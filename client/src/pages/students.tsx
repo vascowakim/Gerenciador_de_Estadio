@@ -381,6 +381,7 @@ export default function Students() {
                       <TableHead className="text-white font-semibold">Endereço</TableHead>
                       <TableHead className="text-white font-semibold">Data Ingresso</TableHead>
                       <TableHead className="text-white font-semibold">Status</TableHead>
+                      <TableHead className="text-white font-semibold text-center">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -423,6 +424,27 @@ export default function Students() {
                           }`}>
                             {student.isActive ? 'Ativo' : 'Inativo'}
                           </span>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <div className="flex justify-center space-x-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEdit(student)}
+                              data-testid={`button-edit-student-${student.id}`}
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDelete(student.id)}
+                              className="text-red-600 hover:text-red-700"
+                              data-testid={`button-delete-student-${student.id}`}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
