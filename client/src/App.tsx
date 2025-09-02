@@ -9,6 +9,7 @@ import Students from "@/pages/students";
 import Advisors from "@/pages/advisors";
 import Companies from "@/pages/companies";
 import Internships from "@/pages/internships";
+import MandatoryInternships from "@/pages/mandatory-internships";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -20,6 +21,7 @@ function Router() {
       <Route path="/advisors" component={Advisors} />
       <Route path="/companies" component={Companies} />
       <Route path="/internships" component={Internships} />
+      <Route path="/mandatory-internships" component={MandatoryInternships} />
       <Route component={NotFound} />
     </Switch>
   );

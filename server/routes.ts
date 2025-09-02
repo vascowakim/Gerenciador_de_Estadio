@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertUserSchema, insertAdvisorSchema, insertStudentSchema, insertCompanySchema, insertInternshipSchema } from "@shared/schema";
+import { insertUserSchema, insertAdvisorSchema, insertStudentSchema, insertCompanySchema, insertInternshipSchema, insertMandatoryInternshipSchema } from "@shared/schema";
 import bcrypt from "bcrypt";
 import session from "express-session";
 
@@ -338,6 +338,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: "Estágio excluído com sucesso" });
     } catch (error) {
       res.status(500).json({ message: "Erro ao excluir estágio" });
+    }
+  });
+
+  // Mandatory Internships routes
+  app.get("/api/mandatory-internships", requireAuth, async (req: any, res) => {
+    try {
+      let mandatoryInternships;
+      if (req.session.user.role === "administrator") {
+        mandatoryInternships = await storage.getAllMandatoryInternships();
+      } else {
+        // Professors can only see mandatory internships they supervise
+        mandatoryInternships = await storage.getMandatoryInternshipsByAdvisor(req.session.user.id);
+      }
+      res.json(mandatoryInternships);
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao buscar estágios obrigatórios" });
+    }
+  });
+
+  app.post("/api/mandatory-internships", requireAuth, async (req, res) => {
+    try {
+      const mandatoryInternshipData = insertMandatoryInternshipSchema.parse(req.body);
+      const mandatoryInternship = await storage.createMandatoryInternship(mandatoryInternshipData);
+      res.status(201).json(mandatoryInternship);
+    } catch (error) {
+      console.error("Error creating mandatory internship:", error);
+      res.status(400).json({ message: "Dados inválidos" });
+    }
+  });
+
+  app.put("/api/mandatory-internships/:id", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const mandatoryInternshipData = insertMandatoryInternshipSchema.partial().parse(req.body);
+      const mandatoryInternship = await storage.updateMandatoryInternship(id, mandatoryInternshipData);
+      if (!mandatoryInternship) {
+        return res.status(404).json({ message: "Estágio obrigatório não encontrado" });
+      }
+      res.json(mandatoryInternship);
+    } catch (error) {
+      res.status(400).json({ message: "Dados inválidos" });
+    }
+  });
+
+  app.delete("/api/mandatory-internships/:id", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const success = await storage.deleteMandatoryInternship(id);
+      if (!success) {
+        return res.status(404).json({ message: "Estágio obrigatório não encontrado" });
+      }
+      res.json({ message: "Estágio obrigatório excluído com sucesso" });
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao excluir estágio obrigatório" });
     }
   });
 

@@ -1,4 +1,4 @@
-import { users, advisors, students, companies, internships, type User, type InsertUser, type Advisor, type InsertAdvisor, type Student, type InsertStudent, type Company, type InsertCompany, type Internship, type InsertInternship } from "@shared/schema";
+import { users, advisors, students, companies, internships, mandatoryInternships, type User, type InsertUser, type Advisor, type InsertAdvisor, type Student, type InsertStudent, type Company, type InsertCompany, type Internship, type InsertInternship, type MandatoryInternship, type InsertMandatoryInternship } from "@shared/schema";
 import { db } from "./db";
 import { eq, and } from "drizzle-orm";
 
@@ -40,6 +40,15 @@ export interface IStorage {
   createInternship(internship: InsertInternship): Promise<Internship>;
   updateInternship(id: string, internship: Partial<InsertInternship>): Promise<Internship | undefined>;
   deleteInternship(id: string): Promise<boolean>;
+
+  // Mandatory Internship operations
+  getMandatoryInternship(id: string): Promise<MandatoryInternship | undefined>;
+  getAllMandatoryInternships(): Promise<MandatoryInternship[]>;
+  getMandatoryInternshipsByAdvisor(advisorId: string): Promise<MandatoryInternship[]>;
+  getMandatoryInternshipsByStudent(studentId: string): Promise<MandatoryInternship[]>;
+  createMandatoryInternship(mandatoryInternship: InsertMandatoryInternship): Promise<MandatoryInternship>;
+  updateMandatoryInternship(id: string, mandatoryInternship: Partial<InsertMandatoryInternship>): Promise<MandatoryInternship | undefined>;
+  deleteMandatoryInternship(id: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -222,6 +231,46 @@ export class DatabaseStorage implements IStorage {
 
   async deleteInternship(id: string): Promise<boolean> {
     const result = await db.delete(internships).where(eq(internships.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Mandatory Internship operations
+  async getMandatoryInternship(id: string): Promise<MandatoryInternship | undefined> {
+    const [mandatoryInternship] = await db.select().from(mandatoryInternships).where(eq(mandatoryInternships.id, id));
+    return mandatoryInternship || undefined;
+  }
+
+  async getAllMandatoryInternships(): Promise<MandatoryInternship[]> {
+    return await db.select().from(mandatoryInternships);
+  }
+
+  async getMandatoryInternshipsByAdvisor(advisorId: string): Promise<MandatoryInternship[]> {
+    return await db.select().from(mandatoryInternships).where(eq(mandatoryInternships.advisorId, advisorId));
+  }
+
+  async getMandatoryInternshipsByStudent(studentId: string): Promise<MandatoryInternship[]> {
+    return await db.select().from(mandatoryInternships).where(eq(mandatoryInternships.studentId, studentId));
+  }
+
+  async createMandatoryInternship(insertMandatoryInternship: InsertMandatoryInternship): Promise<MandatoryInternship> {
+    const [mandatoryInternship] = await db
+      .insert(mandatoryInternships)
+      .values(insertMandatoryInternship)
+      .returning();
+    return mandatoryInternship;
+  }
+
+  async updateMandatoryInternship(id: string, mandatoryInternshipUpdate: Partial<InsertMandatoryInternship>): Promise<MandatoryInternship | undefined> {
+    const [mandatoryInternship] = await db
+      .update(mandatoryInternships)
+      .set({ ...mandatoryInternshipUpdate, updatedAt: new Date() })
+      .where(eq(mandatoryInternships.id, id))
+      .returning();
+    return mandatoryInternship || undefined;
+  }
+
+  async deleteMandatoryInternship(id: string): Promise<boolean> {
+    const result = await db.delete(mandatoryInternships).where(eq(mandatoryInternships.id, id));
     return result.rowCount > 0;
   }
 }
