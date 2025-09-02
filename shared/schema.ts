@@ -41,10 +41,27 @@ export const students = pgTable("students", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const companies = pgTable("companies", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  cnpj: text("cnpj").unique(),
+  email: text("email").notNull(),
+  phone: text("phone"),
+  address: text("address"),
+  city: text("city"),
+  state: text("state"),
+  sector: text("sector"),
+  contactPerson: text("contact_person"),
+  website: text("website"),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const internships = pgTable("internships", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   studentId: varchar("student_id").notNull().references(() => students.id),
   advisorId: varchar("advisor_id").notNull().references(() => advisors.id),
+  companyId: varchar("company_id").references(() => companies.id),
   company: text("company").notNull(),
   position: text("position").notNull(),
   type: internshipTypeEnum("type").notNull(),
@@ -70,6 +87,10 @@ export const studentsRelations = relations(students, ({ many }) => ({
   internships: many(internships),
 }));
 
+export const companiesRelations = relations(companies, ({ many }) => ({
+  internships: many(internships),
+}));
+
 export const internshipsRelations = relations(internships, ({ one }) => ({
   student: one(students, {
     fields: [internships.studentId],
@@ -78,6 +99,10 @@ export const internshipsRelations = relations(internships, ({ one }) => ({
   advisor: one(advisors, {
     fields: [internships.advisorId],
     references: [advisors.id],
+  }),
+  company: one(companies, {
+    fields: [internships.companyId],
+    references: [companies.id],
   }),
 }));
 
@@ -97,6 +122,11 @@ export const insertStudentSchema = createInsertSchema(students).omit({
   createdAt: true,
 });
 
+export const insertCompanySchema = createInsertSchema(companies).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertInternshipSchema = createInsertSchema(internships).omit({
   id: true,
   createdAt: true,
@@ -112,6 +142,9 @@ export type InsertAdvisor = z.infer<typeof insertAdvisorSchema>;
 
 export type Student = typeof students.$inferSelect;
 export type InsertStudent = z.infer<typeof insertStudentSchema>;
+
+export type Company = typeof companies.$inferSelect;
+export type InsertCompany = z.infer<typeof insertCompanySchema>;
 
 export type Internship = typeof internships.$inferSelect;
 export type InsertInternship = z.infer<typeof insertInternshipSchema>;

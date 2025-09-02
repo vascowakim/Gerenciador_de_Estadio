@@ -1,4 +1,4 @@
-import { users, advisors, students, internships, type User, type InsertUser, type Advisor, type InsertAdvisor, type Student, type InsertStudent, type Internship, type InsertInternship } from "@shared/schema";
+import { users, advisors, students, companies, internships, type User, type InsertUser, type Advisor, type InsertAdvisor, type Student, type InsertStudent, type Company, type InsertCompany, type Internship, type InsertInternship } from "@shared/schema";
 import { db } from "./db";
 import { eq, and } from "drizzle-orm";
 
@@ -24,6 +24,13 @@ export interface IStorage {
   createStudent(student: InsertStudent): Promise<Student>;
   updateStudent(id: string, student: Partial<InsertStudent>): Promise<Student | undefined>;
   deleteStudent(id: string): Promise<boolean>;
+
+  // Company operations
+  getCompany(id: string): Promise<Company | undefined>;
+  getAllCompanies(): Promise<Company[]>;
+  createCompany(company: InsertCompany): Promise<Company>;
+  updateCompany(id: string, company: Partial<InsertCompany>): Promise<Company | undefined>;
+  deleteCompany(id: string): Promise<boolean>;
 
   // Internship operations
   getInternship(id: string): Promise<Internship | undefined>;
@@ -140,6 +147,41 @@ export class DatabaseStorage implements IStorage {
       .update(students)
       .set({ isActive: false })
       .where(eq(students.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Company operations
+  async getCompany(id: string): Promise<Company | undefined> {
+    const [company] = await db.select().from(companies).where(eq(companies.id, id));
+    return company || undefined;
+  }
+
+  async getAllCompanies(): Promise<Company[]> {
+    return await db.select().from(companies).where(eq(companies.isActive, true));
+  }
+
+  async createCompany(insertCompany: InsertCompany): Promise<Company> {
+    const [company] = await db
+      .insert(companies)
+      .values(insertCompany)
+      .returning();
+    return company;
+  }
+
+  async updateCompany(id: string, companyUpdate: Partial<InsertCompany>): Promise<Company | undefined> {
+    const [company] = await db
+      .update(companies)
+      .set(companyUpdate)
+      .where(eq(companies.id, id))
+      .returning();
+    return company || undefined;
+  }
+
+  async deleteCompany(id: string): Promise<boolean> {
+    const result = await db
+      .update(companies)
+      .set({ isActive: false })
+      .where(eq(companies.id, id));
     return result.rowCount > 0;
   }
 

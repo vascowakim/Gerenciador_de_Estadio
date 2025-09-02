@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertUserSchema, insertAdvisorSchema, insertStudentSchema, insertInternshipSchema } from "@shared/schema";
+import { insertUserSchema, insertAdvisorSchema, insertStudentSchema, insertCompanySchema, insertInternshipSchema } from "@shared/schema";
 import bcrypt from "bcrypt";
 import session from "express-session";
 
@@ -238,6 +238,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: "Estudante excluído com sucesso" });
     } catch (error) {
       res.status(500).json({ message: "Erro ao excluir estudante" });
+    }
+  });
+
+  // Company routes
+  app.get("/api/companies", requireAuth, async (req, res) => {
+    try {
+      const companies = await storage.getAllCompanies();
+      res.json(companies);
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao buscar empresas" });
+    }
+  });
+
+  app.post("/api/companies", requireAuth, async (req, res) => {
+    try {
+      const companyData = insertCompanySchema.parse(req.body);
+      const company = await storage.createCompany(companyData);
+      res.json(company);
+    } catch (error) {
+      res.status(400).json({ message: "Dados inválidos" });
+    }
+  });
+
+  app.put("/api/companies/:id", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const companyData = insertCompanySchema.partial().parse(req.body);
+      const company = await storage.updateCompany(id, companyData);
+      if (!company) {
+        return res.status(404).json({ message: "Empresa não encontrada" });
+      }
+      res.json(company);
+    } catch (error) {
+      res.status(400).json({ message: "Dados inválidos" });
+    }
+  });
+
+  app.delete("/api/companies/:id", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const success = await storage.deleteCompany(id);
+      if (!success) {
+        return res.status(404).json({ message: "Empresa não encontrada" });
+      }
+      res.json({ message: "Empresa excluída com sucesso" });
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao excluir empresa" });
     }
   });
 
