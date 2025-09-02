@@ -421,6 +421,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Rota específica para buscar um estágio obrigatório
+  app.get("/api/mandatory-internships/:id", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const mandatoryInternship = await storage.getMandatoryInternshipById(id);
+      if (!mandatoryInternship) {
+        return res.status(404).json({ message: "Estágio obrigatório não encontrado" });
+      }
+      res.json(mandatoryInternship);
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao buscar estágio obrigatório" });
+    }
+  });
+
+  // Rota para atualizar carga horária
+  app.put("/api/mandatory-internships/:id/workload", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { partialWorkload, notes } = req.body;
+      
+      const mandatoryInternship = await storage.updateMandatoryInternshipWorkload(id, {
+        partialWorkload,
+        workloadNotes: notes
+      });
+      
+      if (!mandatoryInternship) {
+        return res.status(404).json({ message: "Estágio obrigatório não encontrado" });
+      }
+      
+      res.json(mandatoryInternship);
+    } catch (error) {
+      console.error("Erro ao atualizar carga horária:", error);
+      res.status(400).json({ message: "Erro ao atualizar carga horária" });
+    }
+  });
+
+  // Rota para upload de relatórios
+  app.post("/api/mandatory-internships/:id/reports", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      // Por enquanto, apenas marcar o relatório como entregue
+      // Em uma implementação completa, usaríamos multer para fazer upload real
+      const { reportType, reportNumber } = req.body;
+      
+      const updateData: any = {};
+      updateData[`r${reportNumber}`] = true;
+      
+      const mandatoryInternship = await storage.updateMandatoryInternship(id, updateData);
+      
+      if (!mandatoryInternship) {
+        return res.status(404).json({ message: "Estágio obrigatório não encontrado" });
+      }
+      
+      res.json({ message: "Relatório enviado com sucesso", mandatoryInternship });
+    } catch (error) {
+      console.error("Erro ao enviar relatório:", error);
+      res.status(400).json({ message: "Erro ao enviar relatório" });
+    }
+  });
+
   // Non-Mandatory Internships routes
   app.get("/api/non-mandatory-internships", requireAuth, async (req: any, res) => {
     try {

@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, boolean, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, boolean, integer, pgEnum } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -102,6 +102,9 @@ export const mandatoryInternships = pgTable("mandatory_internships", {
   r8: boolean("r8").default(false).notNull(),
   r9: boolean("r9").default(false).notNull(),
   r10: boolean("r10").default(false).notNull(),
+  // Campos de carga horária
+  partialWorkload: integer("partial_workload").default(0),
+  workloadNotes: text("workload_notes"),
   isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),

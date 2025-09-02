@@ -351,6 +351,28 @@ export class DatabaseStorage implements IStorage {
     const result = await db.delete(nonMandatoryInternships).where(eq(nonMandatoryInternships.id, id));
     return result.rowCount > 0;
   }
+
+  // Métodos específicos para controle de estágio obrigatório
+  async getMandatoryInternshipById(id: string): Promise<MandatoryInternship | undefined> {
+    const [mandatoryInternship] = await db
+      .select()
+      .from(mandatoryInternships)
+      .where(eq(mandatoryInternships.id, id));
+    return mandatoryInternship || undefined;
+  }
+
+  async updateMandatoryInternshipWorkload(id: string, workloadData: { partialWorkload: number; workloadNotes?: string }): Promise<MandatoryInternship | undefined> {
+    const [mandatoryInternship] = await db
+      .update(mandatoryInternships)
+      .set({ 
+        partialWorkload: workloadData.partialWorkload,
+        workloadNotes: workloadData.workloadNotes,
+        updatedAt: new Date() 
+      })
+      .where(eq(mandatoryInternships.id, id))
+      .returning();
+    return mandatoryInternship || undefined;
+  }
 }
 
 export const storage = new DatabaseStorage();

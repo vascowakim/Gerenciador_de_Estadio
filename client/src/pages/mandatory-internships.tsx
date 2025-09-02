@@ -626,7 +626,17 @@ export default function MandatoryInternships() {
                               </TableCell>
                             ))}
                             <TableCell className="text-center">
-                              <div className="flex justify-center space-x-2">
+                              <div className="flex justify-center space-x-1">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => window.location.href = `/mandatory-internship-control/${internship.id}`}
+                                  className="text-blue-600 hover:text-blue-700"
+                                  data-testid={`button-control-mandatory-internship-${internship.id}`}
+                                  title="Controle do Estágio"
+                                >
+                                  <FileText className="h-4 w-4" />
+                                </Button>
                                 <Button
                                   variant="outline"
                                   size="sm"
