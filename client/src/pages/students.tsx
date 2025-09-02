@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, Search, Edit2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Edit2, Users } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertStudentSchema, type Student } from "@shared/schema";
@@ -147,49 +147,69 @@ export default function Students() {
     }
   };
 
+  const filteredStudents = students ? students.filter((student: Student) => 
+    student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    student.registrationNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (student.cpf && student.cpf.toLowerCase().includes(searchTerm.toLowerCase()))
+  ) : [];
+
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <div className="flex">
-        <Sidebar user={user} />
-        <main className="flex-1">
-          {/* Top Header Bar */}
-          <div className="bg-blue-600 text-white px-6 py-3 flex justify-between items-center">
-            <h1 className="text-xl font-semibold" data-testid="text-students-title">Gestão de Estudantes</h1>
-            <div className="flex items-center space-x-4 text-sm">
-              <span>🧑‍💼 Administrador</span>
+    <div className="p-6 space-y-6">
+      {/* Header */}
+      <div className="bg-blue-600 text-white p-6 rounded-lg">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <Users className="h-8 w-8" />
+            <div>
+              <h1 className="text-2xl font-bold" data-testid="text-students-title">Gestão de Estudantes</h1>
+              <p className="text-blue-100">Cadastro e gerenciamento de estudantes do sistema</p>
             </div>
           </div>
+          <div className="text-right">
+            <div className="text-3xl font-bold">{filteredStudents.length}</div>
+            <div className="text-blue-100">Total de Estudantes</div>
+          </div>
+        </div>
+      </div>
 
-          <div className="p-6">
-            {/* Action Buttons */}
-            <div className="flex items-center space-x-4 mb-6">
-
-              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button 
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded flex items-center"
-                    onClick={() => {
-                      setEditingStudent(null);
-                      form.reset({
-                        name: "",
-                        email: "",
-                        registrationNumber: "",
-                        course: "",
-                        phone: "",
-                        cpf: "",
-                        address: "",
-                        isActive: true,
-                      });
-                    }}
-                    data-testid="button-add-student"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Novo Cadastro
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-3xl">
+      {/* Search and Actions */}
+      <div className="flex justify-between items-center">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Input
+            placeholder="Buscar por nome, matrícula ou curso..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+            data-testid="input-search"
+          />
+        </div>
+        
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button 
+              onClick={() => {
+                setEditingStudent(null);
+                form.reset({
+                  name: "",
+                  email: "",
+                  registrationNumber: "",
+                  course: "",
+                  phone: "",
+                  cpf: "",
+                  address: "",
+                  isActive: true,
+                });
+              }}
+              data-testid="button-add-student"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Novo Estudante
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-3xl">
                   <DialogHeader>
                     <DialogTitle>
                       {editingStudent ? "Editar Estudante" : "Novo Estudante"}
@@ -327,123 +347,86 @@ export default function Students() {
               </Dialog>
             </div>
 
-            {/* Students Table with Search */}
-            <div className="bg-white rounded-lg border">
-              {/* Search Bar */}
-              <div className="flex justify-between items-center p-4 border-b bg-blue-50">
-                <h3 className="text-lg font-semibold text-blue-800">Lista de Estudantes</h3>
-                <div className="flex items-center space-x-2">
-                  <Input 
-                    placeholder="Busque por nome, matrícula ou CPF..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-64"
-                    data-testid="input-search"
-                  />
-                  <Button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded flex items-center">
-                    <Search className="w-4 h-4 mr-2" />
-                    Localizar
-                  </Button>
-                </div>
-              </div>
-
-              {/* Table */}
-              {isLoading ? (
-                <div className="text-center py-8">
-                  <p>Carregando estudantes...</p>
-                </div>
-              ) : !students || students.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-gray-500" data-testid="text-no-students">Nenhum estudante cadastrado</p>
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-blue-600 hover:bg-blue-600">
-                      <TableHead className="text-white font-semibold">ID</TableHead>
-                      <TableHead className="text-white font-semibold">Nome</TableHead>
-                      <TableHead className="text-white font-semibold">Email</TableHead>
-                      <TableHead className="text-white font-semibold">Curso</TableHead>
-                      <TableHead className="text-white font-semibold">Matrícula</TableHead>
-                      <TableHead className="text-white font-semibold">Telefone</TableHead>
-                      <TableHead className="text-white font-semibold">CPF</TableHead>
-                      <TableHead className="text-white font-semibold">Endereço</TableHead>
-                      <TableHead className="text-white font-semibold">Data Ingresso</TableHead>
-                      <TableHead className="text-white font-semibold">Status</TableHead>
-                      <TableHead className="text-white font-semibold text-center">Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {students.filter((student: Student) => 
-                      student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                      student.registrationNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                      (student.cpf && student.cpf.toLowerCase().includes(searchTerm.toLowerCase()))
-                    ).map((student: Student, index: number) => (
-                      <TableRow key={student.id} data-testid={`row-student-${student.id}`} className="hover:bg-gray-50">
-                        <TableCell className="font-medium" data-testid={`text-student-id-${student.id}`}>
-                          {index + 1}
-                        </TableCell>
-                        <TableCell className="font-medium" data-testid={`text-student-name-${student.id}`}>
-                          {student.name}
-                        </TableCell>
-                        <TableCell data-testid={`text-student-email-${student.id}`}>
-                          {student.email}
-                        </TableCell>
-                        <TableCell data-testid={`text-student-course-${student.id}`}>
-                          {student.course}
-                        </TableCell>
-                        <TableCell data-testid={`text-student-registration-${student.id}`}>
-                          {student.registrationNumber}
-                        </TableCell>
-                        <TableCell data-testid={`text-student-phone-${student.id}`}>
-                          {student.phone || "-"}
-                        </TableCell>
-                        <TableCell data-testid={`text-student-cpf-${student.id}`}>
-                          {student.cpf || "-"}
-                        </TableCell>
-                        <TableCell data-testid={`text-student-address-${student.id}`}>
-                          {student.address || "-"}
-                        </TableCell>
-                        <TableCell data-testid={`text-student-created-${student.id}`}>
-                          {new Date(student.createdAt).toLocaleDateString('pt-BR')}
-                        </TableCell>
-                        <TableCell data-testid={`text-student-status-${student.id}`}>
-                          <span className={`px-2 py-1 rounded text-xs ${
-                            student.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                          }`}>
-                            {student.isActive ? 'Ativo' : 'Inativo'}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <div className="flex justify-center space-x-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleEdit(student)}
-                              data-testid={`button-edit-student-${student.id}`}
-                            >
-                              <Edit2 className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDelete(student.id)}
-                              className="text-red-600 hover:text-red-700"
-                              data-testid={`button-delete-student-${student.id}`}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
+      {/* Students Table */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg font-semibold">Lista de Estudantes</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="text-center py-8">
+              <p>Carregando estudantes...</p>
             </div>
-          </div>
-        </main>
-      </div>
+          ) : !students || students.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-gray-500" data-testid="text-no-students">Nenhum estudante cadastrado</p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Curso</TableHead>
+                  <TableHead>Matrícula</TableHead>
+                  <TableHead>Telefone</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-center">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredStudents.map((student: Student) => (
+                  <TableRow key={student.id} data-testid={`row-student-${student.id}`}>
+                    <TableCell className="font-medium" data-testid={`text-student-name-${student.id}`}>
+                      {student.name}
+                    </TableCell>
+                    <TableCell data-testid={`text-student-email-${student.id}`}>
+                      {student.email}
+                    </TableCell>
+                    <TableCell data-testid={`text-student-course-${student.id}`}>
+                      {student.course}
+                    </TableCell>
+                    <TableCell data-testid={`text-student-registration-${student.id}`}>
+                      {student.registrationNumber}
+                    </TableCell>
+                    <TableCell data-testid={`text-student-phone-${student.id}`}>
+                      {student.phone || "-"}
+                    </TableCell>
+                    <TableCell data-testid={`text-student-status-${student.id}`}>
+                      <span className={`px-2 py-1 rounded text-xs ${
+                        student.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                      }`}>
+                        {student.isActive ? 'Ativo' : 'Inativo'}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <div className="flex justify-center space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEdit(student)}
+                          data-testid={`button-edit-student-${student.id}`}
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDelete(student.id)}
+                          className="text-red-600 hover:text-red-700"
+                          data-testid={`button-delete-student-${student.id}`}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

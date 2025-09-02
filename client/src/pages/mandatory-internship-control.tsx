@@ -15,7 +15,8 @@ import {
   Users,
   Building,
   Calendar,
-  User as UserIcon
+  User as UserIcon,
+  CheckCircle
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
@@ -185,235 +187,158 @@ export default function MandatoryInternshipControl() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <div className="flex">
-        <Sidebar user={user} />
-        <main className="flex-1">
-          {/* Top Header Bar */}
-          <div className="bg-blue-600 text-white px-6 py-3 flex justify-between items-center">
-            <div className="flex items-center space-x-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => window.history.back()}
-                className="text-white hover:bg-blue-700"
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Voltar
-              </Button>
-              <h1 className="text-xl font-semibold">Controle de Estágio Obrigatório</h1>
-            </div>
-            <div className="flex items-center space-x-4 text-sm">
-              <span>🧑‍💼 {user.role === "administrator" ? "Administrador" : "Professor"}</span>
+    <div className="p-6 space-y-6">
+      {/* Header */}
+      <div className="bg-blue-600 text-white p-6 rounded-lg">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <FileText className="h-8 w-8" />
+            <div>
+              <h1 className="text-2xl font-bold">Controle de Estágio Obrigatório</h1>
+              <p className="text-blue-100">
+                Estudante: {student?.name} - {internship.companyName}
+              </p>
             </div>
           </div>
-
-          <div className="p-6 space-y-6">
-            {/* Informações do Estágio */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <FileText className="h-5 w-5" />
-                  <span>Informações do Estágio</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <UserIcon className="h-4 w-4 text-gray-500" />
-                      <span className="font-semibold">Estudante</span>
-                    </div>
-                    <p className="text-sm">{student?.name || "N/A"}</p>
-                    <p className="text-xs text-gray-500">Matrícula: {student?.registrationNumber || "N/A"}</p>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <Users className="h-4 w-4 text-gray-500" />
-                      <span className="font-semibold">Orientador</span>
-                    </div>
-                    <p className="text-sm">{advisor?.name || "N/A"}</p>
-                    <p className="text-xs text-gray-500">SIAPE: {advisor?.siape || "N/A"}</p>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <Building className="h-4 w-4 text-gray-500" />
-                      <span className="font-semibold">Empresa</span>
-                    </div>
-                    <p className="text-sm">{company?.name || "N/A"}</p>
-                    <p className="text-xs text-gray-500">Supervisor: {internship.supervisor || "N/A"}</p>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <Calendar className="h-4 w-4 text-gray-500" />
-                      <span className="font-semibold">Período</span>
-                    </div>
-                    <p className="text-sm">
-                      {internship.startDate ? format(new Date(internship.startDate), "dd/MM/yyyy") : "N/A"}
-                      {" - "}
-                      {internship.endDate ? format(new Date(internship.endDate), "dd/MM/yyyy") : "N/A"}
-                    </p>
-                    <Badge variant={internship.status === "active" ? "default" : "secondary"}>
-                      {internship.status === "active" ? "Ativo" : 
-                       internship.status === "completed" ? "Concluído" : 
-                       internship.status === "cancelled" ? "Cancelado" : "Pendente"}
-                    </Badge>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Controle de Carga Horária */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Clock className="h-5 w-5" />
-                  <span>Controle de Carga Horária</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                  <div className="text-center p-4 bg-blue-50 rounded-lg">
-                    <h3 className="font-semibold text-blue-800">CH Total</h3>
-                    <p className="text-2xl font-bold text-blue-600">{totalWorkload}h</p>
-                  </div>
-                  <div className="text-center p-4 bg-green-50 rounded-lg">
-                    <h3 className="font-semibold text-green-800">CH Parcial</h3>
-                    <p className="text-2xl font-bold text-green-600">{partialWorkload}h</p>
-                  </div>
-                  <div className="text-center p-4 bg-orange-50 rounded-lg">
-                    <h3 className="font-semibold text-orange-800">CH Restante</h3>
-                    <p className="text-2xl font-bold text-orange-600">{remainingWorkload}h</p>
-                  </div>
-                </div>
-
-                <form onSubmit={workloadForm.handleSubmit(onSubmitWorkload)} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="partialWorkload">Atualizar CH Parcial (horas)</Label>
-                      <Input
-                        id="partialWorkload"
-                        type="number"
-                        min="0"
-                        max={totalWorkload}
-                        {...workloadForm.register("partialWorkload", { valueAsNumber: true })}
-                        placeholder="Digite as horas cumpridas"
-                      />
-                      {workloadForm.formState.errors.partialWorkload && (
-                        <p className="text-red-500 text-sm">{workloadForm.formState.errors.partialWorkload.message}</p>
-                      )}
-                    </div>
-                    <div>
-                      <Label htmlFor="notes">Observações (opcional)</Label>
-                      <Input
-                        id="notes"
-                        {...workloadForm.register("notes")}
-                        placeholder="Observações sobre a carga horária"
-                      />
-                    </div>
-                  </div>
-                  <Button 
-                    type="submit" 
-                    disabled={updateWorkloadMutation.isPending}
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    {updateWorkloadMutation.isPending ? "Salvando..." : "Salvar CH Parcial"}
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
-
-            {/* Controle de Relatórios */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Upload className="h-5 w-5" />
-                  <span>Controle de Relatórios</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  {/* Relatórios Parciais */}
-                  <div>
-                    <h3 className="font-semibold mb-4">Relatórios Parciais (R1-R9)</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => {
-                        const isUploaded = uploadedReports[`partial-${num}`] || internship[`r${num}` as keyof MandatoryInternship];
-                        return (
-                          <div key={num} className="p-4 border rounded-lg">
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="font-medium">Relatório R{num}</span>
-                              {isUploaded ? (
-                                <Check className="h-5 w-5 text-green-600" />
-                              ) : (
-                                <X className="h-5 w-5 text-red-600" />
-                              )}
-                            </div>
-                            <div className="space-y-2">
-                              <input
-                                type="file"
-                                accept=".pdf,.doc,.docx"
-                                onChange={(e) => handleFileUpload(e, "partial", num)}
-                                className="text-sm"
-                                disabled={uploadReportMutation.isPending}
-                              />
-                              <div className="flex items-center space-x-2">
-                                <Checkbox 
-                                  checked={!!isUploaded}
-                                  disabled
-                                />
-                                <span className="text-sm text-gray-600">
-                                  {isUploaded ? "Anexado" : "Pendente"}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Relatório Final */}
-                  <div>
-                    <h3 className="font-semibold mb-4">Relatório Final (R10)</h3>
-                    <div className="p-4 border rounded-lg bg-yellow-50">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="font-medium">Relatório Final R10</span>
-                        {uploadedReports["final-10"] || internship.r10 ? (
-                          <Check className="h-5 w-5 text-green-600" />
-                        ) : (
-                          <X className="h-5 w-5 text-red-600" />
-                        )}
-                      </div>
-                      <div className="space-y-2">
-                        <input
-                          type="file"
-                          accept=".pdf,.doc,.docx"
-                          onChange={(e) => handleFileUpload(e, "final", 10)}
-                          className="text-sm"
-                          disabled={uploadReportMutation.isPending}
-                        />
-                        <div className="flex items-center space-x-2">
-                          <Checkbox 
-                            checked={!!(uploadedReports["final-10"] || internship.r10)}
-                            disabled
-                          />
-                          <span className="text-sm text-gray-600">
-                            {uploadedReports["final-10"] || internship.r10 ? "Anexado" : "Pendente"}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          <div className="text-right">
+            <div className="text-3xl font-bold">{Math.round((partialWorkload / totalWorkload) * 100)}%</div>
+            <div className="text-blue-100">Progresso</div>
           </div>
-        </main>
+        </div>
       </div>
+
+      {/* Workload and Progress Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <Clock className="h-5 w-5 text-blue-600" />
+              <div>
+                <p className="text-sm text-gray-600">Carga Horária Total</p>
+                <p className="text-2xl font-bold text-blue-600">{totalWorkload}h</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <CheckCircle className="h-5 w-5 text-green-600" />
+              <div>
+                <p className="text-sm text-gray-600">Horas Cumpridas</p>
+                <p className="text-2xl font-bold text-green-600">{partialWorkload}h</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <Calendar className="h-5 w-5 text-orange-600" />
+              <div>
+                <p className="text-sm text-gray-600">Horas Restantes</p>
+                <p className="text-2xl font-bold text-orange-600">{remainingWorkload}h</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Workload Update Form */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Atualizar Carga Horária</CardTitle>
+          <CardDescription>
+            Registre as horas cumpridas pelo estudante
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Form {...workloadForm}>
+            <form onSubmit={workloadForm.handleSubmit(onSubmitWorkload)} className="space-y-4">
+              <div className="flex items-end space-x-4">
+                <FormField
+                  control={workloadForm.control}
+                  name="hoursWorked"
+                  render={({ field }) => (
+                    <FormItem className="flex-1">
+                      <FormLabel>Horas Trabalhadas</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          placeholder="0" 
+                          {...field}
+                          onChange={(e) => field.onChange(Number(e.target.value))}
+                          data-testid="input-hours-worked"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button 
+                  type="submit" 
+                  disabled={updateWorkloadMutation.isPending}
+                  data-testid="button-update-workload"
+                >
+                  {updateWorkloadMutation.isPending ? "Atualizando..." : "Atualizar"}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+
+      {/* Reports Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Relatórios de Estágio</CardTitle>
+          <CardDescription>
+            Gerencie os relatórios obrigatórios do estágio
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((reportNumber) => (
+              <div key={reportNumber} className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <FileText className="h-5 w-5 text-blue-600" />
+                  <div>
+                    <p className="font-medium">Relatório {reportNumber}</p>
+                    <p className="text-sm text-gray-600">
+                      {uploadedReports[`report-${reportNumber}`] ? "Enviado" : "Pendente"}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  {uploadedReports[`report-${reportNumber}`] ? (
+                    <span className="text-green-600 text-sm">✓ Enviado</span>
+                  ) : (
+                    <div className="flex items-center space-x-2">
+                      <Input
+                        type="file"
+                        accept=".pdf,.doc,.docx"
+                        onChange={(e) => handleFileUpload(e, "report", reportNumber)}
+                        className="w-48"
+                        data-testid={`input-report-${reportNumber}`}
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={uploadReportMutation.isPending}
+                        data-testid={`button-upload-report-${reportNumber}`}
+                      >
+                        Enviar
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
