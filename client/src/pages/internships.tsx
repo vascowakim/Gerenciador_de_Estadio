@@ -10,7 +10,6 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Navbar } from "@/components/layout/navbar";
-import { Sidebar } from "@/components/layout/sidebar";
 import { Plus, Pencil, Trash2, BookOpen, Calendar } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -178,11 +177,7 @@ export default function Internships() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar user={user} />
-      <div className="flex">
-        <Sidebar user={user} />
-        <main className="flex-1 p-8">
+        <main className="p-8">
           <div className="max-w-7xl mx-auto">
             <div className="flex items-center justify-between mb-8">
               <div>
@@ -538,7 +533,5 @@ export default function Internships() {
             </Card>
           </div>
         </main>
-      </div>
-    </div>
   );
 }

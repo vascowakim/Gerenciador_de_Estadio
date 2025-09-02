@@ -3,6 +3,7 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { MainLayout } from "@/components/layout/main-layout";
 import Login from "@/pages/login";
 import Dashboard from "@/pages/dashboard";
 import Students from "@/pages/students";
@@ -18,14 +19,46 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Login} />
-      <Route path="/dashboard" component={Dashboard} />
-      <Route path="/students" component={Students} />
-      <Route path="/advisors" component={Advisors} />
-      <Route path="/companies" component={Companies} />
-      <Route path="/internships" component={Internships} />
-      <Route path="/mandatory-internships" component={MandatoryInternships} />
-      <Route path="/mandatory-internship-control/:id" component={MandatoryInternshipControl} />
-      <Route path="/non-mandatory-internships" component={NonMandatoryInternships} />
+      <Route path="/dashboard">
+        <MainLayout>
+          <Dashboard />
+        </MainLayout>
+      </Route>
+      <Route path="/students">
+        <MainLayout>
+          <Students />
+        </MainLayout>
+      </Route>
+      <Route path="/advisors">
+        <MainLayout>
+          <Advisors />
+        </MainLayout>
+      </Route>
+      <Route path="/companies">
+        <MainLayout>
+          <Companies />
+        </MainLayout>
+      </Route>
+      <Route path="/internships">
+        <MainLayout>
+          <Internships />
+        </MainLayout>
+      </Route>
+      <Route path="/mandatory-internships">
+        <MainLayout>
+          <MandatoryInternships />
+        </MainLayout>
+      </Route>
+      <Route path="/mandatory-internship-control/:id">
+        <MainLayout>
+          <MandatoryInternshipControl />
+        </MainLayout>
+      </Route>
+      <Route path="/non-mandatory-internships">
+        <MainLayout>
+          <NonMandatoryInternships />
+        </MainLayout>
+      </Route>
       <Route component={NotFound} />
     </Switch>
   );

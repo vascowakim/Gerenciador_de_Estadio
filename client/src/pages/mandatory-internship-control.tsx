@@ -28,7 +28,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
-import { Sidebar } from "@/components/layout/sidebar";
 
 import type { User, MandatoryInternship, Student, Advisor, Company } from "@shared/schema";
 
