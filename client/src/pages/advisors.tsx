@@ -23,6 +23,7 @@ const registerAdvisorSchema = insertAdvisorSchema.extend({
     required_error: "Selecione um perfil",
   }),
   isSystemAdmin: z.boolean(),
+  isInternshipCoordinator: z.boolean(),
   isProfessor: z.boolean(),
 });
 
@@ -49,6 +50,7 @@ export default function Advisors() {
       password: "",
       role: "professor",
       isSystemAdmin: false,
+      isInternshipCoordinator: false,
       isProfessor: false,
       isActive: true,
     },
@@ -70,6 +72,10 @@ export default function Advisors() {
       let role = "professor";
       if (data.isSystemAdmin) {
         role = "administrator";
+      } else if (data.isInternshipCoordinator) {
+        role = "professor"; // Coordenador também é um tipo de professor
+      } else if (data.isProfessor) {
+        role = "professor";
       }
 
       const payload = {
@@ -167,8 +173,9 @@ export default function Advisors() {
       department: advisor.department || "",
       password: "",
       role: "professor",
-      isSystemAdmin: false,
-      isProfessor: true,
+      isSystemAdmin: advisor.isSystemAdmin || false,
+      isInternshipCoordinator: advisor.isInternshipCoordinator || false,
+      isProfessor: (!advisor.isSystemAdmin && !advisor.isInternshipCoordinator) || false,
       isActive: advisor.isActive,
     });
     setIsDialogOpen(true);
@@ -396,13 +403,38 @@ export default function Advisors() {
                                 onCheckedChange={(checked) => {
                                   field.onChange(checked);
                                   if (checked) {
+                                    form.setValue("isInternshipCoordinator", false);
                                     form.setValue("isProfessor", false);
                                   }
                                 }}
                               />
                             </FormControl>
                             <FormLabel className="text-sm font-normal">
-                              ☑️ Administrador do Sistema
+                              ☑️ Administrador do Sistema - Acesso total ao sistema
+                            </FormLabel>
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="isInternshipCoordinator"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={(checked) => {
+                                  field.onChange(checked);
+                                  if (checked) {
+                                    form.setValue("isSystemAdmin", false);
+                                    form.setValue("isProfessor", false);
+                                  }
+                                }}
+                              />
+                            </FormControl>
+                            <FormLabel className="text-sm font-normal text-blue-600">
+                              📋 Coordenador do Estágio - Apenas para inserir em relatórios
                             </FormLabel>
                           </FormItem>
                         )}
@@ -420,12 +452,13 @@ export default function Advisors() {
                                   field.onChange(checked);
                                   if (checked) {
                                     form.setValue("isSystemAdmin", false);
+                                    form.setValue("isInternshipCoordinator", false);
                                   }
                                 }}
                               />
                             </FormControl>
                             <FormLabel className="text-sm font-normal text-orange-600">
-                              👨‍🏫 Professor de Estágio - Históricas Pendentes
+                              👨‍🏫 Professor - Acesso limitado ao sistema
                             </FormLabel>
                           </FormItem>
                         )}
@@ -473,6 +506,7 @@ export default function Advisors() {
                   <TableHead className="font-semibold">SIAPE</TableHead>
                   <TableHead className="font-semibold">Departamento</TableHead>
                   <TableHead className="font-semibold">Email</TableHead>
+                  <TableHead className="font-semibold">Perfil</TableHead>
                   <TableHead className="font-semibold">Status</TableHead>
                   <TableHead className="font-semibold text-center">Ações</TableHead>
                 </TableRow>
@@ -497,6 +531,23 @@ export default function Advisors() {
                     </TableCell>
                     <TableCell>
                       {advisor.email || "N/A"}
+                    </TableCell>
+                    <TableCell>
+                      {advisor.isSystemAdmin && (
+                        <Badge variant="destructive" className="mr-1">
+                          Administrador do Sistema
+                        </Badge>
+                      )}
+                      {advisor.isInternshipCoordinator && (
+                        <Badge variant="secondary" className="mr-1">
+                          Coordenador do Estágio
+                        </Badge>
+                      )}
+                      {!advisor.isSystemAdmin && !advisor.isInternshipCoordinator && (
+                        <Badge variant="outline">
+                          Professor
+                        </Badge>
+                      )}
                     </TableCell>
                     <TableCell>
                       <Badge variant={advisor.isActive ? "default" : "secondary"}>
