@@ -9,6 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { LogIn, Star, Shield, BarChart3, Settings } from "lucide-react";
 import { AuthService } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
+import ufvjmLogo from "@assets/ufvjm_1756831174700.png";
 
 const loginSchema = z.object({
   username: z.string().min(1, "Usuário é obrigatório"),
@@ -74,8 +75,13 @@ export function LoginForm({ onLoginSuccess }: LoginFormProps) {
           {/* UFVJM Logo and Branding */}
           <div className="text-center mb-8">
             <div className="mb-6">
-              <div className="w-16 h-16 mx-auto mb-4 ufvjm-green rounded-full flex items-center justify-center">
-                <span className="text-2xl font-bold text-white">U</span>
+              <div className="w-20 h-20 mx-auto mb-4 bg-white rounded-full flex items-center justify-center p-2">
+                <img 
+                  src={ufvjmLogo} 
+                  alt="UFVJM Logo" 
+                  className="w-full h-full object-contain"
+                  data-testid="img-ufvjm-logo"
+                />
               </div>
               <h2 className="text-xl font-bold tracking-wide mb-2" data-testid="text-university-name">UFVJM</h2>
             </div>
