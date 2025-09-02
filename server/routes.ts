@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertUserSchema, insertAdvisorSchema, insertStudentSchema, insertCompanySchema, insertInternshipSchema, insertMandatoryInternshipSchema } from "@shared/schema";
+import { insertUserSchema, insertAdvisorSchema, insertStudentSchema, insertCompanySchema, insertInternshipSchema, insertMandatoryInternshipSchema, insertNonMandatoryInternshipSchema } from "@shared/schema";
 import bcrypt from "bcrypt";
 import session from "express-session";
 
@@ -392,6 +392,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: "Estágio obrigatório excluído com sucesso" });
     } catch (error) {
       res.status(500).json({ message: "Erro ao excluir estágio obrigatório" });
+    }
+  });
+
+  // Non-Mandatory Internships routes
+  app.get("/api/non-mandatory-internships", requireAuth, async (req: any, res) => {
+    try {
+      let nonMandatoryInternships;
+      if (req.session.user.role === "administrator") {
+        nonMandatoryInternships = await storage.getAllNonMandatoryInternships();
+      } else {
+        // Professors can only see non-mandatory internships they supervise
+        nonMandatoryInternships = await storage.getNonMandatoryInternshipsByAdvisor(req.session.user.id);
+      }
+      res.json(nonMandatoryInternships);
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao buscar estágios não obrigatórios" });
+    }
+  });
+
+  app.post("/api/non-mandatory-internships", requireAuth, async (req, res) => {
+    try {
+      const nonMandatoryInternshipData = insertNonMandatoryInternshipSchema.parse(req.body);
+      const nonMandatoryInternship = await storage.createNonMandatoryInternship(nonMandatoryInternshipData);
+      res.status(201).json(nonMandatoryInternship);
+    } catch (error) {
+      console.error("Error creating non-mandatory internship:", error);
+      res.status(400).json({ message: "Dados inválidos" });
+    }
+  });
+
+  app.put("/api/non-mandatory-internships/:id", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const nonMandatoryInternshipData = insertNonMandatoryInternshipSchema.partial().parse(req.body);
+      const nonMandatoryInternship = await storage.updateNonMandatoryInternship(id, nonMandatoryInternshipData);
+      if (!nonMandatoryInternship) {
+        return res.status(404).json({ message: "Estágio não obrigatório não encontrado" });
+      }
+      res.json(nonMandatoryInternship);
+    } catch (error) {
+      res.status(400).json({ message: "Dados inválidos" });
+    }
+  });
+
+  app.delete("/api/non-mandatory-internships/:id", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const success = await storage.deleteNonMandatoryInternship(id);
+      if (!success) {
+        return res.status(404).json({ message: "Estágio não obrigatório não encontrado" });
+      }
+      res.json({ message: "Estágio não obrigatório excluído com sucesso" });
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao excluir estágio não obrigatório" });
     }
   });
 

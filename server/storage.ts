@@ -1,4 +1,4 @@
-import { users, advisors, students, companies, internships, mandatoryInternships, type User, type InsertUser, type Advisor, type InsertAdvisor, type Student, type InsertStudent, type Company, type InsertCompany, type Internship, type InsertInternship, type MandatoryInternship, type InsertMandatoryInternship } from "@shared/schema";
+import { users, advisors, students, companies, internships, mandatoryInternships, nonMandatoryInternships, type User, type InsertUser, type Advisor, type InsertAdvisor, type Student, type InsertStudent, type Company, type InsertCompany, type Internship, type InsertInternship, type MandatoryInternship, type InsertMandatoryInternship, type NonMandatoryInternship, type InsertNonMandatoryInternship } from "@shared/schema";
 import { db } from "./db";
 import { eq, and } from "drizzle-orm";
 
@@ -49,6 +49,15 @@ export interface IStorage {
   createMandatoryInternship(mandatoryInternship: InsertMandatoryInternship): Promise<MandatoryInternship>;
   updateMandatoryInternship(id: string, mandatoryInternship: Partial<InsertMandatoryInternship>): Promise<MandatoryInternship | undefined>;
   deleteMandatoryInternship(id: string): Promise<boolean>;
+
+  // Non-Mandatory Internship operations
+  getNonMandatoryInternship(id: string): Promise<NonMandatoryInternship | undefined>;
+  getAllNonMandatoryInternships(): Promise<NonMandatoryInternship[]>;
+  getNonMandatoryInternshipsByAdvisor(advisorId: string): Promise<NonMandatoryInternship[]>;
+  getNonMandatoryInternshipsByStudent(studentId: string): Promise<NonMandatoryInternship[]>;
+  createNonMandatoryInternship(nonMandatoryInternship: InsertNonMandatoryInternship): Promise<NonMandatoryInternship>;
+  updateNonMandatoryInternship(id: string, nonMandatoryInternship: Partial<InsertNonMandatoryInternship>): Promise<NonMandatoryInternship | undefined>;
+  deleteNonMandatoryInternship(id: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -271,6 +280,46 @@ export class DatabaseStorage implements IStorage {
 
   async deleteMandatoryInternship(id: string): Promise<boolean> {
     const result = await db.delete(mandatoryInternships).where(eq(mandatoryInternships.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Non-Mandatory Internship operations
+  async getNonMandatoryInternship(id: string): Promise<NonMandatoryInternship | undefined> {
+    const [nonMandatoryInternship] = await db.select().from(nonMandatoryInternships).where(eq(nonMandatoryInternships.id, id));
+    return nonMandatoryInternship || undefined;
+  }
+
+  async getAllNonMandatoryInternships(): Promise<NonMandatoryInternship[]> {
+    return await db.select().from(nonMandatoryInternships);
+  }
+
+  async getNonMandatoryInternshipsByAdvisor(advisorId: string): Promise<NonMandatoryInternship[]> {
+    return await db.select().from(nonMandatoryInternships).where(eq(nonMandatoryInternships.advisorId, advisorId));
+  }
+
+  async getNonMandatoryInternshipsByStudent(studentId: string): Promise<NonMandatoryInternship[]> {
+    return await db.select().from(nonMandatoryInternships).where(eq(nonMandatoryInternships.studentId, studentId));
+  }
+
+  async createNonMandatoryInternship(insertNonMandatoryInternship: InsertNonMandatoryInternship): Promise<NonMandatoryInternship> {
+    const [nonMandatoryInternship] = await db
+      .insert(nonMandatoryInternships)
+      .values(insertNonMandatoryInternship)
+      .returning();
+    return nonMandatoryInternship;
+  }
+
+  async updateNonMandatoryInternship(id: string, nonMandatoryInternshipUpdate: Partial<InsertNonMandatoryInternship>): Promise<NonMandatoryInternship | undefined> {
+    const [nonMandatoryInternship] = await db
+      .update(nonMandatoryInternships)
+      .set({ ...nonMandatoryInternshipUpdate, updatedAt: new Date() })
+      .where(eq(nonMandatoryInternships.id, id))
+      .returning();
+    return nonMandatoryInternship || undefined;
+  }
+
+  async deleteNonMandatoryInternship(id: string): Promise<boolean> {
+    const result = await db.delete(nonMandatoryInternships).where(eq(nonMandatoryInternships.id, id));
     return result.rowCount > 0;
   }
 }

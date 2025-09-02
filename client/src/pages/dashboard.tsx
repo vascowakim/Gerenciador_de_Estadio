@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/layout/navbar";
 import { Sidebar } from "@/components/layout/sidebar";
-import { Users, GraduationCap, UserCheck, BookOpen, TrendingUp, Clock, FileText, Building2, UserGraduationCap, Users2 } from "lucide-react";
+import { Users, GraduationCap, UserCheck, BookOpen, TrendingUp, Clock, FileText, Building2, Users2 } from "lucide-react";
 import { AuthService } from "@/lib/auth";
 import { useLocation, Link } from "wouter";
 import { useEffect } from "react";

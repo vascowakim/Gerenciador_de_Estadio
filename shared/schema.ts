@@ -107,6 +107,33 @@ export const mandatoryInternships = pgTable("mandatory_internships", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const nonMandatoryInternships = pgTable("non_mandatory_internships", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  studentId: varchar("student_id").notNull().references(() => students.id),
+  advisorId: varchar("advisor_id").notNull().references(() => advisors.id),
+  companyId: varchar("company_id").references(() => companies.id),
+  supervisor: text("supervisor"),
+  crc: text("crc"),
+  workload: text("workload"),
+  startDate: timestamp("start_date"),
+  endDate: timestamp("end_date"),
+  status: internshipStatusEnum("status").default("pending").notNull(),
+  // Controle de relatórios R1-R10
+  r1: boolean("r1").default(false).notNull(),
+  r2: boolean("r2").default(false).notNull(),
+  r3: boolean("r3").default(false).notNull(),
+  r4: boolean("r4").default(false).notNull(),
+  r5: boolean("r5").default(false).notNull(),
+  r6: boolean("r6").default(false).notNull(),
+  r7: boolean("r7").default(false).notNull(),
+  r8: boolean("r8").default(false).notNull(),
+  r9: boolean("r9").default(false).notNull(),
+  r10: boolean("r10").default(false).notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   // Users don't have direct relations to other entities in this system
@@ -115,16 +142,19 @@ export const usersRelations = relations(users, ({ many }) => ({
 export const advisorsRelations = relations(advisors, ({ many }) => ({
   internships: many(internships),
   mandatoryInternships: many(mandatoryInternships),
+  nonMandatoryInternships: many(nonMandatoryInternships),
 }));
 
 export const studentsRelations = relations(students, ({ many }) => ({
   internships: many(internships),
   mandatoryInternships: many(mandatoryInternships),
+  nonMandatoryInternships: many(nonMandatoryInternships),
 }));
 
 export const companiesRelations = relations(companies, ({ many }) => ({
   internships: many(internships),
   mandatoryInternships: many(mandatoryInternships),
+  nonMandatoryInternships: many(nonMandatoryInternships),
 }));
 
 export const internshipsRelations = relations(internships, ({ one }) => ({
@@ -153,6 +183,21 @@ export const mandatoryInternshipsRelations = relations(mandatoryInternships, ({ 
   }),
   company: one(companies, {
     fields: [mandatoryInternships.companyId],
+    references: [companies.id],
+  }),
+}));
+
+export const nonMandatoryInternshipsRelations = relations(nonMandatoryInternships, ({ one }) => ({
+  student: one(students, {
+    fields: [nonMandatoryInternships.studentId],
+    references: [students.id],
+  }),
+  advisor: one(advisors, {
+    fields: [nonMandatoryInternships.advisorId],
+    references: [advisors.id],
+  }),
+  company: one(companies, {
+    fields: [nonMandatoryInternships.companyId],
     references: [companies.id],
   }),
 }));
@@ -190,6 +235,12 @@ export const insertMandatoryInternshipSchema = createInsertSchema(mandatoryInter
   updatedAt: true,
 });
 
+export const insertNonMandatoryInternshipSchema = createInsertSchema(nonMandatoryInternships).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -208,3 +259,6 @@ export type InsertInternship = z.infer<typeof insertInternshipSchema>;
 
 export type MandatoryInternship = typeof mandatoryInternships.$inferSelect;
 export type InsertMandatoryInternship = z.infer<typeof insertMandatoryInternshipSchema>;
+
+export type NonMandatoryInternship = typeof nonMandatoryInternships.$inferSelect;
+export type InsertNonMandatoryInternship = z.infer<typeof insertNonMandatoryInternshipSchema>;
