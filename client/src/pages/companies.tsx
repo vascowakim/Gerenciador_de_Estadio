@@ -384,16 +384,6 @@ export default function Companies() {
                   </Form>
                 </DialogContent>
               </Dialog>
-              
-              <Button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded flex items-center">
-                <Pencil className="w-4 h-4 mr-2" />
-                Editar
-              </Button>
-              
-              <Button className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded flex items-center">
-                <Trash2 className="w-4 h-4 mr-2" />
-                Excluir
-              </Button>
             </div>
 
             {/* Companies Table with Search */}
