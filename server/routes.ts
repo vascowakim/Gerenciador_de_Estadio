@@ -194,6 +194,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/advisors/register", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const { email, password, role, ...advisorData } = req.body;
+      
+      // Validar dados do orientador
+      const validatedAdvisorData = insertAdvisorSchema.parse(advisorData);
+      
+      // Verificar se o email já existe
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(400).json({ message: "Email já está em uso" });
+      }
+      
+      // Criar orientador com usuário
+      const result = await storage.createAdvisorWithUser(validatedAdvisorData, { email, password, role });
+      
+      res.status(201).json({
+        advisor: result.advisor,
+        message: "Orientador e usuário criados com sucesso"
+      });
+    } catch (error) {
+      console.error("Erro ao registrar orientador:", error);
+      res.status(400).json({ message: "Erro ao criar orientador e usuário" });
+    }
+  });
+
   // Student routes
   app.get("/api/students", requireAuth, async (req, res) => {
     try {

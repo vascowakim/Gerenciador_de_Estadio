@@ -1,6 +1,7 @@
 import { users, advisors, students, companies, internships, mandatoryInternships, nonMandatoryInternships, type User, type InsertUser, type Advisor, type InsertAdvisor, type Student, type InsertStudent, type Company, type InsertCompany, type Internship, type InsertInternship, type MandatoryInternship, type InsertMandatoryInternship, type NonMandatoryInternship, type InsertNonMandatoryInternship } from "@shared/schema";
 import { db } from "./db";
 import { eq, and } from "drizzle-orm";
+import bcrypt from "bcrypt";
 
 export interface IStorage {
   // User operations
@@ -15,6 +16,7 @@ export interface IStorage {
   getAdvisor(id: string): Promise<Advisor | undefined>;
   getAllAdvisors(): Promise<Advisor[]>;
   createAdvisor(advisor: InsertAdvisor): Promise<Advisor>;
+  createAdvisorWithUser(advisor: InsertAdvisor, userData: { email: string; password: string; role: string }): Promise<{ advisor: Advisor; user: User }>;
   updateAdvisor(id: string, advisor: Partial<InsertAdvisor>): Promise<Advisor | undefined>;
   deleteAdvisor(id: string): Promise<boolean>;
 
@@ -114,6 +116,33 @@ export class DatabaseStorage implements IStorage {
       .values(insertAdvisor)
       .returning();
     return advisor;
+  }
+
+  async createAdvisorWithUser(insertAdvisor: InsertAdvisor, userData: { email: string; password: string; role: string }): Promise<{ advisor: Advisor; user: User }> {
+    // Usar transação para garantir que ambos sejam criados ou nenhum
+    return await db.transaction(async (tx) => {
+      // Criar usuário primeiro
+      const hashedPassword = await bcrypt.hash(userData.password, 10);
+      const [user] = await tx
+        .insert(users)
+        .values({
+          email: userData.email,
+          password: hashedPassword,
+          role: userData.role as "administrator" | "professor",
+        })
+        .returning();
+
+      // Criar orientador vinculado ao usuário
+      const [advisor] = await tx
+        .insert(advisors)
+        .values({
+          ...insertAdvisor,
+          id: user.id, // Usar o mesmo ID do usuário
+        })
+        .returning();
+
+      return { advisor, user };
+    });
   }
 
   async updateAdvisor(id: string, advisorUpdate: Partial<InsertAdvisor>): Promise<Advisor | undefined> {
