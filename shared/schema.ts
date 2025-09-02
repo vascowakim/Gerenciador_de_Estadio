@@ -21,9 +21,15 @@ export const users = pgTable("users", {
 export const advisors = pgTable("advisors", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
+  position: text("position"),
+  siape: text("siape").unique(),
+  phone: text("phone"),
+  cpf: text("cpf"),
   email: text("email").notNull().unique(),
   department: text("department").notNull(),
-  phone: text("phone"),
+  password: text("password"),
+  isSystemAdmin: boolean("is_system_admin").default(false).notNull(),
+  isInternshipCoordinator: boolean("is_internship_coordinator").default(false).notNull(),
   isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
