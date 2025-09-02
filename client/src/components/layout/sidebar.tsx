@@ -8,8 +8,15 @@ import {
   UserCheck, 
   BookOpen,
   BarChart3,
-  Settings
+  Settings,
+  FileSpreadsheet,
+  Building2,
+  FileText,
+  Briefcase,
+  Shield,
+  Archive
 } from "lucide-react";
+import ufvjmLogo from "@assets/ufvjm_1756831174700.png";
 
 interface SidebarProps {
   user: any;
@@ -26,15 +33,33 @@ export function Sidebar({ user }: SidebarProps) {
       adminOnly: false,
     },
     {
-      title: "Usuários",
-      href: "/users",
-      icon: Users,
-      adminOnly: true,
+      title: "Controle de Alertas",
+      href: "/alerts",
+      icon: Shield,
+      adminOnly: false,
     },
     {
       title: "Estudantes",
       href: "/students",
       icon: GraduationCap,
+      adminOnly: false,
+    },
+    {
+      title: "Empresas",
+      href: "/companies",
+      icon: Building2,
+      adminOnly: false,
+    },
+    {
+      title: "Estagio Obrigatorio",
+      href: "/mandatory-internships",
+      icon: BookOpen,
+      adminOnly: false,
+    },
+    {
+      title: "Estagio Nao Obrigatorio",
+      href: "/non-mandatory-internships",
+      icon: FileText,
       adminOnly: false,
     },
     {
@@ -44,21 +69,27 @@ export function Sidebar({ user }: SidebarProps) {
       adminOnly: false,
     },
     {
-      title: "Estágios",
-      href: "/internships",
-      icon: BookOpen,
+      title: "Certificados",
+      href: "/certificates",
+      icon: FileSpreadsheet,
       adminOnly: false,
     },
     {
-      title: "Relatórios",
+      title: "Relatorios",
       href: "/reports",
       icon: BarChart3,
       adminOnly: false,
     },
     {
-      title: "Configurações",
+      title: "Configuracoes",
       href: "/settings",
       icon: Settings,
+      adminOnly: true,
+    },
+    {
+      title: "Backup",
+      href: "/backup",
+      icon: Archive,
       adminOnly: true,
     },
   ];
@@ -68,40 +99,51 @@ export function Sidebar({ user }: SidebarProps) {
   );
 
   return (
-    <div className="w-64 bg-white border-r border-gray-200 h-full">
-      <div className="p-6">
-        <div className="flex items-center space-x-3 mb-8">
-          <div className="w-10 h-10 ufvjm-green rounded-full flex items-center justify-center">
-            <span className="text-sm font-bold text-white">U</span>
+    <div className="w-64 bg-blue-600 text-white h-full">
+      <div className="p-4">
+        <div className="bg-blue-700 rounded-lg p-4 mb-6 text-center">
+          <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto mb-2">
+            <img 
+              src={ufvjmLogo} 
+              alt="UFVJM Logo" 
+              className="w-8 h-8 object-contain"
+            />
           </div>
-          <div>
-            <h2 className="text-lg font-bold text-gray-900">UFVJM</h2>
-            <p className="text-xs text-gray-500">EstagioPro</p>
-          </div>
+          <h2 className="text-sm font-bold">UFVJM</h2>
+          <p className="text-xs text-blue-200">Ciências Contábeis</p>
         </div>
 
-        <nav className="space-y-2">
+        <nav className="space-y-1">
           {filteredItems.map((item) => {
             const Icon = item.icon;
             const isActive = location === item.href;
             
             return (
               <Link key={item.href} href={item.href}>
-                <Button
-                  variant={isActive ? "default" : "ghost"}
+                <div
                   className={cn(
-                    "w-full justify-start",
-                    isActive && "ufvjm-light-blue text-white"
+                    "flex items-center space-x-3 px-3 py-2 rounded text-sm hover:bg-blue-700 cursor-pointer",
+                    isActive && "bg-blue-700 font-semibold"
                   )}
                   data-testid={`link-${item.title.toLowerCase()}`}
                 >
-                  <Icon className="w-4 h-4 mr-3" />
-                  {item.title}
-                </Button>
+                  <Icon className="w-4 h-4" />
+                  <span>{item.title}</span>
+                </div>
               </Link>
             );
           })}
         </nav>
+        
+        {/* Bottom Section */}
+        <div className="absolute bottom-4 left-4 right-4">
+          <div className="bg-green-600 text-white px-3 py-2 rounded text-center text-sm font-semibold mb-2">
+            👤 Aluno Portal
+          </div>
+          <div className="bg-red-600 text-white px-3 py-2 rounded text-center text-sm font-semibold">
+            🚚 Sair
+          </div>
+        </div>
       </div>
     </div>
   );
