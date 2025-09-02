@@ -68,7 +68,8 @@ export default function Companies() {
         description: "Empresa criada com sucesso!",
       });
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("Erro ao criar empresa:", error);
       toast({
         title: "Erro",
         description: "Erro ao criar empresa",
@@ -133,6 +134,7 @@ export default function Companies() {
   }
 
   const onSubmit = (data: any) => {
+    console.log("Dados do formulário:", data);
     if (editingCompany) {
       updateMutation.mutate({ id: editingCompany.id, data });
     } else {
