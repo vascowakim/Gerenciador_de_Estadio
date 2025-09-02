@@ -35,6 +35,8 @@ export const students = pgTable("students", {
   registrationNumber: text("registration_number").notNull().unique(),
   course: text("course").notNull(),
   phone: text("phone"),
+  cpf: text("cpf"),
+  address: text("address"),
   isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
