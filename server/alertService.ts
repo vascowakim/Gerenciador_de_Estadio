@@ -101,7 +101,7 @@ export class AlertService {
       (endDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
     );
 
-    // Verificar se já existe alerta para este estágio
+    // Verificar se já existe alerta ativo para este estágio (não dispensado)
     const existingAlert = await db
       .select()
       .from(internshipAlerts)
@@ -110,12 +110,14 @@ export class AlertService {
           eq(internshipAlerts.internshipId, internshipId),
           eq(internshipAlerts.internshipType, internshipType),
           eq(internshipAlerts.alertType, "expiration_warning"),
-          isNull(internshipAlerts.sentAt)
+          eq(internshipAlerts.isActive, true),
+          isNull(internshipAlerts.dismissedAt)
         )
       );
 
     if (existingAlert.length > 0) {
-      return; // Alerta já existe
+      console.log(`⚠️ Alerta já existe para estágio ${internshipId} (tipo: ${internshipType})`);
+      return; // Alerta já existe e está ativo
     }
 
     const alertData: InsertInternshipAlert = {
@@ -167,8 +169,7 @@ export class AlertService {
         })
         .where(eq(internshipAlerts.id, alert.id));
 
-      console.log(`✅ Link WhatsApp gerado para orientador ${advisor.name}: ${whatsappUrl}`);
-      console.log(`📱 Telefone: +${phoneNumber}`);
+      console.log(`✅ WhatsApp: ${advisor.name} (+${phoneNumber})`);
     } catch (error) {
       console.error(`Erro ao enviar WhatsApp para ${advisor.name}:`, error);
       
@@ -311,7 +312,7 @@ export class AlertService {
               phone: student.phone,
               url: whatsappUrl
             });
-            console.log(`✅ Link WhatsApp gerado para estudante ${student.name}: ${whatsappUrl}`);
+            console.log(`✅ WhatsApp Estudante: ${student.name}`);
           } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
             console.error(`Erro ao gerar link WhatsApp para estudante ${student.name}:`, errorMessage);
@@ -334,7 +335,7 @@ export class AlertService {
               phone: advisor.phone,
               url: whatsappUrl
             });
-            console.log(`✅ Link WhatsApp gerado para orientador ${advisor.name}: ${whatsappUrl}`);
+            console.log(`✅ WhatsApp Orientador: ${advisor.name}`);
           } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
             console.error(`Erro ao gerar link WhatsApp para orientador ${advisor.name}:`, errorMessage);
@@ -351,7 +352,7 @@ export class AlertService {
         links
       };
       
-      console.log(`📋 Resultado final:`, result);
+      // console.log(`📋 Resultado final:`, result);
       return result;
 
     } catch (error) {

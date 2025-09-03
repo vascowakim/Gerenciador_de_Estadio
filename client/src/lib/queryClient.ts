@@ -32,7 +32,7 @@ export async function apiRequest(
   const token = getAuthToken();
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
-    console.log('🔑 Usando JWT token para API request:', method, url);
+    // console.log('🔑 Usando JWT token para API request:', method, url);
   }
 
   const res = await fetch(url, {
@@ -58,7 +58,7 @@ export const getQueryFn: <T>(options: {
     const token = getAuthToken();
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
-      console.log('🔑 Usando JWT token para query:', queryKey.join("/"));
+      // console.log('🔑 Usando JWT token para query:', queryKey.join("/"));
     }
 
     const res = await fetch(queryKey.join("/") as string, {

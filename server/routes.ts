@@ -55,19 +55,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.substring(7);
       try {
-        console.log('🔑 Tentando verificar JWT token para iframe...');
+        // console.log('🔑 Tentando verificar JWT token para iframe...');
         const decoded = jwt.verify(token, JWT_SECRET) as any;
         req.session.user = decoded;
-        console.log('✅ JWT token válido para usuário:', decoded.username);
+        // console.log('✅ JWT token válido para usuário:', decoded.username);
         return next();
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Token inválido';
-        console.log('❌ JWT token inválido:', errorMessage);
+        // console.log('❌ JWT token inválido:', errorMessage);
         return res.status(401).json({ message: "Token inválido" });
       }
     }
     
-    console.log('❌ Nenhuma autenticação encontrada (sessão ou JWT)');
+    // console.log('❌ Nenhuma autenticação encontrada (sessão ou JWT)');
     return res.status(401).json({ message: "Não autorizado" });
   };
 
