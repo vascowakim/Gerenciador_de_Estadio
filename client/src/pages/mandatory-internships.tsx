@@ -33,7 +33,7 @@ export default function MandatoryInternships() {
       companyId: "",
       supervisor: "",
       crc: "",
-      workload: "",
+      workload: "390",
       startDate: undefined,
       endDate: undefined,
       status: "pending",
@@ -251,7 +251,7 @@ export default function MandatoryInternships() {
                   companyId: "",
                   supervisor: "",
                   crc: "",
-                  workload: "",
+                  workload: "390",
                   startDate: undefined,
                   endDate: undefined,
                   status: "pending",
@@ -396,9 +396,9 @@ export default function MandatoryInternships() {
                     name="workload"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Carga Horária</FormLabel>
+                        <FormLabel>Carga Horária Total</FormLabel>
                         <FormControl>
-                          <Input placeholder="Ex: 30 horas/semana" {...field} data-testid="input-workload" />
+                          <Input placeholder="Ex: 390" {...field} data-testid="input-workload" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
