@@ -5,6 +5,7 @@ import { insertUserSchema, insertAdvisorSchema, insertStudentSchema, insertCompa
 import { alertService } from "./alertService";
 import bcrypt from "bcrypt";
 import session from "express-session";
+import jwt from "jsonwebtoken";
 import {
   ObjectStorageService,
   ObjectNotFoundError,
@@ -19,16 +20,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     saveUninitialized: false,
     cookie: { 
       secure: false, // Set to true in production with HTTPS
-      maxAge: 24 * 60 * 60 * 1000 // 24 hours
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      sameSite: 'none', // Necessário para iframes cross-origin
+      httpOnly: true
     }
   }));
 
-  // Authentication middleware
+  // Authentication middleware - suporta sessão e JWT
   const requireAuth = (req: any, res: any, next: any) => {
-    if (!req.session.user) {
-      return res.status(401).json({ message: "Não autorizado" });
+    // Primeiro tenta autenticação via sessão
+    if (req.session.user) {
+      return next();
     }
-    next();
+    
+    // Se não houver sessão, tenta JWT (para iframes)
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'jwt-secret') as any;
+        req.session.user = decoded;
+        return next();
+      } catch (error) {
+        return res.status(401).json({ message: "Token inválido" });
+      }
+    }
+    
+    return res.status(401).json({ message: "Não autorizado" });
   };
 
   const requireAdmin = (req: any, res: any, next: any) => {
@@ -91,7 +109,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Credenciais inválidas" });
       }
 
-      req.session.user = {
+      const userData = {
         id: user.id,
         username: user.username,
         name: user.name,
@@ -99,14 +117,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         role: user.role
       };
 
+      req.session.user = userData;
+
+      // Gerar JWT token para compatibilidade com iframes
+      const token = jwt.sign(userData, process.env.JWT_SECRET || 'jwt-secret', {
+        expiresIn: '24h'
+      });
+
       res.json({ 
-        user: {
-          id: user.id,
-          username: user.username,
-          name: user.name,
-          email: user.email,
-          role: user.role
-        }
+        user: userData,
+        token: token, // Enviar token para uso em iframes
+        message: "Login realizado com sucesso"
       });
     } catch (error) {
       console.error("Login error:", error);

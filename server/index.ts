@@ -1,9 +1,33 @@
 import express, { type Request, Response, NextFunction } from "express";
+import cors from "cors";
 import { registerRoutes } from "./routes";
 import { alertScheduler } from "./scheduler";
 import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
+
+// Configuração CORS para permitir incorporação em sites externos como Wix
+app.use(cors({
+  origin: true, // Permite qualquer origem (necessário para Wix)
+  credentials: true, // Permite cookies/sessões cross-origin
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+  exposedHeaders: ['Set-Cookie']
+}));
+
+// Headers para permitir iframe embedding
+app.use((req, res, next) => {
+  // Permitir iframe de qualquer origem (necessário para Wix)
+  res.setHeader('X-Frame-Options', 'ALLOWALL');
+  res.setHeader('Content-Security-Policy', 'frame-ancestors *');
+  
+  // Headers para cookies cross-site
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('SameSite', 'None');
+  
+  next();
+});
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
