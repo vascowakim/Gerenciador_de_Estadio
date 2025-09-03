@@ -1,6 +1,6 @@
 import { users, advisors, students, companies, internships, mandatoryInternships, nonMandatoryInternships, internshipDocuments, type User, type InsertUser, type Advisor, type InsertAdvisor, type Student, type InsertStudent, type Company, type InsertCompany, type Internship, type InsertInternship, type MandatoryInternship, type InsertMandatoryInternship, type NonMandatoryInternship, type InsertNonMandatoryInternship, type InternshipDocument, type InsertInternshipDocument } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, inArray } from "drizzle-orm";
+import { eq, and, inArray, sql } from "drizzle-orm";
 import bcrypt from "bcrypt";
 
 export interface IStorage {
@@ -193,12 +193,12 @@ export class DatabaseStorage implements IStorage {
   async getStudentsByAdvisor(advisorId: string): Promise<Student[]> {
     // Buscar estudantes que têm estágios obrigatórios ou não obrigatórios com este orientador
     const mandatoryStudentIds = await db
-      .selectDistinct({ studentId: mandatoryInternships.studentId })
+      .select({ studentId: mandatoryInternships.studentId })
       .from(mandatoryInternships)
       .where(eq(mandatoryInternships.advisorId, advisorId));
 
     const nonMandatoryStudentIds = await db
-      .selectDistinct({ studentId: nonMandatoryInternships.studentId })
+      .select({ studentId: nonMandatoryInternships.studentId })
       .from(nonMandatoryInternships)
       .where(eq(nonMandatoryInternships.advisorId, advisorId));
 
