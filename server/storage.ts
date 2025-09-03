@@ -136,12 +136,16 @@ export class DatabaseStorage implements IStorage {
     return await db.transaction(async (tx) => {
       // Criar usuário primeiro
       const hashedPassword = await bcrypt.hash(userData.password, 10);
+      // Gerar username baseado no email (parte antes do @)
+      const username = userData.email.split('@')[0];
       const [user] = await tx
         .insert(users)
         .values({
+          username: username,
           email: userData.email,
           password: hashedPassword,
           role: userData.role as "administrator" | "professor",
+          name: insertAdvisor.name,
         })
         .returning();
 
