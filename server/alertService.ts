@@ -253,7 +253,7 @@ export class AlertService {
   }
 
   // Send WhatsApp for specific alert manually
-  async sendWhatsAppForAlert(alertId: string, recipient: 'student' | 'advisor' | 'both'): Promise<{ message: string; sent: string[] }> {
+  async sendWhatsAppForAlert(alertId: string, recipient: 'student' | 'advisor' | 'both'): Promise<{ message: string; sent: string[]; links: { type: string; name: string; phone: string; url: string }[] }> {
     try {
       // Buscar o alerta
       const [alert] = await db.select().from(internshipAlerts).where(eq(internshipAlerts.id, alertId));
@@ -281,38 +281,54 @@ export class AlertService {
       [advisor] = await db.select().from(advisors).where(eq(advisors.id, internship.advisorId));
 
       const sentTo: string[] = [];
+      const links: { type: string; name: string; phone: string; url: string }[] = [];
 
-      // Enviar para estudante
+      // Gerar link para estudante
       if (recipient === 'student' || recipient === 'both') {
         if (student?.phone) {
           try {
-            await this.sendWhatsAppToStudent(alert, student);
+            const whatsappUrl = await this.generateWhatsAppLinkForStudent(alert, student);
             sentTo.push(`Estudante: ${student.name}`);
+            links.push({
+              type: 'Estudante',
+              name: student.name,
+              phone: student.phone,
+              url: whatsappUrl
+            });
+            console.log(`✅ Link WhatsApp gerado para estudante ${student.name}: ${whatsappUrl}`);
           } catch (error) {
-            console.error(`Erro ao enviar WhatsApp para estudante ${student.name}:`, error);
+            console.error(`Erro ao gerar link WhatsApp para estudante ${student.name}:`, error);
           }
         } else {
-          console.log(`Estudante ${student?.name} não possui telefone cadastrado`);
+          console.log(`⚠️ Estudante ${student?.name} não possui telefone cadastrado`);
         }
       }
 
-      // Enviar para orientador
+      // Gerar link para orientador
       if (recipient === 'advisor' || recipient === 'both') {
         if (advisor?.phone) {
           try {
-            await this.sendWhatsAppNotification(alert, advisor, student);
+            const whatsappUrl = await this.generateWhatsAppLinkForAdvisor(alert, advisor, student);
             sentTo.push(`Orientador: ${advisor.name}`);
+            links.push({
+              type: 'Orientador',
+              name: advisor.name,
+              phone: advisor.phone,
+              url: whatsappUrl
+            });
+            console.log(`✅ Link WhatsApp gerado para orientador ${advisor.name}: ${whatsappUrl}`);
           } catch (error) {
-            console.error(`Erro ao enviar WhatsApp para orientador ${advisor.name}:`, error);
+            console.error(`Erro ao gerar link WhatsApp para orientador ${advisor.name}:`, error);
           }
         } else {
-          console.log(`Orientador ${advisor?.name} não possui telefone cadastrado`);
+          console.log(`⚠️ Orientador ${advisor?.name} não possui telefone cadastrado`);
         }
       }
 
       return {
-        message: sentTo.length > 0 ? 'Links WhatsApp gerados com sucesso' : 'Nenhum link foi gerado (telefones não cadastrados)',
-        sent: sentTo
+        message: links.length > 0 ? `${links.length} link(s) WhatsApp gerado(s) com sucesso!` : 'Nenhum link foi gerado (telefones não cadastrados)',
+        sent: sentTo,
+        links
       };
 
     } catch (error) {
@@ -322,29 +338,40 @@ export class AlertService {
   }
 
   // Generate WhatsApp link for student
-  private async sendWhatsAppToStudent(alert: any, student: any): Promise<void> {
+  private async generateWhatsAppLinkForStudent(alert: any, student: any): Promise<string> {
     try {
-      // Formatar número de telefone para WhatsApp
-      let phoneNumber = student.phone.replace(/\D/g, '');
-      if (!phoneNumber.startsWith('55')) {
-        phoneNumber = '55' + phoneNumber;
-      }
-
-      // Criar mensagem
-      const message = `🎓 *EstagioPro UFVJM*\n\n${alert.title}\n\n${alert.message}\n\nPor favor, entre em contato com seu orientador para esclarecimentos.`;
+      // Criar mensagem personalizada para estudante
+      const message = `🎓 *EstagioPro UFVJM*\n\n📢 ${alert.title}\n\n${alert.message}\n\n👨‍🏫 *Próximos passos:*\n• Entre em contato com seu orientador\n• Providencie a documentação necessária\n• Acompanhe os prazos\n\n📞 Em caso de dúvidas, procure a coordenação do curso.`;
       
-      // Usar função auxiliar para gerar link
+      // Gerar link usando função auxiliar
       const whatsappUrl = generateWhatsAppLink(student.phone, message);
       
-      console.log(`✅ Link WhatsApp gerado para estudante ${student.name}: ${whatsappUrl}`);
-      console.log(`📱 Telefone: ${student.phone}`);
-      
-      // Retornar URL para uso no frontend
-      return Promise.resolve();
+      return whatsappUrl;
     } catch (error) {
       console.error(`Erro ao gerar link WhatsApp para estudante ${student.name}:`, error);
       throw error;
     }
+  }
+
+  // Generate WhatsApp link for advisor
+  private async generateWhatsAppLinkForAdvisor(alert: any, advisor: any, student: any): Promise<string> {
+    try {
+      // Criar mensagem personalizada para orientador
+      const message = `🎓 *EstagioPro UFVJM*\n\n📢 ${alert.title}\n\n${alert.message}\n\n👨‍🎓 *Dados do Estudante:*\n• Nome: ${student.name}\n• Matrícula: ${student.registrationNumber || 'Não informado'}\n• Telefone: ${student.phone || 'Não informado'}\n\n📋 *Ação necessária:*\n• Orientar o estudante sobre os próximos passos\n• Verificar documentação do estágio\n• Acompanhar prazos e entregas\n\n💼 Sistema EstagioPro - UFVJM`;
+      
+      // Gerar link usando função auxiliar
+      const whatsappUrl = generateWhatsAppLink(advisor.phone, message);
+      
+      return whatsappUrl;
+    } catch (error) {
+      console.error(`Erro ao gerar link WhatsApp para orientador ${advisor.name}:`, error);
+      throw error;
+    }
+  }
+
+  // Legacy method for backward compatibility
+  private async sendWhatsAppToStudent(alert: any, student: any): Promise<void> {
+    await this.generateWhatsAppLinkForStudent(alert, student);
   }
 }
 
