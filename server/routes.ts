@@ -921,22 +921,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Alert routes
-  app.get("/api/alerts", requireAuth, async (req: any, res) => {
+  app.get("/api/alerts", requireAuth, requireAdmin, async (req: any, res) => {
     try {
-      let alerts;
-      if (req.session.user.role === "administrator") {
-        alerts = await alertService.getActiveAlerts();
-      } else {
-        // Professors can only see alerts directed to them
-        alerts = await alertService.getActiveAlerts(req.session.user.id);
-      }
+      // Apenas administradores podem acessar a Central de Alertas
+      const alerts = await alertService.getActiveAlerts();
       res.json(alerts);
     } catch (error) {
       res.status(500).json({ message: "Erro ao buscar alertas" });
     }
   });
 
-  app.put("/api/alerts/:id/read", requireAuth, async (req: any, res) => {
+  app.put("/api/alerts/:id/read", requireAuth, requireAdmin, async (req: any, res) => {
     try {
       const { id } = req.params;
       await alertService.markAlertAsRead(id, req.session.user.id);
@@ -946,7 +941,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/alerts/:id/dismiss", requireAuth, async (req: any, res) => {
+  app.put("/api/alerts/:id/dismiss", requireAuth, requireAdmin, async (req: any, res) => {
     try {
       const { id } = req.params;
       await alertService.dismissAlert(id, req.session.user.id);
@@ -972,7 +967,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Send WhatsApp notification for specific alert
-  app.post("/api/alerts/:id/send-whatsapp", requireAuth, async (req: any, res) => {
+  app.post("/api/alerts/:id/send-whatsapp", requireAuth, requireAdmin, async (req: any, res) => {
     try {
       const { id } = req.params;
       const { recipient } = req.body; // 'student', 'advisor', or 'both'

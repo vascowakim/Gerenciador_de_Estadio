@@ -49,8 +49,8 @@ export function Sidebar({ user }: SidebarProps) {
       title: "Central de Alertas",
       href: "/alerts",
       icon: Bell,
-      adminOnly: false,
-      professorAccess: true,
+      adminOnly: true,
+      professorAccess: false,
     },
     {
       title: "Estudantes",
