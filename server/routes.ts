@@ -454,7 +454,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/mandatory-internships", requireAuth, async (req, res) => {
     try {
-      const mandatoryInternshipData = insertMandatoryInternshipSchema.parse(req.body);
+      // Converter strings de data para objetos Date
+      const processedBody = {
+        ...req.body,
+        startDate: req.body.startDate ? new Date(req.body.startDate) : null,
+        endDate: req.body.endDate ? new Date(req.body.endDate) : null,
+      };
+      
+      const mandatoryInternshipData = insertMandatoryInternshipSchema.parse(processedBody);
       const mandatoryInternship = await storage.createMandatoryInternship(mandatoryInternshipData);
       res.status(201).json(mandatoryInternship);
     } catch (error) {
@@ -466,12 +473,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/mandatory-internships/:id", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
-      console.log("Updating mandatory internship with ID:", id);
-      console.log("Request body:", JSON.stringify(req.body, null, 2));
       
-      const mandatoryInternshipData = insertMandatoryInternshipSchema.partial().parse(req.body);
-      console.log("Parsed data:", JSON.stringify(mandatoryInternshipData, null, 2));
+      // Converter strings de data para objetos Date
+      const processedBody = {
+        ...req.body,
+        startDate: req.body.startDate ? new Date(req.body.startDate) : null,
+        endDate: req.body.endDate ? new Date(req.body.endDate) : null,
+      };
       
+      const mandatoryInternshipData = insertMandatoryInternshipSchema.partial().parse(processedBody);
       const mandatoryInternship = await storage.updateMandatoryInternship(id, mandatoryInternshipData);
       if (!mandatoryInternship) {
         return res.status(404).json({ message: "Estágio obrigatório não encontrado" });
@@ -574,7 +584,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/non-mandatory-internships", requireAuth, async (req, res) => {
     try {
-      const nonMandatoryInternshipData = insertNonMandatoryInternshipSchema.parse(req.body);
+      // Converter strings de data para objetos Date
+      const processedBody = {
+        ...req.body,
+        startDate: req.body.startDate ? new Date(req.body.startDate) : null,
+        endDate: req.body.endDate ? new Date(req.body.endDate) : null,
+      };
+      
+      const nonMandatoryInternshipData = insertNonMandatoryInternshipSchema.parse(processedBody);
       const nonMandatoryInternship = await storage.createNonMandatoryInternship(nonMandatoryInternshipData);
       res.status(201).json(nonMandatoryInternship);
     } catch (error) {
@@ -586,14 +603,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/non-mandatory-internships/:id", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
-      const nonMandatoryInternshipData = insertNonMandatoryInternshipSchema.partial().parse(req.body);
+      
+      // Converter strings de data para objetos Date
+      const processedBody = {
+        ...req.body,
+        startDate: req.body.startDate ? new Date(req.body.startDate) : null,
+        endDate: req.body.endDate ? new Date(req.body.endDate) : null,
+      };
+      
+      const nonMandatoryInternshipData = insertNonMandatoryInternshipSchema.partial().parse(processedBody);
       const nonMandatoryInternship = await storage.updateNonMandatoryInternship(id, nonMandatoryInternshipData);
       if (!nonMandatoryInternship) {
         return res.status(404).json({ message: "Estágio não obrigatório não encontrado" });
       }
       res.json(nonMandatoryInternship);
     } catch (error) {
-      res.status(400).json({ message: "Dados inválidos" });
+      console.error("Error updating non-mandatory internship:", error);
+      res.status(400).json({ message: "Dados inválidos", error: error.message });
     }
   });
 
