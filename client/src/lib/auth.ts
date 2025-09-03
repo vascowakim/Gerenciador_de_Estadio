@@ -55,7 +55,12 @@ export class AuthService {
     const response = await apiRequest("POST", "/api/auth/login", credentials);
     const data = await response.json();
     
-    // Se recebeu token, salvar para uso em iframes
+    // Verificar se login foi bem-sucedido
+    if (!data.success) {
+      throw new Error(data.message || "Falha na autenticação");
+    }
+    
+    // Salvar token JWT para uso em iframes/produção
     if (data.token) {
       this.saveToken(data.token);
     }
@@ -72,8 +77,15 @@ export class AuthService {
     try {
       const response = await apiRequest("GET", "/api/auth/me");
       const data = await response.json();
-      return data.user;
+      
+      if (data.success && data.user) {
+        return data.user;
+      }
+      
+      return null;
     } catch (error) {
+      // Limpar token inválido se houver
+      this.removeToken();
       return null;
     }
   }

@@ -26,57 +26,99 @@ interface AuthenticatedRequest extends Request {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Session configuration
+  // Configuração profissional de sessão
+  const isProduction = process.env.NODE_ENV === 'production';
+  
   app.use(session({
-    secret: process.env.SESSION_SECRET || 'your-secret-key',
+    secret: process.env.SESSION_SECRET || 'fallback-secret-key',
     resave: false,
-    saveUninitialized: true, // Permitir criação de sessão para iframes
+    saveUninitialized: false, // Melhor segurança - só criar sessão quando necessário
+    rolling: true, // Reset expiration com atividade
     cookie: { 
-      secure: process.env.NODE_ENV === 'production', // True em produção com HTTPS
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : false, // 'none' em produção para iframe
-      httpOnly: false, // Permitir acesso via JavaScript para compatibilidade
-      domain: undefined // Não forçar domínio - deixar automático
+      secure: isProduction, // HTTPS obrigatório em produção
+      maxAge: 24 * 60 * 60 * 1000, // 24 horas
+      sameSite: isProduction ? 'none' : 'lax', // 'none' para iframe em produção
+      httpOnly: !isProduction, // Permitir JS em dev, bloquear em produção por segurança
+      domain: undefined // Detecção automática do domínio
     },
-    name: 'connect.sid' // Nome padrão
+    name: isProduction ? '__Host-sid' : 'connect.sid' // Nome seguro em produção
   }));
 
-  // Chave JWT consistente
-  const JWT_SECRET = process.env.JWT_SECRET || 'estagiopro-ufvjm-jwt-secret-2024';
+  // Configuração JWT segura
+  const JWT_SECRET = process.env.JWT_SECRET;
+  if (!JWT_SECRET) {
+    throw new Error('JWT_SECRET é obrigatório para funcionamento seguro');
+  }
 
-  // Authentication middleware - suporta sessão e JWT
+  // Middleware de autenticação robusto
   const requireAuth = (req: AuthenticatedRequest, res: Response, next: any) => {
-    // Primeiro tenta autenticação via sessão
-    if (req.session.user) {
-      return next();
-    }
-    
-    // Se não houver sessão, tenta JWT (para iframes)
-    const authHeader = req.headers.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.substring(7);
-      try {
-        // console.log('🔑 Tentando verificar JWT token para iframe...');
-        const decoded = jwt.verify(token, JWT_SECRET) as any;
-        req.session.user = decoded;
-        // console.log('✅ JWT token válido para usuário:', decoded.username);
+    try {
+      // Primeiro: Verificar sessão ativa
+      if (req.session?.user) {
         return next();
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Token inválido';
-        // console.log('❌ JWT token inválido:', errorMessage);
-        return res.status(401).json({ message: "Token inválido" });
       }
+      
+      // Segundo: Verificar JWT token (essencial para produção/iframe)
+      const authHeader = req.headers.authorization;
+      if (authHeader?.startsWith('Bearer ')) {
+        const token = authHeader.substring(7);
+        
+        if (token && token !== 'null' && token !== 'undefined') {
+          try {
+            const decoded = jwt.verify(token, JWT_SECRET) as any;
+            
+            // Validar estrutura do token
+            if (decoded?.id && decoded?.username && decoded?.role) {
+              req.session.user = decoded;
+              return next();
+            }
+          } catch (jwtError) {
+            // Token inválido - continuar para rejeição
+          }
+        }
+      }
+      
+      // Rejeitar acesso não autorizado
+      return res.status(401).json({ 
+        message: "Acesso não autorizado",
+        code: "UNAUTHORIZED"
+      });
+      
+    } catch (error) {
+      console.error('Erro no middleware de autenticação:', error);
+      return res.status(500).json({ 
+        message: "Erro interno de autenticação",
+        code: "AUTH_ERROR"
+      });
     }
-    
-    // console.log('❌ Nenhuma autenticação encontrada (sessão ou JWT)');
-    return res.status(401).json({ message: "Não autorizado" });
   };
 
   const requireAdmin = (req: AuthenticatedRequest, res: Response, next: any) => {
-    if (!req.session.user || req.session.user.role !== "administrator") {
-      return res.status(403).json({ message: "Acesso negado" });
+    try {
+      const user = req.session?.user;
+      
+      if (!user) {
+        return res.status(401).json({ 
+          message: "Usuário não autenticado",
+          code: "NOT_AUTHENTICATED"
+        });
+      }
+      
+      if (user.role !== "administrator") {
+        return res.status(403).json({ 
+          message: "Acesso restrito a administradores",
+          code: "INSUFFICIENT_PRIVILEGES"
+        });
+      }
+      
+      next();
+    } catch (error) {
+      console.error('Erro no middleware de admin:', error);
+      return res.status(500).json({ 
+        message: "Erro interno de autorização",
+        code: "AUTHZ_ERROR"
+      });
     }
-    next();
   };
 
   // Dashboard statistics route
@@ -113,41 +155,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Health check route para produção
+  // Health check profissional para monitoramento
   app.get("/api/health", (req, res) => {
-    res.json({
-      status: "ok",
+    const healthData = {
+      status: "healthy",
       timestamp: new Date().toISOString(),
       environment: process.env.NODE_ENV || 'development',
+      version: "1.0.0",
+      uptime: process.uptime(),
       domain: req.get('host'),
-      userAgent: req.get('user-agent'),
-      origin: req.get('origin')
+      secure: req.secure,
+      protocol: req.protocol,
+      sessionStore: req.session ? 'active' : 'inactive'
+    };
+    
+    res.set({
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
     });
+    
+    res.json(healthData);
   });
 
-  // Auth routes
+  // Endpoint de login profissional e seguro
   app.post("/api/auth/login", async (req, res) => {
+    const startTime = Date.now();
+    const clientIP = req.ip || req.connection.remoteAddress || 'unknown';
+    
     try {
       const { username, password } = req.body;
       
-      console.log(`🔐 Tentativa de login para: ${username} de IP: ${req.ip}`);
-      
+      // Validação de entrada
       if (!username || !password) {
-        return res.status(400).json({ message: "Usuário e senha são obrigatórios" });
+        return res.status(400).json({ 
+          success: false,
+          message: "Usuário e senha são obrigatórios",
+          code: "MISSING_CREDENTIALS"
+        });
       }
 
-      const user = await storage.getUserByUsername(username);
+      if (typeof username !== 'string' || typeof password !== 'string') {
+        return res.status(400).json({ 
+          success: false,
+          message: "Formato de credenciais inválido",
+          code: "INVALID_FORMAT"
+        });
+      }
+
+      console.log(`🔐 Login attempt: ${username} from ${clientIP}`);
+
+      // Buscar usuário
+      const user = await storage.getUserByUsername(username.trim());
       if (!user) {
-        console.log(`❌ Usuário não encontrado: ${username}`);
-        return res.status(401).json({ message: "Credenciais inválidas" });
+        console.log(`❌ User not found: ${username}`);
+        // Delay consistente para evitar timing attacks
+        await new Promise(resolve => setTimeout(resolve, 200));
+        return res.status(401).json({ 
+          success: false,
+          message: "Credenciais inválidas",
+          code: "INVALID_CREDENTIALS"
+        });
       }
 
+      // Verificar senha
       const isValidPassword = await bcrypt.compare(password, user.password);
       if (!isValidPassword) {
-        console.log(`❌ Senha incorreta para usuário: ${username}`);
-        return res.status(401).json({ message: "Credenciais inválidas" });
+        console.log(`❌ Invalid password for user: ${username}`);
+        return res.status(401).json({ 
+          success: false,
+          message: "Credenciais inválidas",
+          code: "INVALID_CREDENTIALS"
+        });
       }
 
+      // Dados do usuário seguros
       const userData = {
         id: user.id,
         username: user.username,
@@ -156,56 +238,135 @@ export async function registerRoutes(app: Express): Promise<Server> {
         role: user.role
       };
 
-      // Configurar sessão
-      req.session.user = userData;
+      // Regenerar ID da sessão por segurança
+      req.session.regenerate((err) => {
+        if (err) {
+          console.error('Session regeneration error:', err);
+          // Continuar mesmo com erro de regeneração
+        }
+        
+        // Configurar sessão do usuário
+        req.session.user = userData;
+        req.session.loginTime = new Date().toISOString();
+        req.session.clientIP = clientIP;
 
-      // Gerar JWT token para compatibilidade com iframes
-      const token = jwt.sign(userData, JWT_SECRET, {
-        expiresIn: '24h'
+        // Gerar JWT token seguro
+        const tokenPayload = {
+          ...userData,
+          iat: Math.floor(Date.now() / 1000),
+          loginTime: req.session.loginTime
+        };
+        
+        const token = jwt.sign(tokenPayload, JWT_SECRET, {
+          expiresIn: '24h',
+          issuer: 'estagiopro-ufvjm',
+          audience: req.get('host') || 'localhost'
+        });
+        
+        const duration = Date.now() - startTime;
+        console.log(`✅ Login successful: ${userData.username} (${userData.role}) in ${duration}ms`);
+
+        // Resposta de sucesso
+        res.json({ 
+          success: true,
+          user: userData,
+          token: token,
+          sessionId: req.sessionID,
+          expiresIn: 24 * 60 * 60, // 24 horas em segundos
+          message: "Autenticação realizada com sucesso"
+        });
       });
       
-      console.log(`✅ Login realizado com sucesso: ${userData.username} (${userData.role})`);
-
-      res.json({ 
-        user: userData,
-        token: token, // Enviar token para uso em iframes
-        message: "Login realizado com sucesso"
-      });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Erro interno do servidor';
-      console.error("Login error:", errorMessage);
-      res.status(500).json({ message: "Erro interno do servidor" });
+      const duration = Date.now() - startTime;
+      const errorMessage = error instanceof Error ? error.message : 'Erro interno';
+      
+      console.error(`❌ Login error (${duration}ms):`, errorMessage);
+      
+      res.status(500).json({ 
+        success: false,
+        message: "Erro interno do servidor",
+        code: "INTERNAL_ERROR"
+      });
     }
   });
 
-  app.post("/api/auth/logout", (req, res) => {
-    req.session.destroy((err) => {
-      if (err) {
-        return res.status(500).json({ message: "Erro ao fazer logout" });
-      }
-      res.json({ message: "Logout realizado com sucesso" });
-    });
+  app.post("/api/auth/logout", (req: AuthenticatedRequest, res) => {
+    try {
+      const username = req.session?.user?.username || 'unknown';
+      const sessionId = req.sessionID;
+      
+      console.log(`🚪 Logout request: ${username} (session: ${sessionId})`);
+      
+      req.session.destroy((err) => {
+        if (err) {
+          console.error('Session destruction error:', err);
+          return res.status(500).json({ 
+            success: false,
+            message: "Erro ao encerrar sessão",
+            code: "LOGOUT_ERROR"
+          });
+        }
+        
+        // Limpar cookies de sessão
+        const cookieName = isProduction ? '__Host-sid' : 'connect.sid';
+        res.clearCookie(cookieName);
+        
+        console.log(`✅ Logout successful: ${username}`);
+        
+        res.json({ 
+          success: true,
+          message: "Logout realizado com sucesso"
+        });
+      });
+      
+    } catch (error) {
+      console.error('Logout error:', error);
+      res.status(500).json({ 
+        success: false,
+        message: "Erro interno no logout",
+        code: "INTERNAL_ERROR"
+      });
+    }
   });
 
-  app.get("/api/auth/me", (req: any, res) => {
-    // Primeiro tenta autenticação via sessão
-    if (req.session.user) {
-      return res.json({ user: req.session.user });
-    }
-    
-    // Se não houver sessão, tenta JWT (para iframes)
-    const authHeader = req.headers.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.substring(7);
-      try {
-        const decoded = jwt.verify(token, JWT_SECRET) as any;
-        return res.json({ user: decoded });
-      } catch (error) {
-        return res.status(401).json({ message: "Token inválido" });
+  app.get("/api/auth/me", requireAuth, (req: AuthenticatedRequest, res) => {
+    try {
+      const user = req.session.user;
+      
+      if (!user) {
+        return res.status(401).json({ 
+          success: false,
+          message: "Sessão não encontrada",
+          code: "NO_SESSION"
+        });
       }
+      
+      // Informações seguras do usuário
+      const safeUserData = {
+        id: user.id,
+        username: user.username,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        sessionActive: true,
+        loginTime: req.session.loginTime || null
+      };
+      
+      res.json({ 
+        success: true,
+        user: safeUserData,
+        sessionId: req.sessionID
+      });
+      
+    } catch (error) {
+      console.error('Error in /api/auth/me:', error);
+      res.status(500).json({ 
+        success: false,
+        message: "Erro interno",
+        code: "INTERNAL_ERROR"
+      });
     }
-    
-    return res.status(401).json({ message: "Não autenticado" });
   });
 
   // Rota para alterar senha do usuário logado
