@@ -42,7 +42,7 @@ export default function AlertsPage() {
 
   const markAsReadMutation = useMutation({
     mutationFn: async (alertId: string) => {
-      await apiRequest(`/api/alerts/${alertId}/read`, "PUT");
+      await apiRequest("PUT", `/api/alerts/${alertId}/read`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/alerts"] });
@@ -55,7 +55,7 @@ export default function AlertsPage() {
 
   const dismissAlertMutation = useMutation({
     mutationFn: async (alertId: string) => {
-      await apiRequest(`/api/alerts/${alertId}/dismiss`, "PUT");
+      await apiRequest("PUT", `/api/alerts/${alertId}/dismiss`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/alerts"] });
@@ -68,9 +68,9 @@ export default function AlertsPage() {
   });
 
   const runCheckMutation = useMutation({
-    mutationFn: async () => {
-      const response = await apiRequest("/api/alerts/check", "POST");
-      return response as CheckResult;
+    mutationFn: async (): Promise<CheckResult> => {
+      const response = await apiRequest("POST", "/api/alerts/check");
+      return await response.json();
     },
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["/api/alerts"] });
@@ -89,9 +89,9 @@ export default function AlertsPage() {
   });
 
   const sendWhatsAppMutation = useMutation({
-    mutationFn: async ({ alertId, recipient }: { alertId: string; recipient: 'student' | 'advisor' | 'both' }) => {
-      const response = await apiRequest(`/api/alerts/${alertId}/send-whatsapp`, "POST", { recipient });
-      return response as { message: string; sent: string[]; links?: { type: string; name: string; phone: string; url: string }[] };
+    mutationFn: async ({ alertId, recipient }: { alertId: string; recipient: 'student' | 'advisor' | 'both' }): Promise<{ message: string; sent: string[]; links?: { type: string; name: string; phone: string; url: string }[] }> => {
+      const response = await apiRequest("POST", `/api/alerts/${alertId}/send-whatsapp`, { recipient });
+      return await response.json();
     },
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["/api/alerts"] });

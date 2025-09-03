@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertUserSchema, insertAdvisorSchema, insertStudentSchema, insertCompanySchema, insertInternshipSchema, insertMandatoryInternshipSchema, insertNonMandatoryInternshipSchema, insertInternshipDocumentSchema, insertInternshipAlertSchema } from "@shared/schema";
@@ -11,6 +11,19 @@ import {
   ObjectNotFoundError,
 } from "./objectStorage";
 import { ObjectPermission } from "./objectAcl";
+
+// Interface para estender o tipo de sessão
+interface AuthenticatedRequest extends Request {
+  session: {
+    user?: {
+      id: string;
+      username: string;
+      name: string;
+      email: string;
+      role: string;
+    };
+  } & session.Session;
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Session configuration
@@ -31,7 +44,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const JWT_SECRET = process.env.JWT_SECRET || 'estagiopro-ufvjm-jwt-secret-2024';
 
   // Authentication middleware - suporta sessão e JWT
-  const requireAuth = (req: any, res: any, next: any) => {
+  const requireAuth = (req: AuthenticatedRequest, res: Response, next: any) => {
     // Primeiro tenta autenticação via sessão
     if (req.session.user) {
       return next();
@@ -48,7 +61,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log('✅ JWT token válido para usuário:', decoded.username);
         return next();
       } catch (error) {
-        console.log('❌ JWT token inválido:', error.message);
+        const errorMessage = error instanceof Error ? error.message : 'Token inválido';
+        console.log('❌ JWT token inválido:', errorMessage);
         return res.status(401).json({ message: "Token inválido" });
       }
     }
@@ -57,7 +71,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return res.status(401).json({ message: "Não autorizado" });
   };
 
-  const requireAdmin = (req: any, res: any, next: any) => {
+  const requireAdmin = (req: AuthenticatedRequest, res: Response, next: any) => {
     if (!req.session.user || req.session.user.role !== "administrator") {
       return res.status(403).json({ message: "Acesso negado" });
     }
@@ -967,7 +981,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Send WhatsApp notification for specific alert
-  app.post("/api/alerts/:id/send-whatsapp", requireAuth, requireAdmin, async (req: any, res) => {
+  app.post("/api/alerts/:id/send-whatsapp", requireAuth, requireAdmin, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { id } = req.params;
       const { recipient } = req.body; // 'student', 'advisor', or 'both'
@@ -979,8 +993,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const result = await alertService.sendWhatsAppForAlert(id, recipient);
       res.json(result);
     } catch (error) {
-      console.error("Error sending WhatsApp:", error);
-      res.status(500).json({ message: "Erro ao enviar WhatsApp" });
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao enviar WhatsApp';
+      console.error("Error sending WhatsApp:", errorMessage);
+      res.status(500).json({ message: "Erro ao enviar WhatsApp", details: errorMessage });
     }
   });
 

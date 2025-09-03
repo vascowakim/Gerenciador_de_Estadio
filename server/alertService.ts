@@ -255,6 +255,8 @@ export class AlertService {
   // Send WhatsApp for specific alert manually
   async sendWhatsAppForAlert(alertId: string, recipient: 'student' | 'advisor' | 'both'): Promise<{ message: string; sent: string[]; links: { type: string; name: string; phone: string; url: string }[] }> {
     try {
+      console.log(`🚀 Iniciando envio de WhatsApp para alerta ${alertId}, destinatário: ${recipient}`);
+      
       // Buscar o alerta
       const [alert] = await db.select().from(internshipAlerts).where(eq(internshipAlerts.id, alertId));
       if (!alert) {
@@ -266,19 +268,33 @@ export class AlertService {
       let student: any;
       let advisor: any;
 
-      if (alert.internshipType === 'mandatory') {
-        [internship] = await db.select().from(mandatoryInternships).where(eq(mandatoryInternships.id, alert.internshipId));
-      } else {
-        [internship] = await db.select().from(nonMandatoryInternships).where(eq(nonMandatoryInternships.id, alert.internshipId));
-      }
+      try {
+        if (alert.internshipType === 'mandatory') {
+          [internship] = await db.select().from(mandatoryInternships).where(eq(mandatoryInternships.id, alert.internshipId));
+        } else {
+          [internship] = await db.select().from(nonMandatoryInternships).where(eq(nonMandatoryInternships.id, alert.internshipId));
+        }
 
-      if (!internship) {
-        throw new Error('Estágio não encontrado');
-      }
+        if (!internship) {
+          throw new Error('Estágio não encontrado');
+        }
 
-      // Buscar estudante e orientador
-      [student] = await db.select().from(students).where(eq(students.id, internship.studentId));
-      [advisor] = await db.select().from(advisors).where(eq(advisors.id, internship.advisorId));
+        // Buscar estudante e orientador
+        [student] = await db.select().from(students).where(eq(students.id, internship.studentId));
+        [advisor] = await db.select().from(advisors).where(eq(advisors.id, internship.advisorId));
+        
+        if (!student) {
+          throw new Error('Estudante não encontrado');
+        }
+        if (!advisor) {
+          throw new Error('Orientador não encontrado');
+        }
+
+      } catch (dbError) {
+        const errorMessage = dbError instanceof Error ? dbError.message : 'Erro ao buscar dados';
+        console.error('Erro ao buscar dados do banco:', errorMessage);
+        throw new Error(`Erro ao buscar dados: ${errorMessage}`);
+      }
 
       const sentTo: string[] = [];
       const links: { type: string; name: string; phone: string; url: string }[] = [];
@@ -297,7 +313,9 @@ export class AlertService {
             });
             console.log(`✅ Link WhatsApp gerado para estudante ${student.name}: ${whatsappUrl}`);
           } catch (error) {
-            console.error(`Erro ao gerar link WhatsApp para estudante ${student.name}:`, error);
+            const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+            console.error(`Erro ao gerar link WhatsApp para estudante ${student.name}:`, errorMessage);
+            // Não interromper o processo - continuar com próximo destinatário
           }
         } else {
           console.log(`⚠️ Estudante ${student?.name} não possui telefone cadastrado`);
@@ -318,28 +336,38 @@ export class AlertService {
             });
             console.log(`✅ Link WhatsApp gerado para orientador ${advisor.name}: ${whatsappUrl}`);
           } catch (error) {
-            console.error(`Erro ao gerar link WhatsApp para orientador ${advisor.name}:`, error);
+            const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+            console.error(`Erro ao gerar link WhatsApp para orientador ${advisor.name}:`, errorMessage);
+            // Não interromper o processo - continuar
           }
         } else {
           console.log(`⚠️ Orientador ${advisor?.name} não possui telefone cadastrado`);
         }
       }
 
-      return {
+      const result = {
         message: links.length > 0 ? `${links.length} link(s) WhatsApp gerado(s) com sucesso!` : 'Nenhum link foi gerado (telefones não cadastrados)',
         sent: sentTo,
         links
       };
+      
+      console.log(`📋 Resultado final:`, result);
+      return result;
 
     } catch (error) {
-      console.error('Erro ao enviar WhatsApp:', error);
-      throw error;
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido ao enviar WhatsApp';
+      console.error('Erro ao enviar WhatsApp:', errorMessage);
+      throw new Error(errorMessage);
     }
   }
 
   // Generate WhatsApp link for student
   private async generateWhatsAppLinkForStudent(alert: any, student: any): Promise<string> {
     try {
+      if (!student?.phone) {
+        throw new Error('Telefone do estudante não cadastrado');
+      }
+      
       // Criar mensagem personalizada para estudante
       const message = `🎓 *EstagioPro UFVJM*\n\n📢 ${alert.title}\n\n${alert.message}\n\n👨‍🏫 *Próximos passos:*\n• Entre em contato com seu orientador\n• Providencie a documentação necessária\n• Acompanhe os prazos\n\n📞 Em caso de dúvidas, procure a coordenação do curso.`;
       
@@ -348,24 +376,31 @@ export class AlertService {
       
       return whatsappUrl;
     } catch (error) {
-      console.error(`Erro ao gerar link WhatsApp para estudante ${student.name}:`, error);
-      throw error;
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      console.error(`Erro ao gerar link WhatsApp para estudante ${student?.name}:`, errorMessage);
+      throw new Error(errorMessage);
     }
   }
 
   // Generate WhatsApp link for advisor
   private async generateWhatsAppLinkForAdvisor(alert: any, advisor: any, student: any): Promise<string> {
     try {
+      if (!advisor?.phone) {
+        throw new Error('Telefone do orientador não cadastrado');
+      }
+      
       // Criar mensagem personalizada para orientador
       const message = `🎓 *EstagioPro UFVJM*\n\n📢 ${alert.title}\n\n${alert.message}\n\n👨‍🎓 *Dados do Estudante:*\n• Nome: ${student.name}\n• Matrícula: ${student.registrationNumber || 'Não informado'}\n• Telefone: ${student.phone || 'Não informado'}\n\n📋 *Ação necessária:*\n• Orientar o estudante sobre os próximos passos\n• Verificar documentação do estágio\n• Acompanhar prazos e entregas\n\n💼 Sistema EstagioPro - UFVJM`;
       
       // Gerar link usando função auxiliar
       const whatsappUrl = generateWhatsAppLink(advisor.phone, message);
       
+      
       return whatsappUrl;
     } catch (error) {
-      console.error(`Erro ao gerar link WhatsApp para orientador ${advisor.name}:`, error);
-      throw error;
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      console.error(`Erro ao gerar link WhatsApp para orientador ${advisor?.name}:`, errorMessage);
+      throw new Error(errorMessage);
     }
   }
 
