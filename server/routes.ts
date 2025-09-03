@@ -845,27 +845,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const validatedData = insertInternshipDocumentSchema.parse(documentData);
       
-      // Normalizar o path do arquivo e definir política ACL
-      const objectStorageService = new ObjectStorageService();
-      const normalizedPath = await objectStorageService.trySetObjectEntityAclPolicy(
-        validatedData.filePath,
-        {
-          owner: userId,
-          visibility: "private",
-        },
-      );
-
-      // Atualizar o documento com o path normalizado
-      const finalDocumentData = {
-        ...validatedData,
-        filePath: normalizedPath,
-      };
+      // Se há um arquivo anexado, normalizar o path
+      let finalDocumentData = validatedData;
+      
+      if (validatedData.filePath) {
+        try {
+          const objectStorageService = new ObjectStorageService();
+          const normalizedPath = await objectStorageService.trySetObjectEntityAclPolicy(
+            validatedData.filePath,
+            {
+              owner: userId,
+              visibility: "private",
+            },
+          );
+          
+          finalDocumentData = {
+            ...validatedData,
+            filePath: normalizedPath,
+          };
+        } catch (error) {
+          console.error("Erro ao configurar ACL do arquivo:", error);
+          // Continuar sem normalização se não for possível
+          finalDocumentData = validatedData;
+        }
+      }
 
       const document = await storage.createDocument(finalDocumentData);
       res.status(201).json(document);
     } catch (error) {
       console.error("Error creating document:", error);
-      res.status(400).json({ message: "Dados inválidos" });
+      if (error.message.includes('validation')) {
+        res.status(400).json({ message: "Dados inválidos para o documento" });
+      } else {
+        res.status(500).json({ message: "Erro interno do servidor" });
+      }
     }
   });
 
