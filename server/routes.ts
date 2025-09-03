@@ -466,14 +466,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/mandatory-internships/:id", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
+      console.log("Updating mandatory internship with ID:", id);
+      console.log("Request body:", JSON.stringify(req.body, null, 2));
+      
       const mandatoryInternshipData = insertMandatoryInternshipSchema.partial().parse(req.body);
+      console.log("Parsed data:", JSON.stringify(mandatoryInternshipData, null, 2));
+      
       const mandatoryInternship = await storage.updateMandatoryInternship(id, mandatoryInternshipData);
       if (!mandatoryInternship) {
         return res.status(404).json({ message: "Estágio obrigatório não encontrado" });
       }
       res.json(mandatoryInternship);
     } catch (error) {
-      res.status(400).json({ message: "Dados inválidos" });
+      console.error("Error updating mandatory internship:", error);
+      res.status(400).json({ message: "Dados inválidos", error: error.message });
     }
   });
 
