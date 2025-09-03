@@ -37,6 +37,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     next();
   };
 
+  // Dashboard statistics route
+  app.get("/api/stats", requireAuth, async (req, res) => {
+    try {
+      const students = await storage.getAllStudents();
+      const advisors = await storage.getAllAdvisors();
+      const mandatoryInternships = await storage.getAllMandatoryInternships();
+      const nonMandatoryInternships = await storage.getAllNonMandatoryInternships();
+      
+      const totalStudents = students.length;
+      const totalAdvisors = advisors.length;
+      const totalMandatoryInternships = mandatoryInternships.length;
+      const totalNonMandatoryInternships = nonMandatoryInternships.length;
+      
+      // Count active students (students with active internships)
+      const activeStudentIds = new Set([
+        ...mandatoryInternships.filter(i => i.isActive).map(i => i.studentId),
+        ...nonMandatoryInternships.filter(i => i.isActive).map(i => i.studentId)
+      ]);
+      const activeStudents = activeStudentIds.size;
+      
+      res.json({
+        totalStudents,
+        totalAdvisors,
+        totalMandatoryInternships,
+        totalNonMandatoryInternships,
+        activeStudents,
+        totalInternships: totalMandatoryInternships + totalNonMandatoryInternships
+      });
+    } catch (error) {
+      console.error("Error fetching stats:", error);
+      res.status(500).json({ message: "Erro ao buscar estatísticas" });
+    }
+  });
+
   // Auth routes
   app.post("/api/auth/login", async (req, res) => {
     try {

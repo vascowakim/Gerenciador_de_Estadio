@@ -21,17 +21,8 @@ export default function Dashboard() {
     },
   });
 
-  const { data: stats } = useQuery({
+  const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ["/api/stats"],
-    queryFn: async () => {
-      // This would normally fetch dashboard statistics
-      return {
-        totalStudents: 1,
-        totalAdvisors: 1,
-        totalInternships: 0,
-        pendingInternships: 0,
-      };
-    },
     enabled: !!user,
   });
 
@@ -80,32 +71,32 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div className="bg-white rounded-lg p-4 text-center border border-gray-200">
             <div className="text-3xl mb-2">📄</div>
-            <div className="text-2xl font-bold text-gray-800" data-testid="text-students-count">
-              {stats?.totalStudents || 1}
+            <div className="text-2xl font-bold text-gray-800" data-testid="text-mandatory-internships-count">
+              {statsLoading ? "..." : (stats?.totalMandatoryInternships || 0)}
             </div>
             <p className="text-sm text-gray-600">Estágios Obrigatórios</p>
           </div>
           
           <div className="bg-white rounded-lg p-4 text-center border border-gray-200">
             <div className="text-3xl mb-2">📋</div>
-            <div className="text-2xl font-bold text-gray-800" data-testid="text-advisors-count">
-              {stats?.totalAdvisors || 1}
+            <div className="text-2xl font-bold text-gray-800" data-testid="text-non-mandatory-internships-count">
+              {statsLoading ? "..." : (stats?.totalNonMandatoryInternships || 0)}
             </div>
             <p className="text-sm text-gray-600">Estágios Não Obrigatórios</p>
           </div>
           
           <div className="bg-white rounded-lg p-4 text-center border border-gray-200">
             <div className="text-3xl mb-2">🎓</div>
-            <div className="text-2xl font-bold text-gray-800" data-testid="text-internships-count">
-              {stats?.totalInternships || 0}
+            <div className="text-2xl font-bold text-gray-800" data-testid="text-active-students-count">
+              {statsLoading ? "..." : (stats?.activeStudents || 0)}
             </div>
             <p className="text-sm text-gray-600">Estudantes ativos</p>
           </div>
           
           <div className="bg-white rounded-lg p-4 text-center border border-gray-200">
             <div className="text-3xl mb-2">👥</div>
-            <div className="text-2xl font-bold text-gray-800" data-testid="text-pending-count">
-              {stats?.pendingInternships || 0}
+            <div className="text-2xl font-bold text-gray-800" data-testid="text-advisors-count">
+              {statsLoading ? "..." : (stats?.totalAdvisors || 0)}
             </div>
             <p className="text-sm text-gray-600">Orientadores</p>
           </div>
