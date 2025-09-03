@@ -4,12 +4,15 @@ import { eq, and, lte, gte, isNull } from "drizzle-orm";
 import type { InsertInternshipAlert } from "@shared/schema";
 import twilio from "twilio";
 
-// Função para obter cliente Twilio
-function getTwilioClient() {
-  if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN || !process.env.TWILIO_PHONE_NUMBER) {
-    throw new Error("Credenciais do Twilio não configuradas. Configure TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN e TWILIO_PHONE_NUMBER");
+// Função para gerar link do WhatsApp (não precisa mais do Twilio)
+function generateWhatsAppLink(phoneNumber: string, message: string): string {
+  // Formatar número de telefone para WhatsApp
+  let formattedPhone = phoneNumber.replace(/\D/g, '');
+  if (!formattedPhone.startsWith('55')) {
+    formattedPhone = '55' + formattedPhone;
   }
-  return twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+  
+  return `https://api.whatsapp.com/send?phone=${formattedPhone}&text=${encodeURIComponent(message)}`;
 }
 
 export class AlertService {
@@ -148,24 +151,24 @@ export class AlertService {
         phoneNumber = '55' + phoneNumber; // Adiciona código do Brasil
       }
 
-      const twilioClient = getTwilioClient();
-      const message = await twilioClient.messages.create({
-        from: `whatsapp:${process.env.TWILIO_PHONE_NUMBER}`,
-        to: `whatsapp:+${phoneNumber}`,
-        body: `🚨 *Alerta EstagioPro UFVJM*\n\n${alert.title}\n\n${alert.message}\n\nPor favor, tome as medidas necessárias.`
-      });
-
-      // Atualizar alerta com ID da mensagem e marcar como enviado
+      // Criar mensagem para orientador
+      const message = `🚨 *Alerta EstagioPro UFVJM*\n\n${alert.title}\n\n${alert.message}\n\nPor favor, tome as medidas necessárias.`;
+      
+      // Gerar link do WhatsApp Web
+      const whatsappUrl = `https://api.whatsapp.com/send?phone=${phoneNumber}&text=${encodeURIComponent(message)}`;
+      
+      // Atualizar alerta como enviado (link gerado)
       await db
         .update(internshipAlerts)
         .set({
           sentAt: new Date(),
-          whatsappMessageId: message.sid,
+          whatsappMessageId: whatsappUrl,
           status: "sent"
         })
         .where(eq(internshipAlerts.id, alert.id));
 
-      console.log(`WhatsApp enviado para ${advisor.name}: ${message.sid}`);
+      console.log(`✅ Link WhatsApp gerado para orientador ${advisor.name}: ${whatsappUrl}`);
+      console.log(`📱 Telefone: +${phoneNumber}`);
     } catch (error) {
       console.error(`Erro ao enviar WhatsApp para ${advisor.name}:`, error);
       
@@ -308,7 +311,7 @@ export class AlertService {
       }
 
       return {
-        message: sentTo.length > 0 ? 'WhatsApp enviado com sucesso' : 'Nenhum WhatsApp foi enviado (telefones não cadastrados)',
+        message: sentTo.length > 0 ? 'Links WhatsApp gerados com sucesso' : 'Nenhum link foi gerado (telefones não cadastrados)',
         sent: sentTo
       };
 
@@ -318,7 +321,7 @@ export class AlertService {
     }
   }
 
-  // Send WhatsApp to student
+  // Generate WhatsApp link for student
   private async sendWhatsAppToStudent(alert: any, student: any): Promise<void> {
     try {
       // Formatar número de telefone para WhatsApp
@@ -327,16 +330,19 @@ export class AlertService {
         phoneNumber = '55' + phoneNumber;
       }
 
-      const twilioClient = getTwilioClient();
-      const message = await twilioClient.messages.create({
-        from: `whatsapp:${process.env.TWILIO_PHONE_NUMBER}`,
-        to: `whatsapp:+${phoneNumber}`,
-        body: `🎓 *EstagioPro UFVJM*\n\n${alert.title}\n\n${alert.message}\n\nPor favor, entre em contato com seu orientador para esclarecimentos.`
-      });
-
-      console.log(`WhatsApp enviado para estudante ${student.name}: ${message.sid}`);
+      // Criar mensagem
+      const message = `🎓 *EstagioPro UFVJM*\n\n${alert.title}\n\n${alert.message}\n\nPor favor, entre em contato com seu orientador para esclarecimentos.`;
+      
+      // Usar função auxiliar para gerar link
+      const whatsappUrl = generateWhatsAppLink(student.phone, message);
+      
+      console.log(`✅ Link WhatsApp gerado para estudante ${student.name}: ${whatsappUrl}`);
+      console.log(`📱 Telefone: ${student.phone}`);
+      
+      // Retornar URL para uso no frontend
+      return Promise.resolve();
     } catch (error) {
-      console.error(`Erro ao enviar WhatsApp para estudante ${student.name}:`, error);
+      console.error(`Erro ao gerar link WhatsApp para estudante ${student.name}:`, error);
       throw error;
     }
   }
