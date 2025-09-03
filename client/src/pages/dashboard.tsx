@@ -109,27 +109,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Beta Version Section */}
-      <div className="bg-orange-50 border border-orange-200 rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-orange-700 mb-4 flex items-center">
-          🚀 Versão Beta
-        </h3>
-        <div className="text-center">
-          <p className="text-gray-600 mb-2">Desenvolvido e mantido por:</p>
-          <p className="text-lg font-semibold text-blue-600 mb-1">
-            Prof. Dr. Vasconcelos Reis Wakim
-          </p>
-          <p className="text-sm text-gray-500 mb-2">
-            📧 vasconcelos.wakim@ufvjm.edu.br
-          </p>
-          <p className="text-lg font-semibold text-blue-600 mb-1">
-            Prof. Dr. Vasconcelos Reis Wakim
-          </p>
-          <p className="text-sm text-gray-500">
-            Diretor Pro Temp. Departamento de Ciências Contábeis da UFVJM
-          </p>
-        </div>
-      </div>
     </div>
   );
 }
