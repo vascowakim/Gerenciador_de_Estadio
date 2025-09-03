@@ -737,7 +737,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/mandatory-internships", requireAuth, async (req, res) => {
+  app.post("/api/mandatory-internships", requireAuth, async (req: AuthenticatedRequest, res) => {
     try {
       // Converter strings de data para objetos Date
       const processedBody = {
@@ -747,11 +747,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
       
       const mandatoryInternshipData = insertMandatoryInternshipSchema.parse(processedBody);
+      
+      // Verificar se já existe estágio obrigatório ativo para o mesmo estudante
+      const existingInternships = await storage.getMandatoryInternshipsByStudent(mandatoryInternshipData.studentId);
+      const activeInternship = existingInternships.find(internship => 
+        internship.isActive && 
+        internship.status !== 'completed' && 
+        internship.status !== 'cancelled'
+      );
+      
+      if (activeInternship) {
+        return res.status(409).json({ 
+          success: false,
+          message: "O estudante já possui um estágio obrigatório ativo. Complete ou cancele o estágio atual antes de criar um novo.",
+          code: "DUPLICATE_ACTIVE_INTERNSHIP",
+          existingInternship: {
+            id: activeInternship.id,
+            status: activeInternship.status,
+            startDate: activeInternship.startDate,
+            endDate: activeInternship.endDate
+          }
+        });
+      }
+      
       const mandatoryInternship = await storage.createMandatoryInternship(mandatoryInternshipData);
-      res.status(201).json(mandatoryInternship);
+      res.status(201).json({
+        success: true,
+        data: mandatoryInternship,
+        message: "Estágio obrigatório criado com sucesso"
+      });
     } catch (error) {
-      console.error("Error creating mandatory internship:", error);
-      res.status(400).json({ message: "Dados inválidos" });
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      console.error("Error creating mandatory internship:", errorMessage);
+      
+      // Tratar erros específicos
+      if (error instanceof Error && error.message.includes('foreign key')) {
+        return res.status(400).json({ 
+          success: false,
+          message: "Estudante, orientador ou empresa não encontrados",
+          code: "INVALID_REFERENCES"
+        });
+      }
+      
+      res.status(400).json({ 
+        success: false,
+        message: "Dados inválidos para criação do estágio",
+        code: "VALIDATION_ERROR"
+      });
     }
   });
 
@@ -867,7 +909,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/non-mandatory-internships", requireAuth, async (req, res) => {
+  app.post("/api/non-mandatory-internships", requireAuth, async (req: AuthenticatedRequest, res) => {
     try {
       // Converter strings de data para objetos Date
       const processedBody = {
@@ -877,11 +919,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
       
       const nonMandatoryInternshipData = insertNonMandatoryInternshipSchema.parse(processedBody);
+      
+      // Verificar se já existe estágio não obrigatório ativo para o mesmo estudante na mesma empresa
+      const existingInternships = await storage.getNonMandatoryInternshipsByStudent(nonMandatoryInternshipData.studentId);
+      const conflictingInternship = existingInternships.find(internship => 
+        internship.isActive && 
+        internship.status !== 'completed' && 
+        internship.status !== 'cancelled' &&
+        internship.companyId === nonMandatoryInternshipData.companyId
+      );
+      
+      if (conflictingInternship) {
+        return res.status(409).json({ 
+          success: false,
+          message: "O estudante já possui um estágio não obrigatório ativo na mesma empresa. Complete ou cancele o estágio atual antes de criar um novo.",
+          code: "DUPLICATE_ACTIVE_INTERNSHIP_SAME_COMPANY",
+          existingInternship: {
+            id: conflictingInternship.id,
+            status: conflictingInternship.status,
+            startDate: conflictingInternship.startDate,
+            endDate: conflictingInternship.endDate
+          }
+        });
+      }
+      
       const nonMandatoryInternship = await storage.createNonMandatoryInternship(nonMandatoryInternshipData);
-      res.status(201).json(nonMandatoryInternship);
+      res.status(201).json({
+        success: true,
+        data: nonMandatoryInternship,
+        message: "Estágio não obrigatório criado com sucesso"
+      });
     } catch (error) {
-      console.error("Error creating non-mandatory internship:", error);
-      res.status(400).json({ message: "Dados inválidos" });
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      console.error("Error creating non-mandatory internship:", errorMessage);
+      
+      // Tratar erros específicos
+      if (error instanceof Error && error.message.includes('foreign key')) {
+        return res.status(400).json({ 
+          success: false,
+          message: "Estudante, orientador ou empresa não encontrados",
+          code: "INVALID_REFERENCES"
+        });
+      }
+      
+      res.status(400).json({ 
+        success: false,
+        message: "Dados inválidos para criação do estágio",
+        code: "VALIDATION_ERROR"
+      });
     }
   });
 
