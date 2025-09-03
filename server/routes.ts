@@ -1,9 +1,14 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertUserSchema, insertAdvisorSchema, insertStudentSchema, insertCompanySchema, insertInternshipSchema, insertMandatoryInternshipSchema, insertNonMandatoryInternshipSchema } from "@shared/schema";
+import { insertUserSchema, insertAdvisorSchema, insertStudentSchema, insertCompanySchema, insertInternshipSchema, insertMandatoryInternshipSchema, insertNonMandatoryInternshipSchema, insertInternshipDocumentSchema } from "@shared/schema";
 import bcrypt from "bcrypt";
 import session from "express-session";
+import {
+  ObjectStorageService,
+  ObjectNotFoundError,
+} from "./objectStorage";
+import { ObjectPermission } from "./objectAcl";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Session configuration
@@ -532,6 +537,129 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: "Estágio não obrigatório excluído com sucesso" });
     } catch (error) {
       res.status(500).json({ message: "Erro ao excluir estágio não obrigatório" });
+    }
+  });
+
+  // Object Storage routes
+  app.get("/objects/:objectPath(*)", requireAuth, async (req, res) => {
+    const userId = req.session.user?.id;
+    const objectStorageService = new ObjectStorageService();
+    try {
+      const objectFile = await objectStorageService.getObjectEntityFile(
+        req.path,
+      );
+      const canAccess = await objectStorageService.canAccessObjectEntity({
+        objectFile,
+        userId: userId,
+        requestedPermission: ObjectPermission.READ,
+      });
+      if (!canAccess) {
+        return res.sendStatus(401);
+      }
+      objectStorageService.downloadObject(objectFile, res);
+    } catch (error) {
+      console.error("Error checking object access:", error);
+      if (error instanceof ObjectNotFoundError) {
+        return res.sendStatus(404);
+      }
+      return res.sendStatus(500);
+    }
+  });
+
+  app.post("/api/objects/upload", requireAuth, async (req, res) => {
+    const objectStorageService = new ObjectStorageService();
+    const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+    res.json({ uploadURL });
+  });
+
+  // Document management routes
+  app.get("/api/documents", requireAuth, async (req, res) => {
+    try {
+      const { internshipId, internshipType } = req.query;
+      const documents = await storage.getDocuments(
+        internshipId as string, 
+        internshipType as "mandatory" | "non_mandatory"
+      );
+      res.json(documents);
+    } catch (error) {
+      console.error("Error fetching documents:", error);
+      res.status(500).json({ message: "Erro ao buscar documentos" });
+    }
+  });
+
+  app.post("/api/documents", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Usuário não autenticado" });
+      }
+
+      const documentData = {
+        ...req.body,
+        uploadedBy: userId
+      };
+
+      const validatedData = insertInternshipDocumentSchema.parse(documentData);
+      
+      // Normalizar o path do arquivo e definir política ACL
+      const objectStorageService = new ObjectStorageService();
+      const normalizedPath = await objectStorageService.trySetObjectEntityAclPolicy(
+        validatedData.filePath,
+        {
+          owner: userId,
+          visibility: "private",
+        },
+      );
+
+      // Atualizar o documento com o path normalizado
+      const finalDocumentData = {
+        ...validatedData,
+        filePath: normalizedPath,
+      };
+
+      const document = await storage.createDocument(finalDocumentData);
+      res.status(201).json(document);
+    } catch (error) {
+      console.error("Error creating document:", error);
+      res.status(400).json({ message: "Dados inválidos" });
+    }
+  });
+
+  app.put("/api/documents/:id", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const userId = req.session.user?.id;
+      
+      const documentData = req.body;
+      if (documentData.reviewedBy) {
+        documentData.reviewedBy = userId;
+        documentData.reviewedAt = new Date();
+      }
+
+      const validatedData = insertInternshipDocumentSchema.partial().parse(documentData);
+      const document = await storage.updateDocument(id, validatedData);
+      
+      if (!document) {
+        return res.status(404).json({ message: "Documento não encontrado" });
+      }
+      res.json(document);
+    } catch (error) {
+      console.error("Error updating document:", error);
+      res.status(400).json({ message: "Dados inválidos" });
+    }
+  });
+
+  app.delete("/api/documents/:id", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const success = await storage.deleteDocument(id);
+      if (!success) {
+        return res.status(404).json({ message: "Documento não encontrado" });
+      }
+      res.json({ message: "Documento excluído com sucesso" });
+    } catch (error) {
+      console.error("Error deleting document:", error);
+      res.status(500).json({ message: "Erro ao excluir documento" });
     }
   });
 

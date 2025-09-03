@@ -207,7 +207,6 @@ export default function MandatoryInternships() {
   return (
     <div className="min-h-screen bg-gray-100">
       <div className="flex">
-        <Sidebar user={user} />
         <main className="flex-1">
           {/* Top Header Bar */}
           <div className="bg-blue-600 text-white px-6 py-3 flex justify-between items-center">

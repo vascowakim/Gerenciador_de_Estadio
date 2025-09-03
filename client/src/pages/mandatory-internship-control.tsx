@@ -30,6 +30,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
+import DocumentUpload from "@/components/DocumentUpload";
 
 import type { User, MandatoryInternship, Student, Advisor, Company } from "@shared/schema";
 
@@ -290,55 +291,15 @@ export default function MandatoryInternshipControl() {
         </CardContent>
       </Card>
 
-      {/* Reports Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Relatórios de Estágio</CardTitle>
-          <CardDescription>
-            Gerencie os relatórios obrigatórios do estágio
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((reportNumber) => (
-              <div key={reportNumber} className="flex items-center justify-between p-4 border rounded-lg">
-                <div className="flex items-center space-x-3">
-                  <FileText className="h-5 w-5 text-blue-600" />
-                  <div>
-                    <p className="font-medium">Relatório {reportNumber}</p>
-                    <p className="text-sm text-gray-600">
-                      {uploadedReports[`report-${reportNumber}`] ? "Enviado" : "Pendente"}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  {uploadedReports[`report-${reportNumber}`] ? (
-                    <span className="text-green-600 text-sm">✓ Enviado</span>
-                  ) : (
-                    <div className="flex items-center space-x-2">
-                      <Input
-                        type="file"
-                        accept=".pdf,.doc,.docx"
-                        onChange={(e) => handleFileUpload(e, "report", reportNumber)}
-                        className="w-48"
-                        data-testid={`input-report-${reportNumber}`}
-                      />
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={uploadReportMutation.isPending}
-                        data-testid={`button-upload-report-${reportNumber}`}
-                      >
-                        Enviar
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      {/* Document Management Section */}
+      {internshipData && (
+        <DocumentUpload
+          internshipId={internshipData.id}
+          internshipType="mandatory"
+          canUpload={true}
+          canReview={user?.role === "administrator"}
+        />
+      )}
     </div>
   );
 }

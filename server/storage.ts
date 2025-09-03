@@ -1,4 +1,4 @@
-import { users, advisors, students, companies, internships, mandatoryInternships, nonMandatoryInternships, type User, type InsertUser, type Advisor, type InsertAdvisor, type Student, type InsertStudent, type Company, type InsertCompany, type Internship, type InsertInternship, type MandatoryInternship, type InsertMandatoryInternship, type NonMandatoryInternship, type InsertNonMandatoryInternship } from "@shared/schema";
+import { users, advisors, students, companies, internships, mandatoryInternships, nonMandatoryInternships, internshipDocuments, type User, type InsertUser, type Advisor, type InsertAdvisor, type Student, type InsertStudent, type Company, type InsertCompany, type Internship, type InsertInternship, type MandatoryInternship, type InsertMandatoryInternship, type NonMandatoryInternship, type InsertNonMandatoryInternship, type InternshipDocument, type InsertInternshipDocument } from "@shared/schema";
 import { db } from "./db";
 import { eq, and } from "drizzle-orm";
 import bcrypt from "bcrypt";
@@ -60,6 +60,13 @@ export interface IStorage {
   createNonMandatoryInternship(nonMandatoryInternship: InsertNonMandatoryInternship): Promise<NonMandatoryInternship>;
   updateNonMandatoryInternship(id: string, nonMandatoryInternship: Partial<InsertNonMandatoryInternship>): Promise<NonMandatoryInternship | undefined>;
   deleteNonMandatoryInternship(id: string): Promise<boolean>;
+
+  // Document operations
+  getDocument(id: string): Promise<InternshipDocument | undefined>;
+  getDocuments(internshipId: string, internshipType: "mandatory" | "non_mandatory"): Promise<InternshipDocument[]>;
+  createDocument(document: InsertInternshipDocument): Promise<InternshipDocument>;
+  updateDocument(id: string, document: Partial<InsertInternshipDocument>): Promise<InternshipDocument | undefined>;
+  deleteDocument(id: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -372,6 +379,46 @@ export class DatabaseStorage implements IStorage {
       .where(eq(mandatoryInternships.id, id))
       .returning();
     return mandatoryInternship || undefined;
+  }
+
+  // Document operations
+  async getDocument(id: string): Promise<InternshipDocument | undefined> {
+    const [document] = await db.select().from(internshipDocuments).where(eq(internshipDocuments.id, id));
+    return document || undefined;
+  }
+
+  async getDocuments(internshipId: string, internshipType: "mandatory" | "non_mandatory"): Promise<InternshipDocument[]> {
+    return await db
+      .select()
+      .from(internshipDocuments)
+      .where(
+        and(
+          eq(internshipDocuments.internshipId, internshipId),
+          eq(internshipDocuments.internshipType, internshipType)
+        )
+      );
+  }
+
+  async createDocument(insertDocument: InsertInternshipDocument): Promise<InternshipDocument> {
+    const [document] = await db
+      .insert(internshipDocuments)
+      .values(insertDocument)
+      .returning();
+    return document;
+  }
+
+  async updateDocument(id: string, documentUpdate: Partial<InsertInternshipDocument>): Promise<InternshipDocument | undefined> {
+    const [document] = await db
+      .update(internshipDocuments)
+      .set({ ...documentUpdate, updatedAt: new Date() })
+      .where(eq(internshipDocuments.id, id))
+      .returning();
+    return document || undefined;
+  }
+
+  async deleteDocument(id: string): Promise<boolean> {
+    const result = await db.delete(internshipDocuments).where(eq(internshipDocuments.id, id));
+    return result.rowCount > 0;
   }
 }
 

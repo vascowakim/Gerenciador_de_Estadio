@@ -7,6 +7,18 @@ import { z } from "zod";
 export const userRoleEnum = pgEnum("user_role", ["administrator", "professor"]);
 export const internshipTypeEnum = pgEnum("internship_type", ["mandatory", "non_mandatory"]);
 export const internshipStatusEnum = pgEnum("internship_status", ["pending", "approved", "rejected", "completed"]);
+export const documentTypeEnum = pgEnum("document_type", [
+  "enrollment_certificate", 
+  "insurance_policy", 
+  "internship_plan",
+  "activity_report",
+  "final_report",
+  "company_evaluation",
+  "student_evaluation",
+  "attendance_sheet",
+  "other"
+]);
+export const documentStatusEnum = pgEnum("document_status", ["pending", "approved", "rejected", "needs_revision"]);
 
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -137,9 +149,30 @@ export const nonMandatoryInternships = pgTable("non_mandatory_internships", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const internshipDocuments = pgTable("internship_documents", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  internshipId: varchar("internship_id").notNull(),
+  internshipType: internshipTypeEnum("internship_type").notNull(),
+  documentType: documentTypeEnum("document_type").notNull(),
+  fileName: text("file_name").notNull(),
+  originalName: text("original_name").notNull(),
+  filePath: text("file_path").notNull(),
+  fileSize: integer("file_size").notNull(),
+  mimeType: text("mime_type").notNull(),
+  status: documentStatusEnum("status").default("pending").notNull(),
+  uploadedBy: varchar("uploaded_by").notNull().references(() => users.id),
+  reviewedBy: varchar("reviewed_by").references(() => users.id),
+  reviewComments: text("review_comments"),
+  reviewedAt: timestamp("reviewed_at"),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
-  // Users don't have direct relations to other entities in this system
+  uploadedDocuments: many(internshipDocuments, { relationName: "uploadedBy" }),
+  reviewedDocuments: many(internshipDocuments, { relationName: "reviewedBy" }),
 }));
 
 export const advisorsRelations = relations(advisors, ({ many }) => ({
@@ -175,7 +208,7 @@ export const internshipsRelations = relations(internships, ({ one }) => ({
   }),
 }));
 
-export const mandatoryInternshipsRelations = relations(mandatoryInternships, ({ one }) => ({
+export const mandatoryInternshipsRelations = relations(mandatoryInternships, ({ one, many }) => ({
   student: one(students, {
     fields: [mandatoryInternships.studentId],
     references: [students.id],
@@ -188,9 +221,10 @@ export const mandatoryInternshipsRelations = relations(mandatoryInternships, ({ 
     fields: [mandatoryInternships.companyId],
     references: [companies.id],
   }),
+  documents: many(internshipDocuments),
 }));
 
-export const nonMandatoryInternshipsRelations = relations(nonMandatoryInternships, ({ one }) => ({
+export const nonMandatoryInternshipsRelations = relations(nonMandatoryInternships, ({ one, many }) => ({
   student: one(students, {
     fields: [nonMandatoryInternships.studentId],
     references: [students.id],
@@ -202,6 +236,20 @@ export const nonMandatoryInternshipsRelations = relations(nonMandatoryInternship
   company: one(companies, {
     fields: [nonMandatoryInternships.companyId],
     references: [companies.id],
+  }),
+  documents: many(internshipDocuments),
+}));
+
+export const internshipDocumentsRelations = relations(internshipDocuments, ({ one }) => ({
+  uploadedByUser: one(users, {
+    fields: [internshipDocuments.uploadedBy],
+    references: [users.id],
+    relationName: "uploadedBy",
+  }),
+  reviewedByUser: one(users, {
+    fields: [internshipDocuments.reviewedBy],
+    references: [users.id],
+    relationName: "reviewedBy",
   }),
 }));
 
@@ -244,6 +292,12 @@ export const insertNonMandatoryInternshipSchema = createInsertSchema(nonMandator
   updatedAt: true,
 });
 
+export const insertInternshipDocumentSchema = createInsertSchema(internshipDocuments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -265,3 +319,6 @@ export type InsertMandatoryInternship = z.infer<typeof insertMandatoryInternship
 
 export type NonMandatoryInternship = typeof nonMandatoryInternships.$inferSelect;
 export type InsertNonMandatoryInternship = z.infer<typeof insertNonMandatoryInternshipSchema>;
+
+export type InternshipDocument = typeof internshipDocuments.$inferSelect;
+export type InsertInternshipDocument = z.infer<typeof insertInternshipDocumentSchema>;
