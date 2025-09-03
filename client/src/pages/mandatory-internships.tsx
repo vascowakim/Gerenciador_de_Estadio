@@ -419,9 +419,9 @@ export default function MandatoryInternships() {
                           </FormControl>
                           <SelectContent>
                             <SelectItem value="pending">Pendente</SelectItem>
-                            <SelectItem value="active">Ativo</SelectItem>
+                            <SelectItem value="approved">Aprovado</SelectItem>
                             <SelectItem value="completed">Concluído</SelectItem>
-                            <SelectItem value="cancelled">Cancelado</SelectItem>
+                            <SelectItem value="rejected">Rejeitado</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -489,14 +489,14 @@ export default function MandatoryInternships() {
                     <TableCell>{internship.supervisor || "-"}</TableCell>
                     <TableCell>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        internship.status === "active" ? "bg-green-100 text-green-800" :
+                        internship.status === "approved" ? "bg-green-100 text-green-800" :
                         internship.status === "completed" ? "bg-blue-100 text-blue-800" :
-                        internship.status === "cancelled" ? "bg-red-100 text-red-800" :
+                        internship.status === "rejected" ? "bg-red-100 text-red-800" :
                         "bg-yellow-100 text-yellow-800"
                       }`}>
-                        {internship.status === "active" ? "Ativo" :
+                        {internship.status === "approved" ? "Aprovado" :
                          internship.status === "completed" ? "Concluído" :
-                         internship.status === "cancelled" ? "Cancelado" :
+                         internship.status === "rejected" ? "Rejeitado" :
                          "Pendente"}
                       </span>
                     </TableCell>
