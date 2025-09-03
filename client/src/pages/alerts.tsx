@@ -42,7 +42,7 @@ export default function AlertsPage() {
 
   const markAsReadMutation = useMutation({
     mutationFn: async (alertId: string) => {
-      await apiRequest(`/api/alerts/${alertId}/read`, { method: "POST" });
+      await apiRequest(`/api/alerts/${alertId}/read`, "PUT");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/alerts"] });
@@ -55,7 +55,7 @@ export default function AlertsPage() {
 
   const dismissAlertMutation = useMutation({
     mutationFn: async (alertId: string) => {
-      await apiRequest(`/api/alerts/${alertId}/dismiss`, { method: "POST" });
+      await apiRequest(`/api/alerts/${alertId}/dismiss`, "PUT");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/alerts"] });
@@ -69,7 +69,7 @@ export default function AlertsPage() {
 
   const runCheckMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest("/api/alerts/check", { method: "POST" });
+      const response = await apiRequest("/api/alerts/check", "POST");
       return response as CheckResult;
     },
     onSuccess: (result) => {

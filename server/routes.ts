@@ -839,7 +839,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/alerts/:id/read", requireAuth, async (req: any, res) => {
+  app.put("/api/alerts/:id/read", requireAuth, async (req: any, res) => {
     try {
       const { id } = req.params;
       await alertService.markAlertAsRead(id, req.session.user.id);
@@ -849,7 +849,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/alerts/:id/dismiss", requireAuth, async (req: any, res) => {
+  app.put("/api/alerts/:id/dismiss", requireAuth, async (req: any, res) => {
     try {
       const { id } = req.params;
       await alertService.dismissAlert(id, req.session.user.id);
