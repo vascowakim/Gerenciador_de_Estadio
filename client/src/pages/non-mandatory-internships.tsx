@@ -40,16 +40,6 @@ export default function NonMandatoryInternshipsPage() {
       status: "pending",
       startDate: undefined,
       endDate: undefined,
-      r1: false,
-      r2: false,
-      r3: false,
-      r4: false,
-      r5: false,
-      r6: false,
-      r7: false,
-      r8: false,
-      r9: false,
-      r10: false,
       isActive: true,
     },
   });
@@ -235,11 +225,6 @@ export default function NonMandatoryInternshipsPage() {
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
-  const getCompletedReportsCount = (internship: NonMandatoryInternship) => {
-    const reports = [internship.r1, internship.r2, internship.r3, internship.r4, internship.r5, 
-                   internship.r6, internship.r7, internship.r8, internship.r9, internship.r10];
-    return reports.filter(Boolean).length;
-  };
 
   if (internshipsLoading) {
     return (
@@ -319,7 +304,7 @@ export default function NonMandatoryInternshipsPage() {
               <div>
                 <p className="text-sm text-gray-600">Relatórios Pendentes</p>
                 <p className="text-2xl font-bold text-purple-600">
-                  {internships.reduce((acc: number, i: NonMandatoryInternship) => acc + (10 - getCompletedReportsCount(i)), 0)}
+                  0
                 </p>
               </div>
             </div>
@@ -516,33 +501,6 @@ export default function NonMandatoryInternshipsPage() {
                   />
                 </div>
 
-                {/* Controle de Relatórios */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Controle de Relatórios</h3>
-                  <div className="grid grid-cols-5 gap-4">
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
-                      <FormField
-                        key={num}
-                        control={form.control}
-                        name={`r${num}` as keyof FormData}
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                            <FormControl>
-                              <Checkbox
-                                checked={field.value as boolean}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                            <FormLabel className="text-sm font-normal">
-                              R{num}
-                            </FormLabel>
-                          </FormItem>
-                        )}
-                      />
-                    ))}
-                  </div>
-                </div>
-
                 <div className="flex justify-end space-x-2 pt-4">
                   <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                     Cancelar
@@ -568,7 +526,6 @@ export default function NonMandatoryInternshipsPage() {
           const student = students.find((s: Student) => s.id === internship.studentId);
           const advisor = advisors.find((a: Advisor) => a.id === internship.advisorId);
           const company = companies.find((c: Company) => c.id === internship.companyId);
-          const completedReports = getCompletedReportsCount(internship);
           
           return (
             <Card key={internship.id} className="hover:shadow-md transition-shadow">
@@ -611,29 +568,6 @@ export default function NonMandatoryInternshipsPage() {
                         </div>
                         <div className="flex items-center space-x-2">
                           {getStatusBadge(internship.status)}
-                        </div>
-                        <p className="text-xs text-gray-500">
-                          Relatórios: {completedReports}/10
-                        </p>
-                        
-                        {/* Indicadores de relatórios */}
-                        <div className="flex space-x-1 mt-2">
-                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => {
-                            const isCompleted = internship[`r${num}` as keyof NonMandatoryInternship] as boolean;
-                            return (
-                              <div
-                                key={num}
-                                className={`w-3 h-3 rounded-full text-xs flex items-center justify-center border ${
-                                  isCompleted 
-                                    ? 'bg-green-500 border-green-500 text-white' 
-                                    : 'bg-gray-200 border-gray-300 text-gray-600'
-                                }`}
-                                title={`Relatório R${num} ${isCompleted ? 'entregue' : 'pendente'}`}
-                              >
-                                {num}
-                              </div>
-                            );
-                          })}
                         </div>
                       </div>
                     </div>
