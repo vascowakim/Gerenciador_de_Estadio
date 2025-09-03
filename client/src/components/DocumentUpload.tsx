@@ -30,7 +30,7 @@ const documentTypeLabels: Record<string, string> = {
 };
 
 const statusLabels: Record<string, { label: string; color: string; icon: React.ComponentType<any> }> = {
-  pending: { label: "Pendente", color: "bg-yellow-100 text-yellow-800", icon: Clock },
+  pending: { label: "Ativo", color: "bg-yellow-100 text-yellow-800", icon: Clock },
   approved: { label: "Aprovado", color: "bg-green-100 text-green-800", icon: CheckCircle },
   rejected: { label: "Rejeitado", color: "bg-red-100 text-red-800", icon: XCircle },
   needs_revision: { label: "Precisa Revisão", color: "bg-orange-100 text-orange-800", icon: AlertCircle },

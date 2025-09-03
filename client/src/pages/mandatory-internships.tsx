@@ -351,7 +351,7 @@ export default function MandatoryInternships() {
             <div className="flex items-center space-x-2">
               <Calendar className="h-5 w-5 text-yellow-600" />
               <div>
-                <p className="text-sm text-gray-600">Pendentes</p>
+                <p className="text-sm text-gray-600">Ativos</p>
                 <p className="text-2xl font-bold text-yellow-600">
                   {mandatoryInternships ? mandatoryInternships.filter((i: MandatoryInternship) => i.status === "pending").length : 0}
                 </p>
@@ -637,7 +637,7 @@ export default function MandatoryInternships() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="pending">Pendente</SelectItem>
+                            <SelectItem value="pending">Ativo</SelectItem>
                             <SelectItem value="approved">Aprovado</SelectItem>
                             <SelectItem value="completed">Concluído</SelectItem>
                             <SelectItem value="rejected">Rejeitado</SelectItem>
@@ -712,7 +712,7 @@ export default function MandatoryInternships() {
                         {managingInternship.status === "approved" ? "Aprovado" :
                          managingInternship.status === "completed" ? "Concluído" :
                          managingInternship.status === "rejected" ? "Rejeitado" :
-                         "Pendente"}
+                         "Ativo"}
                       </p>
                     </div>
                     {managingInternship.startDate && (
@@ -884,7 +884,7 @@ export default function MandatoryInternships() {
                         {internship.status === "approved" ? "Aprovado" :
                          internship.status === "completed" ? "Concluído" :
                          internship.status === "rejected" ? "Rejeitado" :
-                         "Pendente"}
+                         "Ativo"}
                       </span>
                     </TableCell>
                     <TableCell>

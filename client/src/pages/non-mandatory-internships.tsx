@@ -215,7 +215,7 @@ export default function NonMandatoryInternshipsPage() {
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      pending: { label: "Pendente", variant: "secondary" as const },
+      pending: { label: "Ativo", variant: "secondary" as const },
       approved: { label: "Aprovado", variant: "default" as const },
       rejected: { label: "Rejeitado", variant: "destructive" as const },
       completed: { label: "Concluído", variant: "default" as const },
@@ -260,7 +260,7 @@ export default function NonMandatoryInternshipsPage() {
             <div className="flex items-center space-x-2">
               <Calendar className="h-5 w-5 text-yellow-600" />
               <div>
-                <p className="text-sm text-gray-600">Pendentes</p>
+                <p className="text-sm text-gray-600">Ativos</p>
                 <p className="text-2xl font-bold text-yellow-600">
                   {internships.filter((i: NonMandatoryInternship) => i.status === "pending").length}
                 </p>
@@ -489,7 +489,7 @@ export default function NonMandatoryInternshipsPage() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="pending">Pendente</SelectItem>
+                            <SelectItem value="pending">Ativo</SelectItem>
                             <SelectItem value="approved">Aprovado</SelectItem>
                             <SelectItem value="rejected">Rejeitado</SelectItem>
                             <SelectItem value="completed">Concluído</SelectItem>

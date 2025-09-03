@@ -161,7 +161,7 @@ export default function Internships() {
 
   const getStatusBadge = (status: string) => {
     const statusMap = {
-      pending: { label: "Pendente", variant: "secondary" as const },
+      pending: { label: "Ativo", variant: "secondary" as const },
       approved: { label: "Aprovado", variant: "default" as const },
       rejected: { label: "Rejeitado", variant: "destructive" as const },
       completed: { label: "Concluído", variant: "outline" as const },
@@ -345,7 +345,7 @@ export default function Internships() {
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                  <SelectItem value="pending">Pendente</SelectItem>
+                                  <SelectItem value="pending">Ativo</SelectItem>
                                   <SelectItem value="approved">Aprovado</SelectItem>
                                   <SelectItem value="rejected">Rejeitado</SelectItem>
                                   <SelectItem value="completed">Concluído</SelectItem>
