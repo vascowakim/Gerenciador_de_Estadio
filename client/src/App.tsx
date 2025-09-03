@@ -14,6 +14,7 @@ import MandatoryInternships from "@/pages/mandatory-internships";
 import MandatoryInternshipControl from "@/pages/mandatory-internship-control";
 import AlertsPage from "@/pages/alerts";
 import NonMandatoryInternships from "@/pages/non-mandatory-internships";
+import ProfilePage from "./pages/profile";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -63,6 +64,11 @@ function Router() {
       <Route path="/alerts">
         <MainLayout>
           <AlertsPage />
+        </MainLayout>
+      </Route>
+      <Route path="/profile">
+        <MainLayout>
+          <ProfilePage />
         </MainLayout>
       </Route>
       <Route component={NotFound} />

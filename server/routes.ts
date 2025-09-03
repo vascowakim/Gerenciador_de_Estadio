@@ -145,10 +145,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/auth/me", (req: any, res) => {
+    // Primeiro tenta autenticação via sessão
     if (req.session.user) {
-      res.json({ user: req.session.user });
-    } else {
-      res.status(401).json({ message: "Não autenticado" });
+      return res.json({ user: req.session.user });
+    }
+    
+    // Se não houver sessão, tenta JWT (para iframes)
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'jwt-secret') as any;
+        return res.json({ user: decoded });
+      } catch (error) {
+        return res.status(401).json({ message: "Token inválido" });
+      }
+    }
+    
+    return res.status(401).json({ message: "Não autenticado" });
+  });
+
+  // Rota para alterar senha do usuário logado
+  app.put("/api/auth/change-password", requireAuth, async (req: any, res) => {
+    try {
+      const { currentPassword, newPassword } = req.body;
+      // O req.session.user já foi definido pelo middleware requireAuth
+      const userId = req.session.user.id;
+
+      if (!currentPassword || !newPassword) {
+        return res.status(400).json({ message: "Senha atual e nova senha são obrigatórias" });
+      }
+
+      if (newPassword.length < 6) {
+        return res.status(400).json({ message: "Nova senha deve ter pelo menos 6 caracteres" });
+      }
+
+      // Buscar usuário atual
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "Usuário não encontrado" });
+      }
+
+      // Verificar senha atual
+      const isValidPassword = await bcrypt.compare(currentPassword, user.password);
+      if (!isValidPassword) {
+        return res.status(401).json({ message: "Senha atual incorreta" });
+      }
+
+      // Hash da nova senha
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+      // Atualizar senha
+      await storage.updateUserPassword(userId, hashedPassword);
+
+      res.json({ message: "Senha alterada com sucesso" });
+    } catch (error) {
+      console.error("Error changing password:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
     }
   });
 
