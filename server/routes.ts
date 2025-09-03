@@ -264,9 +264,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Student routes
-  app.get("/api/students", requireAuth, async (req, res) => {
+  app.get("/api/students", requireAuth, async (req: any, res) => {
     try {
-      const students = await storage.getAllStudents();
+      let students;
+      if (req.session.user.role === "administrator") {
+        students = await storage.getAllStudents();
+      } else {
+        // Professors can only see students they supervise
+        students = await storage.getStudentsByAdvisor(req.session.user.id);
+      }
       res.json(students);
     } catch (error) {
       res.status(500).json({ message: "Erro ao buscar estudantes" });

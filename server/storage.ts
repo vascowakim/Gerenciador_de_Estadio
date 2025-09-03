@@ -1,6 +1,6 @@
 import { users, advisors, students, companies, internships, mandatoryInternships, nonMandatoryInternships, internshipDocuments, type User, type InsertUser, type Advisor, type InsertAdvisor, type Student, type InsertStudent, type Company, type InsertCompany, type Internship, type InsertInternship, type MandatoryInternship, type InsertMandatoryInternship, type NonMandatoryInternship, type InsertNonMandatoryInternship, type InternshipDocument, type InsertInternshipDocument } from "@shared/schema";
 import { db } from "./db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 import bcrypt from "bcrypt";
 
 export interface IStorage {
@@ -24,6 +24,7 @@ export interface IStorage {
   // Student operations
   getStudent(id: string): Promise<Student | undefined>;
   getAllStudents(): Promise<Student[]>;
+  getStudentsByAdvisor(advisorId: string): Promise<Student[]>;
   createStudent(student: InsertStudent): Promise<Student>;
   updateStudent(id: string, student: Partial<InsertStudent>): Promise<Student | undefined>;
   deleteStudent(id: string): Promise<boolean>;
@@ -187,6 +188,43 @@ export class DatabaseStorage implements IStorage {
 
   async getAllStudents(): Promise<Student[]> {
     return await db.select().from(students).where(eq(students.isActive, true));
+  }
+
+  async getStudentsByAdvisor(advisorId: string): Promise<Student[]> {
+    // Buscar estudantes que têm estágios obrigatórios ou não obrigatórios com este orientador
+    const mandatoryStudentIds = await db
+      .selectDistinct({ studentId: mandatoryInternships.studentId })
+      .from(mandatoryInternships)
+      .where(eq(mandatoryInternships.advisorId, advisorId));
+
+    const nonMandatoryStudentIds = await db
+      .selectDistinct({ studentId: nonMandatoryInternships.studentId })
+      .from(nonMandatoryInternships)
+      .where(eq(nonMandatoryInternships.advisorId, advisorId));
+
+    // Combinar os IDs dos estudantes
+    const allStudentIds = [
+      ...mandatoryStudentIds.map(item => item.studentId),
+      ...nonMandatoryStudentIds.map(item => item.studentId)
+    ];
+
+    // Remover duplicatas
+    const uniqueStudentIds = [...new Set(allStudentIds)];
+
+    if (uniqueStudentIds.length === 0) {
+      return [];
+    }
+
+    // Buscar os estudantes pelos IDs
+    return await db
+      .select()
+      .from(students)
+      .where(
+        and(
+          eq(students.isActive, true),
+          inArray(students.id, uniqueStudentIds)
+        )
+      );
   }
 
   async createStudent(insertStudent: InsertStudent): Promise<Student> {
