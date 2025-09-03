@@ -14,7 +14,9 @@ import {
   FileText,
   Briefcase,
   Shield,
-  Archive
+  Archive,
+  LogOut,
+  UserCog
 } from "lucide-react";
 import ufvjmLogo from "@assets/ufvjm_1756831174700.png";
 
@@ -23,7 +25,16 @@ interface SidebarProps {
 }
 
 export function Sidebar({ user }: SidebarProps) {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
+
+  const handleLogout = () => {
+    // Limpar dados locais de autenticação se houver
+    localStorage.removeItem('auth-token');
+    sessionStorage.clear();
+    
+    // Redirecionar para a página de login
+    window.location.href = '/';
+  };
 
   const navigationItems = [
     {
@@ -137,12 +148,22 @@ export function Sidebar({ user }: SidebarProps) {
         
         {/* Bottom Section */}
         <div className="absolute bottom-4 left-4 right-4">
-          <div className="bg-green-600 text-white px-3 py-2 rounded text-center text-sm font-semibold mb-2">
-            👤 Aluno Portal
-          </div>
-          <div className="bg-red-600 text-white px-3 py-2 rounded text-center text-sm font-semibold">
-            🚚 Sair
-          </div>
+          <Button
+            onClick={handleLogout}
+            className="w-full bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded text-center text-sm font-semibold mb-2"
+            data-testid="button-change-profile"
+          >
+            <UserCog className="w-4 h-4 mr-2" />
+            Mudar Perfil
+          </Button>
+          <Button
+            onClick={handleLogout}
+            className="w-full bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded text-center text-sm font-semibold"
+            data-testid="button-logout"
+          >
+            <LogOut className="w-4 h-4 mr-2" />
+            Sair
+          </Button>
         </div>
       </div>
     </div>
