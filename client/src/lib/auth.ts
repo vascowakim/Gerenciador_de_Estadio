@@ -17,17 +17,28 @@ export class AuthService {
   // Verifica se está rodando em iframe (para Wix)
   static isInIframe(): boolean {
     try {
-      return window.self !== window.top;
+      // Verifica se está em iframe
+      const inIframe = window.self !== window.top;
+      
+      // Verificações adicionais para Wix
+      const isWix = window.location.href.includes('wix.com') || 
+                    window.parent?.location?.hostname?.includes('wix.com') ||
+                    document.referrer.includes('wix.com');
+      
+      console.log('🔍 Detecção de iframe:', { inIframe, isWix, href: window.location.href });
+      
+      return inIframe || isWix;
     } catch (e) {
+      console.log('🔍 Erro na detecção de iframe, assumindo que está em iframe');
       return true;
     }
   }
 
   // Salva token para uso em iframes
   static saveToken(token: string): void {
-    if (this.isInIframe()) {
-      localStorage.setItem('auth-token', token);
-    }
+    // Sempre salvar token para garantir funcionamento em iframes
+    localStorage.setItem('auth-token', token);
+    console.log('💾 Token JWT salvo no localStorage');
   }
 
   // Obtém token salvo

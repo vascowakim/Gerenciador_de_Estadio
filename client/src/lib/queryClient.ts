@@ -28,12 +28,11 @@ export async function apiRequest(
 ): Promise<Response> {
   const headers: HeadersInit = data ? { "Content-Type": "application/json" } : {};
   
-  // Se estiver em iframe, usar token JWT
-  if (isInIframe()) {
-    const token = getAuthToken();
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
+  // Sempre tentar usar token JWT se disponível (melhor compatibilidade)
+  const token = getAuthToken();
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+    console.log('🔑 Usando JWT token para API request:', method, url);
   }
 
   const res = await fetch(url, {
@@ -55,12 +54,11 @@ export const getQueryFn: <T>(options: {
   async ({ queryKey }) => {
     const headers: HeadersInit = {};
     
-    // Se estiver em iframe, usar token JWT
-    if (isInIframe()) {
-      const token = getAuthToken();
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
+    // Sempre tentar usar token JWT se disponível (melhor compatibilidade)
+    const token = getAuthToken();
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+      console.log('🔑 Usando JWT token para query:', queryKey.join("/"));
     }
 
     const res = await fetch(queryKey.join("/") as string, {

@@ -27,6 +27,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     name: 'connect.sid' // Nome padrão
   }));
 
+  // Chave JWT consistente
+  const JWT_SECRET = process.env.JWT_SECRET || 'estagiopro-ufvjm-jwt-secret-2024';
+
   // Authentication middleware - suporta sessão e JWT
   const requireAuth = (req: any, res: any, next: any) => {
     // Primeiro tenta autenticação via sessão
@@ -39,14 +42,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.substring(7);
       try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'jwt-secret') as any;
+        console.log('🔑 Tentando verificar JWT token para iframe...');
+        const decoded = jwt.verify(token, JWT_SECRET) as any;
         req.session.user = decoded;
+        console.log('✅ JWT token válido para usuário:', decoded.username);
         return next();
       } catch (error) {
+        console.log('❌ JWT token inválido:', error.message);
         return res.status(401).json({ message: "Token inválido" });
       }
     }
     
+    console.log('❌ Nenhuma autenticação encontrada (sessão ou JWT)');
     return res.status(401).json({ message: "Não autorizado" });
   };
 
@@ -121,9 +128,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       req.session.user = userData;
 
       // Gerar JWT token para compatibilidade com iframes
-      const token = jwt.sign(userData, process.env.JWT_SECRET || 'jwt-secret', {
+      const token = jwt.sign(userData, JWT_SECRET, {
         expiresIn: '24h'
       });
+      
+      console.log('🔑 JWT token gerado para iframe:', userData.username);
 
       res.json({ 
         user: userData,
