@@ -1,4 +1,4 @@
-import { users, advisors, students, companies, internships, mandatoryInternships, nonMandatoryInternships, internshipDocuments, type User, type InsertUser, type Advisor, type InsertAdvisor, type Student, type InsertStudent, type Company, type InsertCompany, type Internship, type InsertInternship, type MandatoryInternship, type InsertMandatoryInternship, type NonMandatoryInternship, type InsertNonMandatoryInternship, type InternshipDocument, type InsertInternshipDocument } from "@shared/schema";
+import { users, advisors, students, companies, internships, mandatoryInternships, nonMandatoryInternships, internshipDocuments, internshipAlerts, type User, type InsertUser, type Advisor, type InsertAdvisor, type Student, type InsertStudent, type Company, type InsertCompany, type Internship, type InsertInternship, type MandatoryInternship, type InsertMandatoryInternship, type NonMandatoryInternship, type InsertNonMandatoryInternship, type InternshipDocument, type InsertInternshipDocument, type InternshipAlert, type InsertInternshipAlert } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, inArray, sql } from "drizzle-orm";
 import bcrypt from "bcrypt";
@@ -111,7 +111,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteUser(id: string): Promise<boolean> {
     const result = await db.delete(users).where(eq(users.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount || 0) > 0;
   }
 
   // Advisor operations
@@ -177,7 +177,7 @@ export class DatabaseStorage implements IStorage {
       .update(advisors)
       .set({ isActive: false })
       .where(eq(advisors.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount || 0) > 0;
   }
 
   // Student operations
@@ -209,7 +209,7 @@ export class DatabaseStorage implements IStorage {
     ];
 
     // Remover duplicatas
-    const uniqueStudentIds = [...new Set(allStudentIds)];
+    const uniqueStudentIds = Array.from(new Set(allStudentIds));
 
     if (uniqueStudentIds.length === 0) {
       return [];
@@ -249,7 +249,7 @@ export class DatabaseStorage implements IStorage {
       .update(students)
       .set({ isActive: false })
       .where(eq(students.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount || 0) > 0;
   }
 
   // Company operations
@@ -284,7 +284,7 @@ export class DatabaseStorage implements IStorage {
       .update(companies)
       .set({ isActive: false })
       .where(eq(companies.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount || 0) > 0;
   }
 
   // Internship operations
@@ -324,7 +324,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteInternship(id: string): Promise<boolean> {
     const result = await db.delete(internships).where(eq(internships.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount || 0) > 0;
   }
 
   // Mandatory Internship operations
@@ -364,7 +364,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteMandatoryInternship(id: string): Promise<boolean> {
     const result = await db.delete(mandatoryInternships).where(eq(mandatoryInternships.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount || 0) > 0;
   }
 
   // Non-Mandatory Internship operations
@@ -404,7 +404,50 @@ export class DatabaseStorage implements IStorage {
 
   async deleteNonMandatoryInternship(id: string): Promise<boolean> {
     const result = await db.delete(nonMandatoryInternships).where(eq(nonMandatoryInternships.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Alert operations
+  async getAlert(id: string): Promise<InternshipAlert | undefined> {
+    const [alert] = await db.select().from(internshipAlerts).where(eq(internshipAlerts.id, id));
+    return alert || undefined;
+  }
+
+  async getAllAlerts(): Promise<InternshipAlert[]> {
+    return await db.select().from(internshipAlerts).where(eq(internshipAlerts.isActive, true));
+  }
+
+  async getAlertsByUser(userId: string): Promise<InternshipAlert[]> {
+    const alerts = await db.select().from(internshipAlerts).where(eq(internshipAlerts.isActive, true));
+    return alerts.filter(alert => {
+      const targetUsers = JSON.parse(alert.targetUsers || '[]');
+      return targetUsers.includes(userId);
+    });
+  }
+
+  async createAlert(insertAlert: InsertInternshipAlert): Promise<InternshipAlert> {
+    const [alert] = await db
+      .insert(internshipAlerts)
+      .values(insertAlert)
+      .returning();
+    return alert;
+  }
+
+  async updateAlert(id: string, alertUpdate: Partial<InsertInternshipAlert>): Promise<InternshipAlert | undefined> {
+    const [alert] = await db
+      .update(internshipAlerts)
+      .set({ ...alertUpdate, updatedAt: new Date() })
+      .where(eq(internshipAlerts.id, id))
+      .returning();
+    return alert || undefined;
+  }
+
+  async deleteAlert(id: string): Promise<boolean> {
+    const result = await db
+      .update(internshipAlerts)
+      .set({ isActive: false })
+      .where(eq(internshipAlerts.id, id));
+    return (result.rowCount || 0) > 0;
   }
 
   // Métodos específicos para controle de estágio obrigatório
@@ -466,7 +509,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteDocument(id: string): Promise<boolean> {
     const result = await db.delete(internshipDocuments).where(eq(internshipDocuments.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount || 0) > 0;
   }
 }
 

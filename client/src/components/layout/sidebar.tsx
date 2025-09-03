@@ -16,7 +16,8 @@ import {
   Shield,
   Archive,
   LogOut,
-  UserCog
+  UserCog,
+  Bell
 } from "lucide-react";
 import ufvjmLogo from "@assets/ufvjm_1756831174700.png";
 
@@ -45,11 +46,11 @@ export function Sidebar({ user }: SidebarProps) {
       professorAccess: true,
     },
     {
-      title: "Controle de Alertas",
+      title: "Central de Alertas",
       href: "/alerts",
-      icon: Shield,
+      icon: Bell,
       adminOnly: false,
-      professorAccess: false,
+      professorAccess: true,
     },
     {
       title: "Estudantes",

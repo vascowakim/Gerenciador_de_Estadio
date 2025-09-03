@@ -1,7 +1,8 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertUserSchema, insertAdvisorSchema, insertStudentSchema, insertCompanySchema, insertInternshipSchema, insertMandatoryInternshipSchema, insertNonMandatoryInternshipSchema, insertInternshipDocumentSchema } from "@shared/schema";
+import { insertUserSchema, insertAdvisorSchema, insertStudentSchema, insertCompanySchema, insertInternshipSchema, insertMandatoryInternshipSchema, insertNonMandatoryInternshipSchema, insertInternshipDocumentSchema, insertInternshipAlertSchema } from "@shared/schema";
+import { alertService } from "./alertService";
 import bcrypt from "bcrypt";
 import session from "express-session";
 import {
@@ -819,6 +820,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting document:", error);
       res.status(500).json({ message: "Erro ao excluir documento" });
+    }
+  });
+
+  // Alert routes
+  app.get("/api/alerts", requireAuth, async (req: any, res) => {
+    try {
+      let alerts;
+      if (req.session.user.role === "administrator") {
+        alerts = await alertService.getActiveAlerts();
+      } else {
+        // Professors can only see alerts directed to them
+        alerts = await alertService.getActiveAlerts(req.session.user.id);
+      }
+      res.json(alerts);
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao buscar alertas" });
+    }
+  });
+
+  app.post("/api/alerts/:id/read", requireAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      await alertService.markAlertAsRead(id, req.session.user.id);
+      res.json({ message: "Alerta marcado como lido" });
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao marcar alerta como lido" });
+    }
+  });
+
+  app.post("/api/alerts/:id/dismiss", requireAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      await alertService.dismissAlert(id, req.session.user.id);
+      res.json({ message: "Alerta dispensado" });
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao dispensar alerta" });
+    }
+  });
+
+  app.post("/api/alerts/check", requireAuth, async (req: any, res) => {
+    try {
+      // Apenas administradores podem executar verificação manual
+      if (req.session.user.role !== "administrator") {
+        return res.status(403).json({ message: "Acesso negado" });
+      }
+      
+      const result = await alertService.runManualCheck();
+      res.json(result);
+    } catch (error) {
+      console.error("Erro na verificação de alertas:", error);
+      res.status(500).json({ message: "Erro ao executar verificação de alertas" });
     }
   });
 

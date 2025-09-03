@@ -12,6 +12,7 @@ import Companies from "@/pages/companies";
 import Internships from "@/pages/internships";
 import MandatoryInternships from "@/pages/mandatory-internships";
 import MandatoryInternshipControl from "@/pages/mandatory-internship-control";
+import AlertsPage from "@/pages/alerts";
 import NonMandatoryInternships from "@/pages/non-mandatory-internships";
 import NotFound from "@/pages/not-found";
 
@@ -57,6 +58,11 @@ function Router() {
       <Route path="/non-mandatory-internships">
         <MainLayout>
           <NonMandatoryInternships />
+        </MainLayout>
+      </Route>
+      <Route path="/alerts">
+        <MainLayout>
+          <AlertsPage />
         </MainLayout>
       </Route>
       <Route component={NotFound} />
