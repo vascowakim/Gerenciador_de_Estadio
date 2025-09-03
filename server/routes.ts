@@ -32,10 +32,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     resave: false,
     saveUninitialized: true, // Permitir criação de sessão para iframes
     cookie: { 
-      secure: false, // Set to true in production with HTTPS
+      secure: process.env.NODE_ENV === 'production', // True em produção com HTTPS
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      sameSite: false, // Disable SameSite for iframe compatibility
-      httpOnly: true
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : false, // 'none' em produção para iframe
+      httpOnly: false, // Permitir acesso via JavaScript para compatibilidade
+      domain: undefined // Não forçar domínio - deixar automático
     },
     name: 'connect.sid' // Nome padrão
   }));
@@ -112,10 +113,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Health check route para produção
+  app.get("/api/health", (req, res) => {
+    res.json({
+      status: "ok",
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'development',
+      domain: req.get('host'),
+      userAgent: req.get('user-agent'),
+      origin: req.get('origin')
+    });
+  });
+
   // Auth routes
   app.post("/api/auth/login", async (req, res) => {
     try {
       const { username, password } = req.body;
+      
+      console.log(`🔐 Tentativa de login para: ${username} de IP: ${req.ip}`);
       
       if (!username || !password) {
         return res.status(400).json({ message: "Usuário e senha são obrigatórios" });
@@ -123,11 +138,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const user = await storage.getUserByUsername(username);
       if (!user) {
+        console.log(`❌ Usuário não encontrado: ${username}`);
         return res.status(401).json({ message: "Credenciais inválidas" });
       }
 
       const isValidPassword = await bcrypt.compare(password, user.password);
       if (!isValidPassword) {
+        console.log(`❌ Senha incorreta para usuário: ${username}`);
         return res.status(401).json({ message: "Credenciais inválidas" });
       }
 
@@ -139,6 +156,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         role: user.role
       };
 
+      // Configurar sessão
       req.session.user = userData;
 
       // Gerar JWT token para compatibilidade com iframes
@@ -146,7 +164,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         expiresIn: '24h'
       });
       
-      console.log('🔑 JWT token gerado para iframe:', userData.username);
+      console.log(`✅ Login realizado com sucesso: ${userData.username} (${userData.role})`);
 
       res.json({ 
         user: userData,
@@ -154,7 +172,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: "Login realizado com sucesso"
       });
     } catch (error) {
-      console.error("Login error:", error);
+      const errorMessage = error instanceof Error ? error.message : 'Erro interno do servidor';
+      console.error("Login error:", errorMessage);
       res.status(500).json({ message: "Erro interno do servidor" });
     }
   });
