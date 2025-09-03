@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, Search, Edit2, GraduationCap, Eye } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Edit2, GraduationCap, Eye, Settings } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertMandatoryInternshipSchema, type MandatoryInternship, type Student, type Advisor, type Company } from "@shared/schema";
@@ -24,6 +24,9 @@ export default function MandatoryInternships() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingInternship, setEditingInternship] = useState<MandatoryInternship | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [isManagementDialogOpen, setIsManagementDialogOpen] = useState(false);
+  const [managingInternship, setManagingInternship] = useState<MandatoryInternship | null>(null);
+  const [partialWorkload, setPartialWorkload] = useState(0);
 
   const form = useForm({
     resolver: zodResolver(insertMandatoryInternshipSchema),
@@ -71,17 +74,17 @@ export default function MandatoryInternships() {
   });
 
   // Fetch students, advisors, and companies for form
-  const { data: students } = useQuery({
+  const { data: students = [] } = useQuery<Student[]>({
     queryKey: ["/api/students"],
     enabled: !!user,
   });
 
-  const { data: advisors } = useQuery({
+  const { data: advisors = [] } = useQuery<Advisor[]>({
     queryKey: ["/api/advisors"],
     enabled: !!user,
   });
 
-  const { data: companies } = useQuery({
+  const { data: companies = [] } = useQuery<Company[]>({
     queryKey: ["/api/companies"],
     enabled: !!user,
   });
@@ -149,6 +152,28 @@ export default function MandatoryInternships() {
     },
   });
 
+  // Update workload mutation
+  const updateWorkloadMutation = useMutation({
+    mutationFn: ({ id, partialWorkload, notes }: { id: string; partialWorkload: number; notes?: string }) => 
+      apiRequest("PUT", `/api/mandatory-internships/${id}/workload`, { partialWorkload, notes }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/mandatory-internships"] });
+      setIsManagementDialogOpen(false);
+      setManagingInternship(null);
+      toast({
+        title: "Sucesso",
+        description: "Carga horária atualizada com sucesso!",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar carga horária",
+        variant: "destructive",
+      });
+    },
+  });
+
   if (authLoading) {
     return <div>Carregando...</div>;
   }
@@ -169,8 +194,8 @@ export default function MandatoryInternships() {
     setEditingInternship(internship);
     form.reset({
       ...internship,
-      startDate: internship.startDate ? new Date(internship.startDate) : undefined,
-      endDate: internship.endDate ? new Date(internship.endDate) : undefined,
+      startDate: internship.startDate ? new Date(internship.startDate).toISOString().split('T')[0] : "",
+      endDate: internship.endDate ? new Date(internship.endDate).toISOString().split('T')[0] : "",
     });
     setIsDialogOpen(true);
   };
@@ -178,6 +203,21 @@ export default function MandatoryInternships() {
   const handleDelete = (id: string) => {
     if (confirm("Tem certeza que deseja excluir este estágio obrigatório?")) {
       deleteMutation.mutate(id);
+    }
+  };
+
+  const handleManage = (internship: MandatoryInternship) => {
+    setManagingInternship(internship);
+    setPartialWorkload(internship.partialWorkload || 0);
+    setIsManagementDialogOpen(true);
+  };
+
+  const handleSaveWorkload = () => {
+    if (managingInternship) {
+      updateWorkloadMutation.mutate({ 
+        id: managingInternship.id, 
+        partialWorkload 
+      });
     }
   };
 
@@ -489,6 +529,117 @@ export default function MandatoryInternships() {
             </Form>
           </DialogContent>
         </Dialog>
+
+        {/* Management Dialog */}
+        <Dialog open={isManagementDialogOpen} onOpenChange={setIsManagementDialogOpen}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Gestão do Estágio Obrigatório</DialogTitle>
+              <DialogDescription>
+                Visualize todos os dados do estágio e controle a carga horária
+              </DialogDescription>
+            </DialogHeader>
+            {managingInternship && (
+              <div className="space-y-6">
+                {/* Dados do Estágio */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-lg mb-4">Dados do Estágio</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700">Estudante</Label>
+                      <p className="mt-1 text-sm">{getStudentName(managingInternship.studentId)}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700">Orientador</Label>
+                      <p className="mt-1 text-sm">{getAdvisorName(managingInternship.advisorId)}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700">Empresa</Label>
+                      <p className="mt-1 text-sm">{getCompanyName(managingInternship.companyId)}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700">Supervisor</Label>
+                      <p className="mt-1 text-sm">{managingInternship.supervisor || "-"}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700">CRC</Label>
+                      <p className="mt-1 text-sm">{managingInternship.crc || "-"}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700">Status</Label>
+                      <p className="mt-1 text-sm">
+                        {managingInternship.status === "approved" ? "Aprovado" :
+                         managingInternship.status === "completed" ? "Concluído" :
+                         managingInternship.status === "rejected" ? "Rejeitado" :
+                         "Pendente"}
+                      </p>
+                    </div>
+                    {managingInternship.startDate && (
+                      <div>
+                        <Label className="text-sm font-medium text-gray-700">Data de Início</Label>
+                        <p className="mt-1 text-sm">{format(new Date(managingInternship.startDate), "dd/MM/yyyy")}</p>
+                      </div>
+                    )}
+                    {managingInternship.endDate && (
+                      <div>
+                        <Label className="text-sm font-medium text-gray-700">Data de Término</Label>
+                        <p className="mt-1 text-sm">{format(new Date(managingInternship.endDate), "dd/MM/yyyy")}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Controle de Carga Horária */}
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-lg mb-4">Controle de Carga Horária</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700">CH Total</Label>
+                      <p className="mt-1 text-lg font-semibold text-blue-600">{managingInternship.workload || "390"} horas</p>
+                    </div>
+                    <div>
+                      <Label htmlFor="partialWorkload" className="text-sm font-medium text-gray-700">CH Parcial</Label>
+                      <Input
+                        id="partialWorkload"
+                        type="number"
+                        value={partialWorkload}
+                        onChange={(e) => setPartialWorkload(Number(e.target.value))}
+                        className="mt-1"
+                        min="0"
+                        max={Number(managingInternship.workload) || 390}
+                        data-testid="input-partial-workload"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700">CH Restante</Label>
+                      <p className="mt-1 text-lg font-semibold text-orange-600">
+                        {(Number(managingInternship.workload) || 390) - partialWorkload} horas
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Ações */}
+                <div className="flex justify-end space-x-2 pt-4">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => setIsManagementDialogOpen(false)}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button 
+                    onClick={handleSaveWorkload}
+                    disabled={updateWorkloadMutation.isPending}
+                    data-testid="button-save-workload"
+                  >
+                    {updateWorkloadMutation.isPending ? "Salvando..." : "Salvar Carga Horária"}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Table */}
@@ -549,6 +700,14 @@ export default function MandatoryInternships() {
                             <Eye className="h-4 w-4" />
                           </Button>
                         </Link>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleManage(internship)}
+                          data-testid={`button-manage-${internship.id}`}
+                        >
+                          <Settings className="h-4 w-4" />
+                        </Button>
                         <Button
                           variant="outline"
                           size="sm"
