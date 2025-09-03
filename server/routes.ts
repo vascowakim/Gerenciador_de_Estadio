@@ -275,11 +275,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/students", requireAuth, async (req, res) => {
     try {
+      console.log("Dados recebidos para estudante:", req.body);
       const studentData = insertStudentSchema.parse(req.body);
+      console.log("Dados validados:", studentData);
       const student = await storage.createStudent(studentData);
       res.json(student);
     } catch (error) {
-      res.status(400).json({ message: "Dados inválidos" });
+      console.error("Erro na validação do estudante:", error);
+      if (error instanceof Error) {
+        console.error("Detalhes do erro:", error.message);
+      }
+      res.status(400).json({ message: "Dados inválidos", error: error instanceof Error ? error.message : "Erro desconhecido" });
     }
   });
 
