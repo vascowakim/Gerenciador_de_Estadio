@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ObjectUploader } from "./ObjectUploader";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -10,7 +9,6 @@ import { Upload, Eye, Trash2, CheckCircle, Clock, XCircle, AlertCircle } from "l
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { InternshipDocument } from "@shared/schema";
-import type { UploadResult } from "@uppy/core";
 
 interface DocumentUploadProps {
   internshipId: string;
@@ -122,7 +120,7 @@ export default function DocumentUpload({
     };
   };
 
-  const handleUploadComplete = (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
+  const handleUploadComplete = (result: any) => {
     if (result.successful.length > 0 && selectedDocumentType) {
       const file = result.successful[0];
       const documentData = {
@@ -207,19 +205,61 @@ export default function DocumentUpload({
               </div>
 
               {selectedDocumentType && (
-                <ObjectUploader
-                  maxNumberOfFiles={1}
-                  maxFileSize={10485760} // 10MB
-                  allowedFileTypes={[".pdf", ".doc", ".docx", ".jpg", ".jpeg", ".png"]}
-                  onGetUploadParameters={handleGetUploadParameters}
-                  onComplete={handleUploadComplete}
-                  buttonClassName="w-full"
-                >
-                  <div className="flex items-center justify-center space-x-2">
-                    <Upload className="h-4 w-4" />
-                    <span>Selecionar e Enviar Arquivo</span>
-                  </div>
-                </ObjectUploader>
+                <div className="space-y-2">
+                  <input
+                    type="file"
+                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        try {
+                          // Obter URL de upload
+                          const uploadParams = await handleGetUploadParameters();
+                          
+                          // Upload do arquivo
+                          const uploadResponse = await fetch(uploadParams.url, {
+                            method: uploadParams.method,
+                            body: file,
+                            headers: {
+                              'Content-Type': file.type,
+                            },
+                          });
+
+                          if (uploadResponse.ok) {
+                            // Simular resultado do Uppy para compatibilidade
+                            const result = {
+                              successful: [{
+                                name: file.name,
+                                size: file.size,
+                                type: file.type,
+                                uploadURL: uploadParams.url.split('?')[0], // Remove query params
+                              }],
+                              failed: []
+                            };
+                            handleUploadComplete(result as any);
+                          } else {
+                            toast({
+                              title: "Erro",
+                              description: "Erro ao enviar arquivo. Tente novamente.",
+                              variant: "destructive",
+                            });
+                          }
+                        } catch (error) {
+                          toast({
+                            title: "Erro",
+                            description: "Erro ao enviar arquivo. Tente novamente.",
+                            variant: "destructive",
+                          });
+                        }
+                      }
+                    }}
+                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    data-testid="input-file-upload"
+                  />
+                  <p className="text-xs text-gray-500">
+                    Formatos aceitos: PDF, DOC, DOCX, JPG, JPEG, PNG (máx. 10MB)
+                  </p>
+                </div>
               )}
             </div>
           </CardContent>
