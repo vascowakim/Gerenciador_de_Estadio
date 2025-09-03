@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Pencil, Trash2, Search, Edit2, GraduationCap, Eye, Settings } from "lucide-react";
 import { useForm } from "react-hook-form";
@@ -27,6 +28,10 @@ export default function MandatoryInternships() {
   const [isManagementDialogOpen, setIsManagementDialogOpen] = useState(false);
   const [managingInternship, setManagingInternship] = useState<MandatoryInternship | null>(null);
   const [partialWorkload, setPartialWorkload] = useState(0);
+  const [reports, setReports] = useState({
+    r1: false, r2: false, r3: false, r4: false, r5: false,
+    r6: false, r7: false, r8: false, r9: false, r10: false
+  });
 
   const form = useForm({
     resolver: zodResolver(insertMandatoryInternshipSchema),
@@ -209,6 +214,18 @@ export default function MandatoryInternships() {
   const handleManage = (internship: MandatoryInternship) => {
     setManagingInternship(internship);
     setPartialWorkload(internship.partialWorkload || 0);
+    setReports({
+      r1: internship.r1 || false,
+      r2: internship.r2 || false,
+      r3: internship.r3 || false,
+      r4: internship.r4 || false,
+      r5: internship.r5 || false,
+      r6: internship.r6 || false,
+      r7: internship.r7 || false,
+      r8: internship.r8 || false,
+      r9: internship.r9 || false,
+      r10: internship.r10 || false,
+    });
     setIsManagementDialogOpen(true);
   };
 
@@ -219,6 +236,22 @@ export default function MandatoryInternships() {
         partialWorkload 
       });
     }
+  };
+
+  const handleSaveReports = () => {
+    if (managingInternship) {
+      updateMutation.mutate({
+        id: managingInternship.id,
+        data: reports
+      });
+    }
+  };
+
+  const handleReportChange = (reportNumber: number, checked: boolean) => {
+    setReports(prev => ({
+      ...prev,
+      [`r${reportNumber}`]: checked
+    }));
   };
 
   const getStudentName = (studentId: string) => {
@@ -616,6 +649,51 @@ export default function MandatoryInternships() {
                         {(Number(managingInternship.workload) || 390) - partialWorkload} horas
                       </p>
                     </div>
+                  </div>
+                </div>
+
+                {/* Controle de Relatórios */}
+                <div className="bg-green-50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-lg mb-4">Controle de Relatórios</h3>
+                  <div className="grid grid-cols-5 gap-4">
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => {
+                      const reportKey = `r${num}` as keyof typeof reports;
+                      const isChecked = reports[reportKey];
+                      
+                      return (
+                        <div key={num} className="flex flex-col items-center space-y-2">
+                          <Label className="text-sm font-medium text-gray-700">R{num}</Label>
+                          <div className="flex items-center justify-center w-12 h-12 border-2 rounded-lg transition-colors">
+                            {isChecked ? (
+                              <Checkbox
+                                checked={true}
+                                onCheckedChange={(checked) => handleReportChange(num, checked as boolean)}
+                                className="w-6 h-6"
+                                data-testid={`checkbox-report-${num}`}
+                              />
+                            ) : (
+                              <div 
+                                className="w-8 h-8 border-2 border-red-300 rounded flex items-center justify-center cursor-pointer hover:border-red-400 transition-colors"
+                                onClick={() => handleReportChange(num, true)}
+                                data-testid={`missing-report-${num}`}
+                              >
+                                <span className="text-red-500 font-bold text-lg">✗</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="mt-4 flex justify-end">
+                    <Button 
+                      onClick={handleSaveReports}
+                      disabled={updateMutation.isPending}
+                      variant="outline"
+                      data-testid="button-save-reports"
+                    >
+                      {updateMutation.isPending ? "Salvando..." : "Salvar Relatórios"}
+                    </Button>
                   </div>
                 </div>
 
