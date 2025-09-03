@@ -53,13 +53,19 @@ export default function Dashboard() {
       {/* Welcome Section */}
       <div className="text-center mb-8">
         <h2 className="text-2xl font-bold text-blue-600 mb-2">
-          📝 Bem-vindo, Administrador!
+          {user.role === "professor" ? 
+            `👨‍🏫 Bem-vindo Prof(a) ${user.name}!` : 
+            "📝 Bem-vindo, Administrador!"
+          }
         </h2>
         <p className="text-gray-600 mb-1">
-          Você tem acesso completo ao sistema como Administrador
+          {user.role === "professor" ? 
+            "Você tem acesso aos módulos de estágio e certificados" :
+            "Você tem acesso completo ao sistema como Administrador"
+          }
         </p>
         <p className="text-sm text-gray-500">
-          ou Centro de Ciências Contábeis - UFVJM
+          Centro de Ciências Contábeis - UFVJM
         </p>
       </div>
 

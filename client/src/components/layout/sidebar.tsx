@@ -42,72 +42,89 @@ export function Sidebar({ user }: SidebarProps) {
       href: "/dashboard",
       icon: Home,
       adminOnly: false,
+      professorAccess: true,
     },
     {
       title: "Controle de Alertas",
       href: "/alerts",
       icon: Shield,
       adminOnly: false,
+      professorAccess: false,
     },
     {
       title: "Estudantes",
       href: "/students",
       icon: GraduationCap,
       adminOnly: false,
+      professorAccess: false,
     },
     {
       title: "Empresas",
       href: "/companies",
       icon: Building2,
       adminOnly: false,
+      professorAccess: false,
     },
     {
       title: "Estagio Obrigatorio",
       href: "/mandatory-internships",
       icon: BookOpen,
       adminOnly: false,
+      professorAccess: true,
     },
     {
       title: "Estagio Nao Obrigatorio",
       href: "/non-mandatory-internships",
       icon: FileText,
       adminOnly: false,
+      professorAccess: true,
     },
     {
       title: "Orientadores",
       href: "/advisors",
       icon: UserCheck,
       adminOnly: false,
+      professorAccess: false,
     },
     {
       title: "Certificados",
       href: "/certificates",
       icon: FileSpreadsheet,
       adminOnly: false,
+      professorAccess: true,
     },
     {
       title: "Relatorios",
       href: "/reports",
       icon: BarChart3,
       adminOnly: false,
+      professorAccess: false,
     },
     {
       title: "Configuracoes",
       href: "/settings",
       icon: Settings,
       adminOnly: true,
+      professorAccess: false,
     },
     {
       title: "Backup",
       href: "/backup",
       icon: Archive,
       adminOnly: true,
+      professorAccess: false,
     },
   ];
 
-  const filteredItems = navigationItems.filter(item => 
-    !item.adminOnly || user?.role === "administrator"
-  );
+  const filteredItems = navigationItems.filter(item => {
+    if (user?.role === "administrator") {
+      return true; // Administradores veem tudo
+    }
+    if (user?.role === "professor") {
+      return item.professorAccess; // Professores só veem itens permitidos
+    }
+    return false;
+  });
 
   return (
     <div className="w-64 bg-blue-600 text-white h-full">
