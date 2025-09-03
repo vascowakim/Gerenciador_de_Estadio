@@ -109,6 +109,13 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Beta Version Note */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
+        <p className="text-sm text-blue-700 text-center">
+          🚀 <strong>Versão Beta</strong> - Desenvolvida pelo Prof. Vasconcelos Wakim do DCCO, SIAPE 1717044
+        </p>
+      </div>
+
     </div>
   );
 }
