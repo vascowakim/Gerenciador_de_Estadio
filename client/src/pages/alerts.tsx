@@ -91,14 +91,32 @@ export default function AlertsPage() {
   const sendWhatsAppMutation = useMutation({
     mutationFn: async ({ alertId, recipient }: { alertId: string; recipient: 'student' | 'advisor' | 'both' }) => {
       const response = await apiRequest(`/api/alerts/${alertId}/send-whatsapp`, "POST", { recipient });
-      return response as { message: string; sent: string[] };
+      return response as { message: string; sent: string[]; links?: { type: string; name: string; phone: string; url: string }[] };
     },
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["/api/alerts"] });
-      toast({
-        title: "WhatsApp Enviado",
-        description: `${result.message}. Enviado para: ${result.sent.join(', ')}`,
-      });
+      
+      // Abrir WhatsApp automaticamente para cada link gerado
+      if (result.links && result.links.length > 0) {
+        result.links.forEach((link, index) => {
+          // Abrir cada link com um pequeno delay para não sobrecarregar
+          setTimeout(() => {
+            window.open(link.url, '_blank');
+          }, index * 500); // 500ms de delay entre cada link
+        });
+        
+        toast({
+          title: "✅ WhatsApp Aberto!",
+          description: `${result.links.length} conversa(s) abertas no WhatsApp. Envie as mensagens!`,
+          variant: "default",
+        });
+      } else {
+        toast({
+          title: "⚠️ Nenhum WhatsApp Aberto",
+          description: "Verifique se os telefones estão cadastrados corretamente.",
+          variant: "destructive",
+        });
+      }
     },
     onError: (error: any) => {
       toast({
