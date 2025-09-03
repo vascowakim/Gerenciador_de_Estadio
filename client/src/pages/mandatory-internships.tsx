@@ -18,6 +18,8 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation, Link } from "wouter";
 import { format } from "date-fns";
+import { ObjectUploader } from "@/components/ObjectUploader";
+import type { UploadResult } from "@uppy/core";
 
 export default function MandatoryInternships() {
   const [, setLocation] = useLocation();
@@ -179,6 +181,26 @@ export default function MandatoryInternships() {
     },
   });
 
+  // Upload report mutation
+  const uploadReportMutation = useMutation({
+    mutationFn: ({ internshipId, reportNumber, fileUrl }: { internshipId: string; reportNumber: number; fileUrl: string }) => 
+      apiRequest("POST", `/api/mandatory-internships/${internshipId}/reports/${reportNumber}/upload`, { fileUrl }),
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/mandatory-internships"] });
+      toast({
+        title: "Sucesso",
+        description: `Relatório R${variables.reportNumber} enviado com sucesso!`,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erro",
+        description: "Erro ao enviar relatório",
+        variant: "destructive",
+      });
+    },
+  });
+
   if (authLoading) {
     return <div>Carregando...</div>;
   }
@@ -252,6 +274,28 @@ export default function MandatoryInternships() {
       ...prev,
       [`r${reportNumber}`]: checked
     }));
+  };
+
+  // Upload handlers
+  const handleGetUploadParameters = async () => {
+    const response = await apiRequest("POST", "/api/objects/upload");
+    return {
+      method: "PUT" as const,
+      url: response.uploadURL,
+    };
+  };
+
+  const handleUploadComplete = (reportNumber: number) => async (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
+    if (result.successful && result.successful[0] && managingInternship) {
+      const uploadURL = result.successful[0].uploadURL;
+      if (uploadURL) {
+        uploadReportMutation.mutate({
+          internshipId: managingInternship.id,
+          reportNumber,
+          fileUrl: uploadURL
+        });
+      }
+    }
   };
 
   const getStudentName = (studentId: string) => {
@@ -727,23 +771,35 @@ export default function MandatoryInternships() {
                       return (
                         <div key={num} className="flex flex-col items-center space-y-2">
                           <Label className="text-sm font-medium text-gray-700">R{num}</Label>
-                          <div className="flex items-center justify-center w-12 h-12 border-2 rounded-lg transition-colors">
-                            {isChecked ? (
-                              <Checkbox
-                                checked={true}
-                                onCheckedChange={(checked) => handleReportChange(num, checked as boolean)}
-                                className="w-6 h-6"
-                                data-testid={`checkbox-report-${num}`}
-                              />
-                            ) : (
-                              <div 
-                                className="w-8 h-8 border-2 border-red-300 rounded flex items-center justify-center cursor-pointer hover:border-red-400 transition-colors"
-                                onClick={() => handleReportChange(num, true)}
-                                data-testid={`missing-report-${num}`}
-                              >
-                                <span className="text-red-500 font-bold text-lg">✗</span>
-                              </div>
-                            )}
+                          <div className="flex flex-col items-center space-y-2">
+                            <div className="flex items-center justify-center w-12 h-12 border-2 rounded-lg transition-colors">
+                              {isChecked ? (
+                                <Checkbox
+                                  checked={true}
+                                  onCheckedChange={(checked) => handleReportChange(num, checked as boolean)}
+                                  className="w-6 h-6"
+                                  data-testid={`checkbox-report-${num}`}
+                                />
+                              ) : (
+                                <div 
+                                  className="w-8 h-8 border-2 border-red-300 rounded flex items-center justify-center cursor-pointer hover:border-red-400 transition-colors"
+                                  onClick={() => handleReportChange(num, true)}
+                                  data-testid={`missing-report-${num}`}
+                                >
+                                  <span className="text-red-500 font-bold text-lg">✗</span>
+                                </div>
+                              )}
+                            </div>
+                            <ObjectUploader
+                              maxNumberOfFiles={1}
+                              maxFileSize={10485760}
+                              onGetUploadParameters={handleGetUploadParameters}
+                              onComplete={handleUploadComplete(num)}
+                              buttonClassName="h-8 px-2 text-xs"
+                              allowedFileTypes={['.pdf', '.doc', '.docx']}
+                            >
+                              📁 Upload
+                            </ObjectUploader>
                           </div>
                         </div>
                       );

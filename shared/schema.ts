@@ -114,6 +114,17 @@ export const mandatoryInternships = pgTable("mandatory_internships", {
   r8: boolean("r8").default(false).notNull(),
   r9: boolean("r9").default(false).notNull(),
   r10: boolean("r10").default(false).notNull(),
+  // URLs dos relatórios
+  r1Url: text("r1_url"),
+  r2Url: text("r2_url"),
+  r3Url: text("r3_url"),
+  r4Url: text("r4_url"),
+  r5Url: text("r5_url"),
+  r6Url: text("r6_url"),
+  r7Url: text("r7_url"),
+  r8Url: text("r8_url"),
+  r9Url: text("r9_url"),
+  r10Url: text("r10_url"),
   // Campos de carga horária
   partialWorkload: integer("partial_workload").default(0),
   workloadNotes: text("workload_notes"),

@@ -668,6 +668,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ uploadURL });
   });
 
+  // Upload de relatório de estágio obrigatório
+  app.post("/api/mandatory-internships/:id/reports/:reportNumber/upload", requireAuth, async (req, res) => {
+    try {
+      const { id, reportNumber } = req.params;
+      const { fileUrl } = req.body;
+      const userId = req.session.user?.id;
+
+      if (!userId) {
+        return res.status(401).json({ message: "Usuário não autenticado" });
+      }
+
+      if (!fileUrl) {
+        return res.status(400).json({ message: "URL do arquivo é obrigatória" });
+      }
+
+      const reportNum = parseInt(reportNumber);
+      if (reportNum < 1 || reportNum > 10) {
+        return res.status(400).json({ message: "Número de relatório inválido" });
+      }
+
+      // Configurar ACL do objeto
+      const objectStorageService = new ObjectStorageService();
+      const normalizedPath = await objectStorageService.trySetObjectEntityAclPolicy(
+        fileUrl,
+        {
+          owner: userId,
+          visibility: "private",
+        },
+      );
+
+      // Atualizar o estágio com a URL e marcar como entregue
+      const reportUrlField = `r${reportNum}Url`;
+      const reportField = `r${reportNum}`;
+      
+      const updateData = {
+        [reportUrlField]: normalizedPath,
+        [reportField]: true,
+        updatedAt: new Date()
+      };
+
+      const updatedInternship = await storage.updateMandatoryInternship(id, updateData);
+      
+      if (!updatedInternship) {
+        return res.status(404).json({ message: "Estágio não encontrado" });
+      }
+
+      res.json({ 
+        message: "Relatório enviado com sucesso",
+        reportUrl: normalizedPath,
+        internship: updatedInternship
+      });
+    } catch (error) {
+      console.error("Erro ao fazer upload do relatório:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
   // Document management routes
   app.get("/api/documents", requireAuth, async (req, res) => {
     try {
