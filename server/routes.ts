@@ -17,13 +17,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(session({
     secret: process.env.SESSION_SECRET || 'your-secret-key',
     resave: false,
-    saveUninitialized: false,
+    saveUninitialized: true, // Permitir criação de sessão para iframes
     cookie: { 
       secure: false, // Set to true in production with HTTPS
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      sameSite: 'none', // Necessário para iframes cross-origin
+      sameSite: false, // Disable SameSite for iframe compatibility
       httpOnly: true
-    }
+    },
+    name: 'connect.sid' // Nome padrão
   }));
 
   // Authentication middleware - suporta sessão e JWT

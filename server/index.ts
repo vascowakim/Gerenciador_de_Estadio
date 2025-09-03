@@ -11,19 +11,28 @@ app.use(cors({
   origin: true, // Permite qualquer origem (necessário para Wix)
   credentials: true, // Permite cookies/sessões cross-origin
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'X-Requested-With'],
   exposedHeaders: ['Set-Cookie']
 }));
 
-// Headers para permitir iframe embedding
+// Headers para permitir iframe embedding e melhorar compatibilidade
 app.use((req, res, next) => {
   // Permitir iframe de qualquer origem (necessário para Wix)
   res.setHeader('X-Frame-Options', 'ALLOWALL');
   res.setHeader('Content-Security-Policy', 'frame-ancestors *');
   
-  // Headers para cookies cross-site
+  // Headers adicionais para melhor compatibilidade
+  res.setHeader('Cross-Origin-Embedder-Policy', 'unsafe-none');
+  res.setHeader('Cross-Origin-Opener-Policy', 'unsafe-none');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('SameSite', 'None');
+  
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cookie, X-Requested-With');
+    res.status(200).end();
+    return;
+  }
   
   next();
 });
