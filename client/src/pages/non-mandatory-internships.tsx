@@ -1,13 +1,15 @@
 import { useState } from "react";
-import { Plus, Edit2, Trash2, Search, CheckCircle, XCircle, Calendar, FileText, Users, Building } from "lucide-react";
+import { Plus, Edit2, Trash2, Search, CheckCircle, XCircle, Calendar, FileText, Users, Building, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { ObjectUploader } from "@/components/ObjectUploader";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -26,6 +28,12 @@ export default function NonMandatoryInternshipsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingInternship, setEditingInternship] = useState<NonMandatoryInternship | null>(null);
+  const [isManagementDialogOpen, setIsManagementDialogOpen] = useState(false);
+  const [managingInternship, setManagingInternship] = useState<NonMandatoryInternship | null>(null);
+  const [reports, setReports] = useState({
+    r1: false, r2: false, r3: false, r4: false, r5: false,
+    r6: false, r7: false, r8: false, r9: false, r10: false,
+  });
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -183,6 +191,39 @@ export default function NonMandatoryInternshipsPage() {
     if (window.confirm("Tem certeza que deseja excluir este estágio não obrigatório?")) {
       deleteMutation.mutate(id);
     }
+  };
+
+  const handleManage = (internship: NonMandatoryInternship) => {
+    setManagingInternship(internship);
+    setReports({
+      r1: internship.r1 || false,
+      r2: internship.r2 || false,
+      r3: internship.r3 || false,
+      r4: internship.r4 || false,
+      r5: internship.r5 || false,
+      r6: internship.r6 || false,
+      r7: internship.r7 || false,
+      r8: internship.r8 || false,
+      r9: internship.r9 || false,
+      r10: internship.r10 || false,
+    });
+    setIsManagementDialogOpen(true);
+  };
+
+  const handleSaveReports = () => {
+    if (managingInternship) {
+      updateMutation.mutate({
+        id: managingInternship.id,
+        data: { ...managingInternship, ...reports }
+      });
+    }
+  };
+
+  const handleReportChange = (reportNumber: number, checked: boolean) => {
+    setReports(prev => ({
+      ...prev,
+      [`r${reportNumber}`]: checked
+    }));
   };
 
   const handleOpenDialog = () => {
@@ -593,6 +634,14 @@ export default function NonMandatoryInternshipsPage() {
                     <Button
                       variant="outline"
                       size="sm"
+                      onClick={() => handleManage(internship)}
+                      data-testid={`button-manage-${internship.id}`}
+                    >
+                      <Settings className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => handleEdit(internship)}
                       data-testid={`button-edit-internship-${internship.id}`}
                     >
@@ -627,6 +676,135 @@ export default function NonMandatoryInternshipsPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Management Dialog */}
+      <Dialog open={isManagementDialogOpen} onOpenChange={setIsManagementDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Gestão do Estágio Não Obrigatório</DialogTitle>
+            <DialogDescription>
+              Visualize todos os dados do estágio e controle os relatórios
+            </DialogDescription>
+          </DialogHeader>
+          {managingInternship && (
+            <div className="space-y-6">
+              {/* Dados do Estágio */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-lg mb-4">Dados do Estágio</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700">Estudante</Label>
+                    <p className="mt-1 text-sm">{students.find(s => s.id === managingInternship.studentId)?.name || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700">Orientador</Label>
+                    <p className="mt-1 text-sm">{advisors.find(a => a.id === managingInternship.advisorId)?.name || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700">Empresa</Label>
+                    <p className="mt-1 text-sm">{companies.find(c => c.id === managingInternship.companyId)?.name || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700">Supervisor</Label>
+                    <p className="mt-1 text-sm">{managingInternship.supervisor || "-"}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700">CRC</Label>
+                    <p className="mt-1 text-sm">{managingInternship.crc || "-"}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700">Status</Label>
+                    <p className="mt-1 text-sm">
+                      {managingInternship.status === "approved" ? "Aprovado" :
+                       managingInternship.status === "completed" ? "Concluído" :
+                       managingInternship.status === "rejected" ? "Rejeitado" :
+                       "Ativo"}
+                    </p>
+                  </div>
+                  {managingInternship.startDate && (
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700">Data de Início</Label>
+                      <p className="mt-1 text-sm">{new Date(managingInternship.startDate).toLocaleDateString()}</p>
+                    </div>
+                  )}
+                  {managingInternship.endDate && (
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700">Data de Término</Label>
+                      <p className="mt-1 text-sm">{new Date(managingInternship.endDate).toLocaleDateString()}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Controle de Relatórios */}
+              <div className="bg-green-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-lg mb-4">Controle de Relatórios</h3>
+                <div className="grid grid-cols-5 gap-4">
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => {
+                    const reportKey = `r${num}` as keyof typeof reports;
+                    const isChecked = reports[reportKey];
+                    
+                    return (
+                      <div key={num} className="flex flex-col items-center space-y-2">
+                        <Label className="text-sm font-medium text-gray-700">R{num}</Label>
+                        <div className="flex flex-col items-center space-y-2">
+                          <div className="flex items-center justify-center w-12 h-12 border-2 rounded-lg transition-colors">
+                            {isChecked ? (
+                              <Checkbox
+                                checked={true}
+                                onCheckedChange={(checked) => handleReportChange(num, checked as boolean)}
+                                className="w-6 h-6"
+                                data-testid={`checkbox-report-${num}`}
+                              />
+                            ) : (
+                              <div 
+                                className="w-8 h-8 border-2 border-red-300 rounded flex items-center justify-center cursor-pointer hover:border-red-400 transition-colors"
+                                onClick={() => handleReportChange(num, true)}
+                                data-testid={`missing-report-${num}`}
+                              >
+                                <span className="text-red-500 font-bold text-lg">✗</span>
+                              </div>
+                            )}
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 px-2 text-xs"
+                            data-testid={`button-upload-r${num}`}
+                          >
+                            📁 Upload
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="mt-4 flex justify-end">
+                  <Button 
+                    onClick={handleSaveReports}
+                    disabled={updateMutation.isPending}
+                    variant="outline"
+                    data-testid="button-save-reports"
+                  >
+                    {updateMutation.isPending ? "Salvando..." : "Salvar Relatórios"}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Ações */}
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setIsManagementDialogOpen(false)}
+                >
+                  Cancelar
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
