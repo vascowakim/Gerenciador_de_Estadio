@@ -19,6 +19,8 @@ export const documentTypeEnum = pgEnum("document_type", [
   "other"
 ]);
 export const documentStatusEnum = pgEnum("document_status", ["pending", "approved", "rejected", "needs_revision"]);
+export const alertTypeEnum = pgEnum("alert_type", ["expiration_warning", "document_missing", "system_alert"]);
+export const alertStatusEnum = pgEnum("alert_status", ["pending", "sent", "read", "dismissed"]);
 
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -180,6 +182,25 @@ export const internshipDocuments = pgTable("internship_documents", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const internshipAlerts = pgTable("internship_alerts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  internshipId: varchar("internship_id").notNull(),
+  internshipType: internshipTypeEnum("internship_type").notNull(),
+  alertType: alertTypeEnum("alert_type").notNull(),
+  status: alertStatusEnum("status").default("pending").notNull(),
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  daysUntilExpiration: integer("days_until_expiration"),
+  targetUsers: text("target_users").notNull(), // JSON array of user IDs to notify
+  sentAt: timestamp("sent_at"),
+  readAt: timestamp("read_at"),
+  dismissedAt: timestamp("dismissed_at"),
+  whatsappMessageId: text("whatsapp_message_id"), // Para rastrear mensagens enviadas
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   uploadedDocuments: many(internshipDocuments, { relationName: "uploadedBy" }),
@@ -309,6 +330,12 @@ export const insertInternshipDocumentSchema = createInsertSchema(internshipDocum
   updatedAt: true,
 });
 
+export const insertInternshipAlertSchema = createInsertSchema(internshipAlerts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -333,3 +360,6 @@ export type InsertNonMandatoryInternship = z.infer<typeof insertNonMandatoryInte
 
 export type InternshipDocument = typeof internshipDocuments.$inferSelect;
 export type InsertInternshipDocument = z.infer<typeof insertInternshipDocumentSchema>;
+
+export type InternshipAlert = typeof internshipAlerts.$inferSelect;
+export type InsertInternshipAlert = z.infer<typeof insertInternshipAlertSchema>;

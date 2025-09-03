@@ -168,12 +168,12 @@ export default function MandatoryInternshipControl() {
     </div>;
   }
 
-  const student = students?.find((s: Student) => s.id === internship.studentId);
-  const advisor = advisors?.find((a: Advisor) => a.id === internship.advisorId);
-  const company = companies?.find((c: Company) => c.id === internship.companyId);
+  const student = (students as Student[] || []).find((s: Student) => s.id === (internship as MandatoryInternship).studentId);
+  const advisor = (advisors as Advisor[] || []).find((a: Advisor) => a.id === (internship as MandatoryInternship).advisorId);
+  const company = (companies as Company[] || []).find((c: Company) => c.id === (internship as MandatoryInternship).companyId);
 
   const totalWorkload = 390; // Default para estágio obrigatório
-  const partialWorkload = internship.partialWorkload || 0;
+  const partialWorkload = (internship as MandatoryInternship).partialWorkload || 0;
   const remainingWorkload = totalWorkload - partialWorkload;
 
   const onSubmitWorkload = (data: WorkloadForm) => {
@@ -197,7 +197,7 @@ export default function MandatoryInternshipControl() {
             <div>
               <h1 className="text-2xl font-bold">Controle de Estágio Obrigatório</h1>
               <p className="text-blue-100">
-                Estudante: {student?.name} - {internship.companyName}
+                Estudante: {student?.name} - {company?.name || 'N/A'}
               </p>
             </div>
           </div>
@@ -261,7 +261,7 @@ export default function MandatoryInternshipControl() {
               <div className="flex items-end space-x-4">
                 <FormField
                   control={workloadForm.control}
-                  name="hoursWorked"
+                  name="partialWorkload"
                   render={({ field }) => (
                     <FormItem className="flex-1">
                       <FormLabel>Horas Trabalhadas</FormLabel>
@@ -292,12 +292,12 @@ export default function MandatoryInternshipControl() {
       </Card>
 
       {/* Document Management Section */}
-      {internshipData && (
+      {internship && (
         <DocumentUpload
-          internshipId={internshipData.id}
+          internshipId={(internship as MandatoryInternship).id}
           internshipType="mandatory"
           canUpload={true}
-          canReview={user?.role === "administrator"}
+          canReview={(user as User)?.role === "administrator"}
         />
       )}
     </div>
