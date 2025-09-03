@@ -248,6 +248,98 @@ export class AlertService {
       alertsCreated
     };
   }
+
+  // Send WhatsApp for specific alert manually
+  async sendWhatsAppForAlert(alertId: string, recipient: 'student' | 'advisor' | 'both'): Promise<{ message: string; sent: string[] }> {
+    try {
+      // Buscar o alerta
+      const [alert] = await db.select().from(internshipAlerts).where(eq(internshipAlerts.id, alertId));
+      if (!alert) {
+        throw new Error('Alerta não encontrado');
+      }
+
+      // Buscar dados do estágio
+      let internship: any;
+      let student: any;
+      let advisor: any;
+
+      if (alert.internshipType === 'mandatory') {
+        [internship] = await db.select().from(mandatoryInternships).where(eq(mandatoryInternships.id, alert.internshipId));
+      } else {
+        [internship] = await db.select().from(nonMandatoryInternships).where(eq(nonMandatoryInternships.id, alert.internshipId));
+      }
+
+      if (!internship) {
+        throw new Error('Estágio não encontrado');
+      }
+
+      // Buscar estudante e orientador
+      [student] = await db.select().from(students).where(eq(students.id, internship.studentId));
+      [advisor] = await db.select().from(advisors).where(eq(advisors.id, internship.advisorId));
+
+      const sentTo: string[] = [];
+
+      // Enviar para estudante
+      if (recipient === 'student' || recipient === 'both') {
+        if (student?.phone) {
+          try {
+            await this.sendWhatsAppToStudent(alert, student);
+            sentTo.push(`Estudante: ${student.name}`);
+          } catch (error) {
+            console.error(`Erro ao enviar WhatsApp para estudante ${student.name}:`, error);
+          }
+        } else {
+          console.log(`Estudante ${student?.name} não possui telefone cadastrado`);
+        }
+      }
+
+      // Enviar para orientador
+      if (recipient === 'advisor' || recipient === 'both') {
+        if (advisor?.phone) {
+          try {
+            await this.sendWhatsAppNotification(alert, advisor, student);
+            sentTo.push(`Orientador: ${advisor.name}`);
+          } catch (error) {
+            console.error(`Erro ao enviar WhatsApp para orientador ${advisor.name}:`, error);
+          }
+        } else {
+          console.log(`Orientador ${advisor?.name} não possui telefone cadastrado`);
+        }
+      }
+
+      return {
+        message: sentTo.length > 0 ? 'WhatsApp enviado com sucesso' : 'Nenhum WhatsApp foi enviado (telefones não cadastrados)',
+        sent: sentTo
+      };
+
+    } catch (error) {
+      console.error('Erro ao enviar WhatsApp:', error);
+      throw error;
+    }
+  }
+
+  // Send WhatsApp to student
+  private async sendWhatsAppToStudent(alert: any, student: any): Promise<void> {
+    try {
+      // Formatar número de telefone para WhatsApp
+      let phoneNumber = student.phone.replace(/\D/g, '');
+      if (!phoneNumber.startsWith('55')) {
+        phoneNumber = '55' + phoneNumber;
+      }
+
+      const twilioClient = getTwilioClient();
+      const message = await twilioClient.messages.create({
+        from: `whatsapp:${process.env.TWILIO_PHONE_NUMBER}`,
+        to: `whatsapp:+${phoneNumber}`,
+        body: `🎓 *EstagioPro UFVJM*\n\n${alert.title}\n\n${alert.message}\n\nPor favor, entre em contato com seu orientador para esclarecimentos.`
+      });
+
+      console.log(`WhatsApp enviado para estudante ${student.name}: ${message.sid}`);
+    } catch (error) {
+      console.error(`Erro ao enviar WhatsApp para estudante ${student.name}:`, error);
+      throw error;
+    }
+  }
 }
 
 export const alertService = new AlertService();

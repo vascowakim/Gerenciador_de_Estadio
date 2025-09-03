@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
-import { Bell, Clock, AlertTriangle, CheckCircle2, X, RefreshCw } from "lucide-react";
+import { Bell, Clock, AlertTriangle, CheckCircle2, X, RefreshCw, MessageCircle, User, Users } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -83,6 +83,27 @@ export default function AlertsPage() {
       toast({
         title: "Erro",
         description: error.message || "Erro ao executar verificação",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const sendWhatsAppMutation = useMutation({
+    mutationFn: async ({ alertId, recipient }: { alertId: string; recipient: 'student' | 'advisor' | 'both' }) => {
+      const response = await apiRequest(`/api/alerts/${alertId}/send-whatsapp`, "POST", { recipient });
+      return response as { message: string; sent: string[] };
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/alerts"] });
+      toast({
+        title: "WhatsApp Enviado",
+        description: `${result.message}. Enviado para: ${result.sent.join(', ')}`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao enviar WhatsApp",
         variant: "destructive",
       });
     },
@@ -312,6 +333,61 @@ export default function AlertsPage() {
                     </p>
                   </div>
                 )}
+
+                {/* Seção de WhatsApp */}
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <h5 className="font-medium text-green-800 mb-3 flex items-center">
+                    <MessageCircle className="h-4 w-4 mr-2" />
+                    Enviar WhatsApp
+                  </h5>
+                  <div className="grid grid-cols-1 gap-2">
+                    <Button
+                      onClick={() => sendWhatsAppMutation.mutate({ alertId: selectedAlert.id, recipient: 'student' })}
+                      disabled={sendWhatsAppMutation.isPending}
+                      variant="outline"
+                      size="sm"
+                      className="bg-white hover:bg-green-50 border-green-300 text-green-700"
+                      data-testid="button-whatsapp-student"
+                    >
+                      {sendWhatsAppMutation.isPending ? (
+                        <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+                      ) : (
+                        <User className="h-4 w-4 mr-2" />
+                      )}
+                      Enviar para Estudante
+                    </Button>
+                    <Button
+                      onClick={() => sendWhatsAppMutation.mutate({ alertId: selectedAlert.id, recipient: 'advisor' })}
+                      disabled={sendWhatsAppMutation.isPending}
+                      variant="outline"
+                      size="sm"
+                      className="bg-white hover:bg-green-50 border-green-300 text-green-700"
+                      data-testid="button-whatsapp-advisor"
+                    >
+                      {sendWhatsAppMutation.isPending ? (
+                        <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+                      ) : (
+                        <User className="h-4 w-4 mr-2" />
+                      )}
+                      Enviar para Orientador
+                    </Button>
+                    <Button
+                      onClick={() => sendWhatsAppMutation.mutate({ alertId: selectedAlert.id, recipient: 'both' })}
+                      disabled={sendWhatsAppMutation.isPending}
+                      variant="outline"
+                      size="sm"
+                      className="bg-white hover:bg-green-50 border-green-300 text-green-700 font-medium"
+                      data-testid="button-whatsapp-both"
+                    >
+                      {sendWhatsAppMutation.isPending ? (
+                        <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+                      ) : (
+                        <Users className="h-4 w-4 mr-2" />
+                      )}
+                      Enviar para Ambos
+                    </Button>
+                  </div>
+                </div>
 
                 <div className="flex space-x-2 pt-4">
                   {selectedAlert.status !== "read" && (

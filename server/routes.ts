@@ -949,6 +949,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Send WhatsApp notification for specific alert
+  app.post("/api/alerts/:id/send-whatsapp", requireAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { recipient } = req.body; // 'student', 'advisor', or 'both'
+      
+      if (!recipient || !['student', 'advisor', 'both'].includes(recipient)) {
+        return res.status(400).json({ message: "Destinatário inválido. Use 'student', 'advisor' ou 'both'" });
+      }
+
+      const result = await alertService.sendWhatsAppForAlert(id, recipient);
+      res.json(result);
+    } catch (error) {
+      console.error("Error sending WhatsApp:", error);
+      res.status(500).json({ message: "Erro ao enviar WhatsApp" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
