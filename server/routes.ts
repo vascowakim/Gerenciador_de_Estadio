@@ -165,7 +165,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.substring(7);
       try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'jwt-secret') as any;
+        const decoded = jwt.verify(token, JWT_SECRET) as any;
         return res.json({ user: decoded });
       } catch (error) {
         return res.status(401).json({ message: "Token inválido" });
