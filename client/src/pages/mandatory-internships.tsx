@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, Search, Edit2, GraduationCap, Eye, Settings } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Edit2, GraduationCap, Eye, Settings, Calendar, CheckCircle, XCircle, FileText } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertMandatoryInternshipSchema, type MandatoryInternship, type Student, type Advisor, type Company } from "@shared/schema";
@@ -298,6 +298,70 @@ export default function MandatoryInternships() {
             <div className="text-blue-100">Total de Estágios</div>
           </div>
         </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <Calendar className="h-5 w-5 text-yellow-600" />
+              <div>
+                <p className="text-sm text-gray-600">Pendentes</p>
+                <p className="text-2xl font-bold text-yellow-600">
+                  {mandatoryInternships ? mandatoryInternships.filter((i: MandatoryInternship) => i.status === "pending").length : 0}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <CheckCircle className="h-5 w-5 text-green-600" />
+              <div>
+                <p className="text-sm text-gray-600">Aprovados</p>
+                <p className="text-2xl font-bold text-green-600">
+                  {mandatoryInternships ? mandatoryInternships.filter((i: MandatoryInternship) => i.status === "approved").length : 0}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <XCircle className="h-5 w-5 text-blue-600" />
+              <div>
+                <p className="text-sm text-gray-600">Concluídos</p>
+                <p className="text-2xl font-bold text-blue-600">
+                  {mandatoryInternships ? mandatoryInternships.filter((i: MandatoryInternship) => i.status === "completed").length : 0}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <FileText className="h-5 w-5 text-purple-600" />
+              <div>
+                <p className="text-sm text-gray-600">Relatórios Pendentes</p>
+                <p className="text-2xl font-bold text-purple-600">
+                  {mandatoryInternships ? 
+                    mandatoryInternships.reduce((acc: number, i: MandatoryInternship) => {
+                      const reports = [i.r1, i.r2, i.r3, i.r4, i.r5, i.r6, i.r7, i.r8, i.r9, i.r10];
+                      return acc + (10 - reports.filter(Boolean).length);
+                    }, 0) : 0
+                  }
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Search and Actions */}
