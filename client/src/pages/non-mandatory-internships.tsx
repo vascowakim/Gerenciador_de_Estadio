@@ -37,8 +37,9 @@ export default function NonMandatoryInternshipsPage() {
       companyId: "",
       supervisor: "",
       crc: "",
-      workload: "",
       status: "pending",
+      startDate: undefined,
+      endDate: undefined,
       r1: false,
       r2: false,
       r3: false,
@@ -456,20 +457,6 @@ export default function NonMandatoryInternshipsPage() {
                         <FormLabel>CRC</FormLabel>
                         <FormControl>
                           <Input placeholder="Número do CRC" {...field} value={field.value || ""} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="workload"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Carga Horária</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Ex: 20h/semana" {...field} value={field.value || ""} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
