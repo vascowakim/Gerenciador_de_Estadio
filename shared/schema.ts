@@ -41,7 +41,6 @@ export const advisors = pgTable("advisors", {
   cpf: text("cpf"),
   email: text("email").notNull().unique(),
   department: text("department").notNull(),
-  password: text("password"),
   isSystemAdmin: boolean("is_system_admin").default(false).notNull(),
   isInternshipCoordinator: boolean("is_internship_coordinator").default(false).notNull(),
   isActive: boolean("is_active").default(true).notNull(),
