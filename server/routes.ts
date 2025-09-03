@@ -275,17 +275,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/students", requireAuth, async (req, res) => {
     try {
-      console.log("Dados recebidos para estudante:", req.body);
       const studentData = insertStudentSchema.parse(req.body);
-      console.log("Dados validados:", studentData);
       const student = await storage.createStudent(studentData);
       res.json(student);
-    } catch (error) {
-      console.error("Erro na validação do estudante:", error);
-      if (error instanceof Error) {
-        console.error("Detalhes do erro:", error.message);
+    } catch (error: any) {
+      console.error("Erro ao criar estudante:", error);
+      
+      // Verificar se é erro de email duplicado
+      if (error?.code === '23505' && error?.constraint === 'students_email_unique') {
+        return res.status(400).json({ message: "Este email já está cadastrado para outro estudante" });
       }
-      res.status(400).json({ message: "Dados inválidos", error: error instanceof Error ? error.message : "Erro desconhecido" });
+      
+      // Verificar se é erro de matrícula duplicada
+      if (error?.code === '23505' && error?.constraint === 'students_registration_number_unique') {
+        return res.status(400).json({ message: "Este número de matrícula já está cadastrado" });
+      }
+      
+      // Outros erros de validação
+      res.status(400).json({ message: "Dados inválidos" });
     }
   });
 
@@ -298,7 +305,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Estudante não encontrado" });
       }
       res.json(student);
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Erro ao atualizar estudante:", error);
+      
+      // Verificar se é erro de email duplicado
+      if (error?.code === '23505' && error?.constraint === 'students_email_unique') {
+        return res.status(400).json({ message: "Este email já está cadastrado para outro estudante" });
+      }
+      
+      // Verificar se é erro de matrícula duplicada
+      if (error?.code === '23505' && error?.constraint === 'students_registration_number_unique') {
+        return res.status(400).json({ message: "Este número de matrícula já está cadastrado" });
+      }
+      
+      // Outros erros de validação
       res.status(400).json({ message: "Dados inválidos" });
     }
   });
