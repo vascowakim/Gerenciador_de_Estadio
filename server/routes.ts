@@ -235,19 +235,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/advisors/register", requireAuth, requireAdmin, async (req, res) => {
     try {
-      const { email, password, role, ...advisorData } = req.body;
+      const { password, role, ...advisorData } = req.body;
       
-      // Validar dados do orientador
+      // Validar dados do orientador (incluindo email)
       const validatedAdvisorData = insertAdvisorSchema.parse(advisorData);
       
       // Verificar se o email já existe
-      const existingUser = await storage.getUserByEmail(email);
+      const existingUser = await storage.getUserByEmail(validatedAdvisorData.email);
       if (existingUser) {
         return res.status(400).json({ message: "Email já está em uso" });
       }
       
       // Criar orientador com usuário
-      const result = await storage.createAdvisorWithUser(validatedAdvisorData, { email, password, role });
+      const result = await storage.createAdvisorWithUser(validatedAdvisorData, { 
+        email: validatedAdvisorData.email, 
+        password, 
+        role 
+      });
       
       res.status(201).json({
         advisor: result.advisor,
