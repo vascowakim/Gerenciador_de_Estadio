@@ -84,6 +84,24 @@ app.use((req, res, next) => {
     throw err;
   });
 
+  // CRÍTICO: Verificar se as rotas API estão registradas ANTES do static serving
+  // Adicionar um middleware específico para detectar rotas /api não encontradas
+  app.use('/api/*', (req, res) => {
+    res.status(404).json({ 
+      success: false,
+      message: `Endpoint ${req.originalUrl} não encontrado`,
+      code: "API_ENDPOINT_NOT_FOUND",
+      availableEndpoints: [
+        "/api/health",
+        "/api/auth/login", 
+        "/api/auth/logout",
+        "/api/auth/me",
+        "/api/auth/status",
+        "/api/auth/initialize"
+      ]
+    });
+  });
+
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
