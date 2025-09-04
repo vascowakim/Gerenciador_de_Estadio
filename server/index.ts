@@ -73,6 +73,52 @@ app.use((req, res, next) => {
 (async () => {
   const server = await registerRoutes(app);
 
+  // Inicialização automática em produção
+  if (process.env.NODE_ENV === 'production') {
+    console.log('🚀 Modo produção detectado - verificando inicialização...');
+    try {
+      // Importar storage aqui para evitar problemas de dependência circular
+      const { PgStorage } = await import('./storage.js');
+      const storage = new PgStorage();
+      
+      // Verificar se banco tem usuários
+      const users = await storage.getAllUsers();
+      if (users.length === 0) {
+        console.log('📊 Banco de produção vazio - criando usuários iniciais...');
+        
+        const bcrypt = await import('bcrypt');
+        
+        // Criar admin
+        const hashedPasswordAdmin = await bcrypt.hash("admin123", 10);
+        await storage.createUser({
+          username: "admin",
+          email: "admin@ufvjm.edu.br",
+          password: hashedPasswordAdmin,
+          role: "administrator",
+          name: "Administrador do Sistema"
+        });
+        
+        // Criar professor
+        const hashedPasswordProf = await bcrypt.hash("prof123", 10);
+        await storage.createUser({
+          username: "vasconcelos.wakim",
+          email: "vasconcelos.wakim@ufvjm.edu.br",
+          password: hashedPasswordProf,
+          role: "professor",
+          name: "VASCONCELOS REIS WAKIM"
+        });
+        
+        console.log('✅ Usuários criados em produção:');
+        console.log('   - admin / admin123 (administrator)');
+        console.log('   - vasconcelos.wakim / prof123 (professor)');
+      } else {
+        console.log(`✅ Banco já possui ${users.length} usuários`);
+      }
+    } catch (error) {
+      console.error('❌ Erro na inicialização automática:', error);
+    }
+  }
+
   // Iniciar scheduler de alertas
   alertScheduler.start();
 
