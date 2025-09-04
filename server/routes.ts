@@ -1264,6 +1264,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Endpoint especial para inicialização em produção
+  app.post("/api/auth/initialize", async (req, res) => {
+    try {
+      // Verificar se já existem usuários
+      const existingUsers = await storage.getAllUsers();
+      if (existingUsers.length > 0) {
+        return res.status(409).json({ 
+          success: false,
+          message: "Sistema já inicializado",
+          code: "ALREADY_INITIALIZED"
+        });
+      }
+
+      // Criar usuário administrador padrão
+      const hashedPassword = await bcrypt.hash("admin123", 10);
+      const adminUser = await storage.createUser({
+        username: "admin",
+        email: "admin@ufvjm.edu.br",
+        password: hashedPassword,
+        role: "administrator",
+        name: "Administrador do Sistema"
+      });
+
+      // Criar usuário professor padrão
+      const hashedPasswordProf = await bcrypt.hash("prof123", 10);
+      const profUser = await storage.createUser({
+        username: "vasconcelos.wakim",
+        email: "vasconcelos.wakim@ufvjm.edu.br", 
+        password: hashedPasswordProf,
+        role: "professor",
+        name: "VASCONCELOS REIS WAKIM"
+      });
+
+      res.json({
+        success: true,
+        message: "Sistema inicializado com sucesso",
+        users: [
+          { username: adminUser.username, role: adminUser.role },
+          { username: profUser.username, role: profUser.role }
+        ],
+        credentials: {
+          admin: { username: "admin", password: "admin123" },
+          professor: { username: "vasconcelos.wakim", password: "prof123" }
+        }
+      });
+    } catch (error) {
+      console.error("Erro na inicialização:", error);
+      res.status(500).json({ 
+        success: false,
+        message: "Erro ao inicializar sistema",
+        code: "INITIALIZATION_ERROR"
+      });
+    }
+  });
+
+  // Endpoint para verificar status da inicialização
+  app.get("/api/auth/status", async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      const isInitialized = users.length > 0;
+      
+      res.json({
+        success: true,
+        initialized: isInitialized,
+        userCount: users.length,
+        users: users.map(user => ({ 
+          username: user.username, 
+          role: user.role,
+          email: user.email,
+          name: user.name
+        }))
+      });
+    } catch (error) {
+      res.status(500).json({ 
+        success: false,
+        message: "Erro ao verificar status"
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
