@@ -97,7 +97,8 @@ app.use((req, res, next) => {
         "/api/auth/logout",
         "/api/auth/me",
         "/api/auth/status",
-        "/api/auth/initialize"
+        "/api/auth/initialize",
+        "/api/initialize"
       ]
     });
   });

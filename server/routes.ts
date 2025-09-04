@@ -1264,19 +1264,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Endpoint especial para inicialização em produção
-  app.post("/api/auth/initialize", async (req, res) => {
+  // Endpoint especial para inicialização em produção (acessível sem autenticação)
+  app.post("/api/initialize", async (req, res) => {
     try {
+      console.log("🚀 Iniciando configuração inicial do sistema...");
+      
       // Verificar se já existem usuários
       const existingUsers = await storage.getAllUsers();
+      console.log(`📊 Usuários existentes no banco: ${existingUsers.length}`);
+      
       if (existingUsers.length > 0) {
+        console.log("⚠️ Sistema já possui usuários, pulando inicialização");
         return res.status(409).json({ 
           success: false,
           message: "Sistema já inicializado",
-          code: "ALREADY_INITIALIZED"
+          code: "ALREADY_INITIALIZED",
+          existingUsers: existingUsers.map(u => ({ username: u.username, role: u.role }))
         });
       }
 
+      console.log("👤 Criando usuário administrador...");
       // Criar usuário administrador padrão
       const hashedPassword = await bcrypt.hash("admin123", 10);
       const adminUser = await storage.createUser({
@@ -1286,7 +1293,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         role: "administrator",
         name: "Administrador do Sistema"
       });
+      console.log(`✅ Administrador criado: ${adminUser.username}`);
 
+      console.log("👨‍🏫 Criando usuário professor...");
       // Criar usuário professor padrão
       const hashedPasswordProf = await bcrypt.hash("prof123", 10);
       const profUser = await storage.createUser({
@@ -1296,25 +1305,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         role: "professor",
         name: "VASCONCELOS REIS WAKIM"
       });
+      console.log(`✅ Professor criado: ${profUser.username}`);
 
+      console.log("🎉 Inicialização concluída com sucesso!");
+      
       res.json({
         success: true,
-        message: "Sistema inicializado com sucesso",
+        message: "Sistema inicializado com sucesso! Use as credenciais abaixo para fazer login.",
+        environment: process.env.NODE_ENV || 'development',
+        timestamp: new Date().toISOString(),
         users: [
-          { username: adminUser.username, role: adminUser.role },
-          { username: profUser.username, role: profUser.role }
+          { username: adminUser.username, role: adminUser.role, name: adminUser.name },
+          { username: profUser.username, role: profUser.role, name: profUser.name }
         ],
         credentials: {
-          admin: { username: "admin", password: "admin123" },
-          professor: { username: "vasconcelos.wakim", password: "prof123" }
-        }
+          admin: { username: "admin", password: "admin123", role: "administrator" },
+          professor: { username: "vasconcelos.wakim", password: "prof123", role: "professor" }
+        },
+        loginUrl: req.protocol + '://' + req.get('host') + '/login'
       });
     } catch (error) {
-      console.error("Erro na inicialização:", error);
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      console.error("❌ Erro na inicialização:", errorMessage);
+      
       res.status(500).json({ 
         success: false,
         message: "Erro ao inicializar sistema",
-        code: "INITIALIZATION_ERROR"
+        error: errorMessage,
+        code: "INITIALIZATION_ERROR",
+        environment: process.env.NODE_ENV || 'development'
       });
     }
   });
