@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { LogIn, Star, Shield, BarChart3, Settings } from "lucide-react";
+import { LogIn, Star, Shield, BarChart3, Settings, UserPlus } from "lucide-react";
 import { AuthService } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 import ufvjmLogo from "@assets/ufvjm_1756831174700.png";
 
 const loginSchema = z.object({
@@ -25,6 +26,7 @@ interface LoginFormProps {
 export function LoginForm({ onLoginSuccess }: LoginFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -175,6 +177,20 @@ export function LoginForm({ onLoginSuccess }: LoginFormProps) {
                   <LogIn className="w-4 h-4 mr-2" />
                   {isLoading ? "Entrando..." : "Entrar no Sistema"}
                 </Button>
+
+                {/* Botão Primeiro Acesso */}
+                <div className="mt-4">
+                  <Button 
+                    type="button"
+                    variant="outline"
+                    className="w-full border-blue-300 text-blue-600 hover:bg-blue-50 font-medium"
+                    onClick={() => setLocation("/register")}
+                    data-testid="button-first-access"
+                  >
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    Primeiro Acesso - Cadastrar Usuário
+                  </Button>
+                </div>
               </form>
             </Form>
 

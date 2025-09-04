@@ -1363,6 +1363,110 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Endpoint público para registro de novos usuários (sem autenticação)
+  app.post("/api/public/register", async (req, res) => {
+    try {
+      console.log("📝 Nova solicitação de cadastro recebida");
+      
+      const { password, confirmPassword, role, isProfessor, isInternshipCoordinator, isSystemAdmin, ...userData } = req.body;
+      
+      // Validação de senhas
+      if (password !== confirmPassword) {
+        return res.status(400).json({ 
+          success: false,
+          message: "Senhas não coincidem",
+          code: "PASSWORD_MISMATCH"
+        });
+      }
+
+      // Validação de email UFVJM
+      if (!userData.email || !userData.email.endsWith("@ufvjm.edu.br")) {
+        return res.status(400).json({ 
+          success: false,
+          message: "Email deve ser institucional (@ufvjm.edu.br)",
+          code: "INVALID_EMAIL_DOMAIN"
+        });
+      }
+
+      // Verificar se o email já existe
+      const existingUser = await storage.getUserByEmail(userData.email);
+      if (existingUser) {
+        return res.status(409).json({ 
+          success: false,
+          message: "Email já está em uso",
+          code: "EMAIL_ALREADY_EXISTS"
+        });
+      }
+
+      // Determinar role baseado nos checkboxes
+      let userRole = "professor"; // Padrão
+      if (isSystemAdmin) {
+        userRole = "administrator";
+      } else if (isInternshipCoordinator || isProfessor) {
+        userRole = "professor";
+      }
+
+      // Preparar dados do orientador
+      const advisorData = {
+        name: userData.name,
+        email: userData.email,
+        department: userData.department,
+        phone: userData.phone,
+        registration: userData.registration || null,
+        isActive: false, // Novo usuário inicia inativo até aprovação
+      };
+
+      // Criar orientador com usuário
+      const result = await storage.createAdvisorWithUser(advisorData, { 
+        email: userData.email, 
+        password, 
+        role: userRole 
+      });
+
+      console.log(`✅ Usuário criado: ${result.user.username} (${result.user.role})`);
+      console.log(`📧 Email: ${result.user.email}`);
+      console.log(`🏢 Departamento: ${advisorData.department}`);
+
+      res.status(201).json({
+        success: true,
+        message: "Cadastro realizado com sucesso! Aguarde aprovação do administrador.",
+        user: {
+          id: result.user.id,
+          username: result.user.username,
+          name: result.user.name,
+          email: result.user.email,
+          role: result.user.role,
+        },
+        advisor: {
+          id: result.advisor.id,
+          department: result.advisor.department,
+          isActive: result.advisor.isActive,
+        },
+        note: "Usuário criado com status inativo. Necessário aprovação do administrador para ativação."
+      });
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      console.error("❌ Erro no registro público:", errorMessage);
+      
+      // Tratar erros específicos
+      if (error instanceof Error && error.message.includes('duplicate key')) {
+        return res.status(409).json({ 
+          success: false,
+          message: "Email ou dados já estão em uso",
+          code: "DUPLICATE_DATA"
+        });
+      }
+      
+      res.status(500).json({ 
+        success: false,
+        message: "Erro interno do servidor",
+        error: errorMessage,
+        code: "INTERNAL_ERROR"
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
