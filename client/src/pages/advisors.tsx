@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import InputMask from "react-input-mask";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -295,7 +296,20 @@ export default function Advisors() {
                       <FormItem>
                         <FormLabel>Telefone *</FormLabel>
                         <FormControl>
-                          <Input placeholder="Telefone" {...field} value={field.value || ""} />
+                          <InputMask
+                            mask="(99) 99999-9999"
+                            value={field.value || ""}
+                            onChange={field.onChange}
+                            onBlur={field.onBlur}
+                          >
+                            {(inputProps: any) => (
+                              <Input
+                                {...inputProps}
+                                placeholder="(00) 00000-0000"
+                                data-testid="input-phone"
+                              />
+                            )}
+                          </InputMask>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -309,7 +323,20 @@ export default function Advisors() {
                       <FormItem>
                         <FormLabel>CPF *</FormLabel>
                         <FormControl>
-                          <Input placeholder="CPF" {...field} value={field.value || ""} />
+                          <InputMask
+                            mask="999.999.999-99"
+                            value={field.value || ""}
+                            onChange={field.onChange}
+                            onBlur={field.onBlur}
+                          >
+                            {(inputProps: any) => (
+                              <Input
+                                {...inputProps}
+                                placeholder="000.000.000-00"
+                                data-testid="input-cpf"
+                              />
+                            )}
+                          </InputMask>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
