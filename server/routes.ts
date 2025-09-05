@@ -564,9 +564,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Tratamento específico de erros
       if (error?.code === '23505') { // Violação de unique constraint
-        return res.status(400).json({ 
-          message: "Email ou SIAPE já está em uso" 
-        });
+        console.error("Constraint violation details:", error.detail, error.constraint);
+        
+        // Identificar qual campo causou o erro
+        if (error.constraint?.includes('email')) {
+          return res.status(400).json({ 
+            message: "Este email já está cadastrado no sistema" 
+          });
+        } else if (error.constraint?.includes('siape')) {
+          return res.status(400).json({ 
+            message: "Este SIAPE já está cadastrado no sistema" 
+          });
+        } else if (error.constraint?.includes('username')) {
+          return res.status(400).json({ 
+            message: "Este nome de usuário já existe" 
+          });
+        } else {
+          return res.status(400).json({ 
+            message: "Dados duplicados - verifique email, SIAPE ou nome de usuário" 
+          });
+        }
       }
       
       if (error?.name === 'ZodError') {

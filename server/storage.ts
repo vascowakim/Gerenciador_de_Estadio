@@ -89,6 +89,11 @@ export class DatabaseStorage implements IStorage {
     return user || undefined;
   }
 
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
+  }
+
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db
       .insert(users)
@@ -156,8 +161,17 @@ export class DatabaseStorage implements IStorage {
     return await db.transaction(async (tx) => {
       // Criar usuário primeiro
       const hashedPassword = await bcrypt.hash(userData.password, 10);
-      // Gerar username baseado no email (parte antes do @)
-      const username = userData.email.split('@')[0];
+      // Gerar username único baseado no email
+      const baseUsername = userData.email.split('@')[0];
+      let username = baseUsername;
+      let counter = 1;
+      
+      // Verificar se username já existe e gerar alternativa
+      while (await this.getUserByUsername(username)) {
+        username = `${baseUsername}${counter}`;
+        counter++;
+      }
+      
       const [user] = await tx
         .insert(users)
         .values({
