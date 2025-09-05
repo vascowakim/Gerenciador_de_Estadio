@@ -528,6 +528,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { password, role, ...advisorData } = req.body;
       
+      // Validação básica de campos obrigatórios
+      if (!password || !role) {
+        return res.status(400).json({ 
+          message: "Senha e função são obrigatórias" 
+        });
+      }
+
       // Validar dados do orientador (incluindo email)
       const validatedAdvisorData = insertAdvisorSchema.parse(advisorData);
       
@@ -548,12 +555,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       res.status(201).json({
+        success: true,
         advisor: result.advisor,
-        message: "Orientador e usuário criados com sucesso"
+        message: "Orientador criado com sucesso"
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro ao registrar orientador:", error);
-      res.status(400).json({ message: "Erro ao criar orientador e usuário" });
+      
+      // Tratamento específico de erros
+      if (error?.code === '23505') { // Violação de unique constraint
+        return res.status(400).json({ 
+          message: "Email ou SIAPE já está em uso" 
+        });
+      }
+      
+      if (error?.name === 'ZodError') {
+        return res.status(400).json({ 
+          message: "Dados inválidos: " + error.errors.map((e: any) => e.message).join(', ')
+        });
+      }
+      
+      res.status(500).json({ 
+        message: "Erro interno do servidor. Tente novamente."
+      });
     }
   });
 
