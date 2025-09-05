@@ -28,7 +28,7 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   role: userRoleEnum("role").notNull().default("professor"),
   name: text("name").notNull(),
-  email: text("email").notNull().unique(),
+  email: text("email").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -36,10 +36,10 @@ export const advisors = pgTable("advisors", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
   position: text("position"),
-  siape: text("siape").unique(),
+  siape: text("siape"),
   phone: text("phone"),
   cpf: text("cpf"),
-  email: text("email").notNull().unique(),
+  email: text("email").notNull(),
   department: text("department").notNull(),
   isSystemAdmin: boolean("is_system_admin").default(false).notNull(),
   isInternshipCoordinator: boolean("is_internship_coordinator").default(false).notNull(),
@@ -50,8 +50,8 @@ export const advisors = pgTable("advisors", {
 export const students = pgTable("students", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
-  email: text("email").notNull().unique(),
-  registrationNumber: text("registration_number").notNull().unique(),
+  email: text("email").notNull(),
+  registrationNumber: text("registration_number").notNull(),
   course: text("course").notNull(),
   phone: text("phone"),
   cpf: text("cpf"),
