@@ -22,6 +22,8 @@ interface AuthenticatedRequest extends Request {
       email: string;
       role: string;
     };
+    loginTime?: string;
+    clientIP?: string;
   } & session.Session;
 }
 
