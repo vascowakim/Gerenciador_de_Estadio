@@ -141,6 +141,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createAdvisorWithUser(insertAdvisor: InsertAdvisor, userData: { email: string; password: string; role: string }): Promise<{ advisor: Advisor; user: User }> {
+    // Verificar se existe orientador inativo com mesmo email
+    const [existingAdvisor] = await db
+      .select()
+      .from(advisors)
+      .where(eq(advisors.email, insertAdvisor.email));
+
+    // Se existe orientador inativo, reativar em vez de criar novo
+    if (existingAdvisor && !existingAdvisor.isActive) {
+      return await this.reactivateAdvisorWithUser(existingAdvisor.id, insertAdvisor, userData);
+    }
+
     // Usar transação para garantir que ambos sejam criados ou nenhum
     return await db.transaction(async (tx) => {
       // Criar usuário primeiro
@@ -165,6 +176,37 @@ export class DatabaseStorage implements IStorage {
           ...insertAdvisor,
           id: user.id, // Usar o mesmo ID do usuário
         })
+        .returning();
+
+      return { advisor, user };
+    });
+  }
+
+  async reactivateAdvisorWithUser(advisorId: string, newAdvisorData: InsertAdvisor, userData: { email: string; password: string; role: string }): Promise<{ advisor: Advisor; user: User }> {
+    return await db.transaction(async (tx) => {
+      // Recriar usuário
+      const hashedPassword = await bcrypt.hash(userData.password, 10);
+      const username = userData.email.split('@')[0];
+      const [user] = await tx
+        .insert(users)
+        .values({
+          id: advisorId, // Usar o mesmo ID do orientador
+          username: username,
+          email: userData.email,
+          password: hashedPassword,
+          role: userData.role as "administrator" | "professor",
+          name: newAdvisorData.name,
+        })
+        .returning();
+
+      // Atualizar e reativar orientador
+      const [advisor] = await tx
+        .update(advisors)
+        .set({
+          ...newAdvisorData,
+          isActive: true
+        })
+        .where(eq(advisors.id, advisorId))
         .returning();
 
       return { advisor, user };
