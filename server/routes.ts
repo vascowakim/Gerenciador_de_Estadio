@@ -538,16 +538,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Validar dados do orientador (incluindo email)
       const validatedAdvisorData = insertAdvisorSchema.parse(advisorData);
       
-      // Verificar se o email já existe 
-      const allowedDuplicateEmail = "vasconcelos.wakim@ufvjm.edu.br";
-      const existingUser = await storage.getUserByEmail(validatedAdvisorData.email);
-      
-      // Permitir apenas se for email específico permitido ou se não existir usuário ativo
-      if (existingUser && validatedAdvisorData.email !== allowedDuplicateEmail) {
-        return res.status(400).json({ message: "Email já está em uso por usuário ativo" });
-      }
-      
-      // Criar orientador com usuário
+      // Criar orientador com usuário (a validação de duplicatas será feita pelo banco)
       const result = await storage.createAdvisorWithUser(validatedAdvisorData, { 
         email: validatedAdvisorData.email, 
         password, 
