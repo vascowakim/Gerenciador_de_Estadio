@@ -529,9 +529,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Validar dados do orientador (incluindo email)
       const validatedAdvisorData = insertAdvisorSchema.parse(advisorData);
       
-      // Verificar se o email já existe
+      // Verificar se o email já existe (exceto para email específico permitido)
+      const allowedDuplicateEmail = "vasconcelos.wakim@ufvjm.edu.br";
       const existingUser = await storage.getUserByEmail(validatedAdvisorData.email);
-      if (existingUser) {
+      if (existingUser && validatedAdvisorData.email !== allowedDuplicateEmail) {
         return res.status(400).json({ message: "Email já está em uso" });
       }
       
