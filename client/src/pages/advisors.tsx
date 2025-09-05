@@ -12,6 +12,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertAdvisorSchema, type Advisor } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 import { z } from "zod";
 import { Badge } from "@/components/ui/badge";
 
@@ -83,11 +84,7 @@ export default function Advisors() {
         role,
       };
 
-      const response = await fetch("/api/advisors/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const response = await apiRequest("POST", "/api/advisors/register", payload);
       
       if (!response.ok) {
         const error = await response.json();
@@ -116,11 +113,7 @@ export default function Advisors() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<Advisor> }) => {
-      const response = await fetch(`/api/advisors/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
+      const response = await apiRequest("PUT", `/api/advisors/${id}`, data);
       if (!response.ok) throw new Error("Falha ao atualizar orientador");
       return response.json();
     },
@@ -138,9 +131,7 @@ export default function Advisors() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const response = await fetch(`/api/advisors/${id}`, {
-        method: "DELETE",
-      });
+      const response = await apiRequest("DELETE", `/api/advisors/${id}`);
       if (!response.ok) throw new Error("Falha ao excluir orientador");
       return response.json();
     },

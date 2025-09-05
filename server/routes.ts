@@ -97,7 +97,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = req.session?.user;
       
+      console.log('🔒 Verificação de admin:', {
+        hasUser: !!user,
+        userRole: user?.role,
+        username: user?.username,
+        endpoint: req.path
+      });
+      
       if (!user) {
+        console.log('❌ Admin middleware: Usuário não autenticado');
         return res.status(401).json({ 
           message: "Usuário não autenticado",
           code: "NOT_AUTHENTICATED"
@@ -105,12 +113,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       if (user.role !== "administrator") {
+        console.log(`❌ Admin middleware: Usuário ${user.username} não é admin (role: ${user.role})`);
         return res.status(403).json({ 
           message: "Acesso restrito a administradores",
           code: "INSUFFICIENT_PRIVILEGES"
         });
       }
       
+      console.log(`✅ Admin middleware: Usuário ${user.username} autorizado`);
       next();
     } catch (error) {
       console.error('Erro no middleware de admin:', error);
