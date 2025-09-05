@@ -558,21 +558,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Constraint violation details:", error.detail, error.constraint);
         
         // Identificar qual campo causou o erro
-        if (error.constraint?.includes('email')) {
-          return res.status(400).json({ 
-            message: "Este email já está cadastrado no sistema" 
-          });
-        } else if (error.constraint?.includes('siape')) {
-          return res.status(400).json({ 
-            message: "Este SIAPE já está cadastrado no sistema" 
-          });
-        } else if (error.constraint?.includes('username')) {
+        if (error.constraint?.includes('username')) {
           return res.status(400).json({ 
             message: "Este nome de usuário já existe" 
           });
         } else {
           return res.status(400).json({ 
-            message: "Dados duplicados - verifique email, SIAPE ou nome de usuário" 
+            message: "Dados duplicados - verifique os campos informados" 
           });
         }
       }
