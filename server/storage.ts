@@ -181,11 +181,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteAdvisor(id: string): Promise<boolean> {
-    const result = await db
-      .update(advisors)
-      .set({ isActive: false })
-      .where(eq(advisors.id, id));
-    return (result.rowCount || 0) > 0;
+    // Usar transação para desativar tanto orientador quanto usuário
+    return await db.transaction(async (tx) => {
+      // Desativar orientador
+      const advisorResult = await tx
+        .update(advisors)
+        .set({ isActive: false })
+        .where(eq(advisors.id, id));
+      
+      // Desativar usuário associado (mesmo ID)
+      await tx
+        .delete(users)
+        .where(eq(users.id, id));
+      
+      return (advisorResult.rowCount || 0) > 0;
+    });
   }
 
   // Student operations

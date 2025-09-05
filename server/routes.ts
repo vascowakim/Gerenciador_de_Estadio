@@ -534,6 +534,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Verificar se o email já existe (exceto para email específico permitido)
       const allowedDuplicateEmail = "vasconcelos.wakim@ufvjm.edu.br";
       const existingUser = await storage.getUserByEmail(validatedAdvisorData.email);
+      
+      // Permitir reutilização se for o email específico ou se não existir usuário
       if (existingUser && validatedAdvisorData.email !== allowedDuplicateEmail) {
         return res.status(400).json({ message: "Email já está em uso" });
       }
