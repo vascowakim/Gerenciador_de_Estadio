@@ -20,6 +20,11 @@ import Reports from "@/pages/reports";
 import AdvisorReports from "@/pages/advisor-reports";
 import MandatoryStudentReports from "@/pages/mandatory-student-reports";
 import NonMandatoryStudentReports from "@/pages/non-mandatory-student-reports";
+import Certificates from "@/pages/certificates";
+import StudentCertificates from "@/pages/student-certificates";
+import AdvisorCertificates from "@/pages/advisor-certificates";
+import MandatoryStudentCertificates from "@/pages/mandatory-student-certificates";
+import NonMandatoryStudentCertificates from "@/pages/non-mandatory-student-certificates";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -95,6 +100,31 @@ function Router() {
       <Route path="/non-mandatory-student-reports">
         <MainLayout>
           <NonMandatoryStudentReports />
+        </MainLayout>
+      </Route>
+      <Route path="/certificates">
+        <MainLayout>
+          <Certificates />
+        </MainLayout>
+      </Route>
+      <Route path="/student-certificates">
+        <MainLayout>
+          <StudentCertificates />
+        </MainLayout>
+      </Route>
+      <Route path="/advisor-certificates">
+        <MainLayout>
+          <AdvisorCertificates />
+        </MainLayout>
+      </Route>
+      <Route path="/mandatory-student-certificates">
+        <MainLayout>
+          <MandatoryStudentCertificates />
+        </MainLayout>
+      </Route>
+      <Route path="/non-mandatory-student-certificates">
+        <MainLayout>
+          <NonMandatoryStudentCertificates />
         </MainLayout>
       </Route>
       <Route component={NotFound} />

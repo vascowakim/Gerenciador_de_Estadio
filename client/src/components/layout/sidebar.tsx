@@ -10,6 +10,7 @@ import {
   BarChart3,
   Settings,
   FileSpreadsheet,
+  Award,
   Building2,
   FileText,
   Briefcase,
@@ -90,7 +91,7 @@ export function Sidebar({ user }: SidebarProps) {
     {
       title: "Certificados",
       href: "/certificates",
-      icon: FileSpreadsheet,
+      icon: Award,
       adminOnly: false,
       professorAccess: true,
     },
