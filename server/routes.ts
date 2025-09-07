@@ -1546,6 +1546,152 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Endpoint para relatório de estudantes em estágios obrigatórios
+  app.get("/api/reports/mandatory-students/:semester", requireAuth, async (req, res) => {
+    try {
+      const { semester } = req.params;
+      
+      if (!semester || !semester.match(/^\d{4}-[12]$/)) {
+        return res.status(400).json({
+          success: false,
+          message: "Formato de semestre inválido. Use YYYY-1 ou YYYY-2"
+        });
+      }
+      
+      const [year, sem] = semester.split('-');
+      const yearNum = parseInt(year);
+      
+      let startDate: Date, endDate: Date;
+      if (sem === '1') {
+        startDate = new Date(yearNum, 0, 1);
+        endDate = new Date(yearNum, 5, 30);
+      } else {
+        startDate = new Date(yearNum, 6, 1);
+        endDate = new Date(yearNum, 11, 31);
+      }
+      
+      const mandatoryInternships = await storage.getAllMandatoryInternships();
+      const semesterInternships = mandatoryInternships.filter(internship => {
+        if (!internship.startDate) return false;
+        const internshipStart = new Date(internship.startDate);
+        return internshipStart >= startDate && internshipStart <= endDate;
+      });
+      
+      const students = await storage.getAllStudents();
+      const advisors = await storage.getAllAdvisors();
+      const companies = await storage.getAllCompanies();
+      
+      const studentMap = students.reduce((acc, student) => {
+        acc[student.id] = student;
+        return acc;
+      }, {} as Record<string, any>);
+      
+      const advisorMap = advisors.reduce((acc, advisor) => {
+        acc[advisor.id] = advisor.name;
+        return acc;
+      }, {} as Record<string, string>);
+      
+      const companyMap = companies.reduce((acc, company) => {
+        acc[company.id] = company.name;
+        return acc;
+      }, {} as Record<string, string>);
+      
+      const reportData = semesterInternships.map(internship => {
+        const student = studentMap[internship.studentId];
+        return {
+          name: student?.name || 'N/A',
+          registrationNumber: student?.registrationNumber || 'N/A',
+          course: student?.course || 'N/A',
+          company: companyMap[internship.companyId] || 'N/A',
+          advisor: advisorMap[internship.advisorId] || 'N/A',
+          status: internship.status || 'N/A'
+        };
+      });
+      
+      res.json(reportData);
+      
+    } catch (error) {
+      console.error('Erro ao gerar relatório de estágios obrigatórios:', error);
+      res.status(500).json({
+        success: false,
+        message: "Erro interno ao gerar relatório"
+      });
+    }
+  });
+
+  // Endpoint para relatório de estudantes em estágios não obrigatórios
+  app.get("/api/reports/non-mandatory-students/:semester", requireAuth, async (req, res) => {
+    try {
+      const { semester } = req.params;
+      
+      if (!semester || !semester.match(/^\d{4}-[12]$/)) {
+        return res.status(400).json({
+          success: false,
+          message: "Formato de semestre inválido. Use YYYY-1 ou YYYY-2"
+        });
+      }
+      
+      const [year, sem] = semester.split('-');
+      const yearNum = parseInt(year);
+      
+      let startDate: Date, endDate: Date;
+      if (sem === '1') {
+        startDate = new Date(yearNum, 0, 1);
+        endDate = new Date(yearNum, 5, 30);
+      } else {
+        startDate = new Date(yearNum, 6, 1);
+        endDate = new Date(yearNum, 11, 31);
+      }
+      
+      const nonMandatoryInternships = await storage.getAllNonMandatoryInternships();
+      const semesterInternships = nonMandatoryInternships.filter(internship => {
+        if (!internship.startDate) return false;
+        const internshipStart = new Date(internship.startDate);
+        return internshipStart >= startDate && internshipStart <= endDate;
+      });
+      
+      const students = await storage.getAllStudents();
+      const advisors = await storage.getAllAdvisors();
+      const companies = await storage.getAllCompanies();
+      
+      const studentMap = students.reduce((acc, student) => {
+        acc[student.id] = student;
+        return acc;
+      }, {} as Record<string, any>);
+      
+      const advisorMap = advisors.reduce((acc, advisor) => {
+        acc[advisor.id] = advisor.name;
+        return acc;
+      }, {} as Record<string, string>);
+      
+      const companyMap = companies.reduce((acc, company) => {
+        acc[company.id] = company.name;
+        return acc;
+      }, {} as Record<string, string>);
+      
+      const reportData = semesterInternships.map(internship => {
+        const student = studentMap[internship.studentId];
+        return {
+          name: student?.name || 'N/A',
+          registrationNumber: student?.registrationNumber || 'N/A',
+          course: student?.course || 'N/A',
+          company: companyMap[internship.companyId] || 'N/A',
+          advisor: advisorMap[internship.advisorId] || 'N/A',
+          workload: internship.workload || 'N/A'
+        };
+      });
+      
+      res.json(reportData);
+      
+    } catch (error) {
+      console.error('Erro ao gerar relatório de estágios não obrigatórios:', error);
+      res.status(500).json({
+        success: false,
+        message: "Erro interno ao gerar relatório"
+      });
+    }
+  });
+
   // Endpoint público para registro de novos usuários (sem autenticação)
   app.post("/api/public/register", async (req, res) => {
     try {

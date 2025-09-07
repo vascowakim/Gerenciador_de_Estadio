@@ -17,6 +17,9 @@ import AlertsPage from "@/pages/alerts";
 import NonMandatoryInternships from "@/pages/non-mandatory-internships";
 import ProfilePage from "./pages/profile";
 import Reports from "@/pages/reports";
+import AdvisorReports from "@/pages/advisor-reports";
+import MandatoryStudentReports from "@/pages/mandatory-student-reports";
+import NonMandatoryStudentReports from "@/pages/non-mandatory-student-reports";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -77,6 +80,21 @@ function Router() {
       <Route path="/reports">
         <MainLayout>
           <Reports />
+        </MainLayout>
+      </Route>
+      <Route path="/advisor-reports">
+        <MainLayout>
+          <AdvisorReports />
+        </MainLayout>
+      </Route>
+      <Route path="/mandatory-student-reports">
+        <MainLayout>
+          <MandatoryStudentReports />
+        </MainLayout>
+      </Route>
+      <Route path="/non-mandatory-student-reports">
+        <MainLayout>
+          <NonMandatoryStudentReports />
         </MainLayout>
       </Route>
       <Route component={NotFound} />
