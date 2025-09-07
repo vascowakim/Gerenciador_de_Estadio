@@ -40,10 +40,12 @@ export function StudentSearchModal({
   const { data: students, isLoading, error, refetch } = useQuery<Student[]>({
     queryKey: ["/api/students"],
     enabled: isOpen,
-    retry: 2,
-    staleTime: 10000, // 10 seconds
+    retry: 3,
+    staleTime: 0, // Always fresh data in production
+    cacheTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
     refetchOnMount: true,
     refetchOnWindowFocus: false,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
   });
 
   // Force refetch when modal opens if no data

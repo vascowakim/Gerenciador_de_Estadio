@@ -32,14 +32,17 @@ export async function apiRequest(
   const token = getAuthToken();
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
-    // console.log('🔑 Usando JWT token para API request:', method, url);
   }
 
-  const res = await fetch(url, {
+  // Construir URL corretamente para produção e desenvolvimento
+  const fullUrl = url.startsWith('http') ? url : `${window.location.origin}${url}`;
+
+  const res = await fetch(fullUrl, {
     method,
     headers,
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
+    mode: 'cors', // Explicit CORS mode for production
   });
 
   await throwIfResNotOk(res);
@@ -58,12 +61,16 @@ export const getQueryFn: <T>(options: {
     const token = getAuthToken();
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
-      // console.log('🔑 Usando JWT token para query:', queryKey.join("/"));
     }
 
-    const res = await fetch(queryKey.join("/") as string, {
+    // Construir URL corretamente para produção e desenvolvimento
+    const url = queryKey.join("/") as string;
+    const fullUrl = url.startsWith('http') ? url : `${window.location.origin}${url}`;
+
+    const res = await fetch(fullUrl, {
       headers,
       credentials: "include",
+      mode: 'cors', // Explicit CORS mode for production
     });
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {
