@@ -763,13 +763,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Mandatory Internships routes
   app.get("/api/mandatory-internships", requireAuth, async (req: any, res) => {
     try {
-      let mandatoryInternships;
-      if (req.session.user.role === "administrator") {
-        mandatoryInternships = await storage.getAllMandatoryInternships();
-      } else {
-        // Professors can only see mandatory internships they supervise
-        mandatoryInternships = await storage.getMandatoryInternshipsByAdvisor(req.session.user.id);
-      }
+      // Both administrators and professors can see all mandatory internships
+      const mandatoryInternships = await storage.getAllMandatoryInternships();
       res.json(mandatoryInternships);
     } catch (error) {
       res.status(500).json({ message: "Erro ao buscar estágios obrigatórios" });
@@ -963,13 +958,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Non-Mandatory Internships routes
   app.get("/api/non-mandatory-internships", requireAuth, async (req: any, res) => {
     try {
-      let nonMandatoryInternships;
-      if (req.session.user.role === "administrator") {
-        nonMandatoryInternships = await storage.getAllNonMandatoryInternships();
-      } else {
-        // Professors can only see non-mandatory internships they supervise
-        nonMandatoryInternships = await storage.getNonMandatoryInternshipsByAdvisor(req.session.user.id);
-      }
+      // Both administrators and professors can see all non-mandatory internships
+      const nonMandatoryInternships = await storage.getAllNonMandatoryInternships();
       res.json(nonMandatoryInternships);
     } catch (error) {
       res.status(500).json({ message: "Erro ao buscar estágios não obrigatórios" });
