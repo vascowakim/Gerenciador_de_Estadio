@@ -1765,7 +1765,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Endpoint para buscar dados do perfil do orientador (estágios e certificados)
   app.get("/api/profile/advisor-data", requireAuth, async (req, res) => {
     try {
-      const userId = req.session.userId;
+      const userId = req.session.user?.id;
       
       if (!userId) {
         return res.status(401).json({
@@ -1774,9 +1774,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Buscar o orientador pelo userId
-      const advisors = await storage.getAllAdvisors();
-      const currentAdvisor = advisors.find(advisor => advisor.userId === userId);
+      // Buscar o orientador pelo userId (mesmo ID do usuário)
+      const currentAdvisor = await storage.getAdvisor(userId);
       
       if (!currentAdvisor) {
         return res.status(403).json({
@@ -1835,7 +1834,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }));
 
       // Filtrar estágios concluídos para certificados
-      const completedNonMandatory = nonMandatoryData.filter(i => i.status === 'concluido');
+      const completedNonMandatory = nonMandatoryData.filter(i => i.status === 'completed');
 
       // Combinar todos os dados
       const allInternships = [...mandatoryData, ...nonMandatoryData];
