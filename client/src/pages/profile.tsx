@@ -35,7 +35,53 @@ export default function ProfilePage() {
   });
 
   // Buscar dados do orientador se o usuário for professor
-  const { data: advisorData, isLoading: isAdvisorDataLoading } = useQuery({
+  const { data: advisorData, isLoading: isAdvisorDataLoading } = useQuery<{
+    advisor: {
+      name: string;
+      siape: string;
+      department: string;
+      email: string;
+    };
+    internships: {
+      mandatory: Array<{
+        id: string;
+        type: string;
+        studentName: string;
+        studentRegistration: string;
+        company: string;
+        startDate: string;
+        endDate: string;
+        status: string;
+        workload: string;
+      }>;
+      nonMandatory: Array<{
+        id: string;
+        type: string;
+        studentName: string;
+        studentRegistration: string;
+        company: string;
+        startDate: string;
+        endDate: string;
+        status: string;
+        workload: string;
+      }>;
+      total: number;
+    };
+    certificates: {
+      available: Array<{
+        id: string;
+        type: string;
+        studentName: string;
+        studentRegistration: string;
+        company: string;
+        startDate: string;
+        endDate: string;
+        status: string;
+        workload: string;
+      }>;
+      count: number;
+    };
+  }>({
     queryKey: ["/api/profile/advisor-data"],
     enabled: user?.user?.role === "professor",
   });
