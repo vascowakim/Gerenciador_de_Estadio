@@ -58,7 +58,7 @@ export function Sidebar({ user }: SidebarProps) {
       href: "/students",
       icon: GraduationCap,
       adminOnly: false,
-      professorAccess: false,
+      professorAccess: true,
     },
     {
       title: "Empresas",
