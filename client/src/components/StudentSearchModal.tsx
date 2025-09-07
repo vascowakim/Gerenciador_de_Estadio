@@ -43,12 +43,15 @@ export function StudentSearchModal({
   });
 
   // Filtrar estudantes baseado no termo de busca
-  const filteredStudents = students?.filter(student =>
-    student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    student.registrationNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    student.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    student.course.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Se não há termo de busca, mostra todos os estudantes
+  const filteredStudents = searchTerm.trim() === "" 
+    ? students 
+    : students?.filter(student =>
+        student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        student.registrationNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        student.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        student.course.toLowerCase().includes(searchTerm.toLowerCase())
+      );
 
   const handleSelectStudent = (student: Student) => {
     onSelectStudent(student);
@@ -143,9 +146,9 @@ export function StudentSearchModal({
               <div className="text-center p-8">
                 <User className="h-12 w-12 mx-auto mb-4 text-gray-400" />
                 <p className="text-gray-500">
-                  {searchTerm 
+                  {searchTerm.trim() !== ""
                     ? `Nenhum estudante encontrado para "${searchTerm}"`
-                    : "Nenhum estudante cadastrado"
+                    : "Nenhum estudante cadastrado no sistema"
                   }
                 </p>
               </div>
@@ -155,8 +158,8 @@ export function StudentSearchModal({
           {/* Rodapé com informações */}
           <div className="flex items-center justify-between text-sm text-gray-500 pt-2 border-t">
             <span>
-              {filteredStudents?.length || 0} estudante(s) 
-              {searchTerm && ` encontrado(s) para "${searchTerm}"`}
+              {filteredStudents?.length || 0} estudante(s)
+              {searchTerm.trim() !== "" && ` encontrado(s) para "${searchTerm}"`}
             </span>
             <Button variant="outline" onClick={handleClose}>
               Cancelar
