@@ -76,6 +76,15 @@ export const companies = pgTable("companies", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Tabela de configurações do sistema
+export const settings = pgTable("settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  key: text("key").notNull().unique(),
+  value: text("value").notNull(),
+  description: text("description"),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 export const internships = pgTable("internships", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   studentId: varchar("student_id").notNull().references(() => students.id),
@@ -362,3 +371,11 @@ export type InsertInternshipDocument = z.infer<typeof insertInternshipDocumentSc
 
 export type InternshipAlert = typeof internshipAlerts.$inferSelect;
 export type InsertInternshipAlert = z.infer<typeof insertInternshipAlertSchema>;
+
+// Settings schemas
+export const insertSettingsSchema = createInsertSchema(settings).omit({
+  id: true,
+  updatedAt: true,
+});
+export type Settings = typeof settings.$inferSelect;
+export type InsertSettings = z.infer<typeof insertSettingsSchema>;
