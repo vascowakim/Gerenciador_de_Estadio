@@ -99,7 +99,7 @@ app.use((req, res, next) => {
         });
         
         // Criar professor
-        const hashedPasswordProf = await bcrypt.hash("prof123", 10);
+        const hashedPasswordProf = await bcrypt.hash("123456", 10);
         await storage.createUser({
           username: "vasconcelos.wakim",
           email: "vasconcelos.wakim@ufvjm.edu.br",
@@ -110,7 +110,7 @@ app.use((req, res, next) => {
         
         console.log('✅ Usuários criados em produção:');
         console.log('   - admin / admin123 (administrator)');
-        console.log('   - vasconcelos.wakim / prof123 (professor)');
+        console.log('   - vasconcelos.wakim / 123456 (professor)');
       } else {
         console.log(`✅ Banco já possui ${users.length} usuários`);
       }
