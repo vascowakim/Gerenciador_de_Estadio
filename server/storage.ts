@@ -16,6 +16,7 @@ export interface IStorage {
 
   // Advisor operations
   getAdvisor(id: string): Promise<Advisor | undefined>;
+  getAdvisorByUserId(userId: string): Promise<Advisor | undefined>;
   getAllAdvisors(): Promise<Advisor[]>;
   createAdvisor(advisor: InsertAdvisor): Promise<Advisor>;
   createAdvisorWithUser(advisor: InsertAdvisor, userData: { email: string; password: string; role: string }): Promise<{ advisor: Advisor; user: User }>;
@@ -130,6 +131,11 @@ export class DatabaseStorage implements IStorage {
   // Advisor operations
   async getAdvisor(id: string): Promise<Advisor | undefined> {
     const [advisor] = await db.select().from(advisors).where(eq(advisors.id, id));
+    return advisor || undefined;
+  }
+
+  async getAdvisorByUserId(userId: string): Promise<Advisor | undefined> {
+    const [advisor] = await db.select().from(advisors).where(eq(advisors.id, userId));
     return advisor || undefined;
   }
 

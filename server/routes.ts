@@ -1762,6 +1762,111 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Endpoint para buscar dados do perfil do orientador (estágios e certificados)
+  app.get("/api/profile/advisor-data", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId;
+      
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: "Usuário não autenticado"
+        });
+      }
+
+      // Buscar o orientador pelo userId
+      const advisors = await storage.getAllAdvisors();
+      const currentAdvisor = advisors.find(advisor => advisor.userId === userId);
+      
+      if (!currentAdvisor) {
+        return res.status(403).json({
+          success: false,
+          message: "Usuário não é um orientador"
+        });
+      }
+
+      // Buscar todos os estágios do orientador (obrigatórios e não obrigatórios)
+      const [mandatoryInternships, nonMandatoryInternships, students, companies] = await Promise.all([
+        storage.getAllMandatoryInternships(),
+        storage.getAllNonMandatoryInternships(),
+        storage.getAllStudents(),
+        storage.getAllCompanies()
+      ]);
+
+      // Filtrar estágios do orientador
+      const advisorMandatory = mandatoryInternships.filter(i => i.advisorId === currentAdvisor.id);
+      const advisorNonMandatory = nonMandatoryInternships.filter(i => i.advisorId === currentAdvisor.id);
+
+      // Criar mapas para facilitar lookup
+      const studentMap = students.reduce((acc, student) => {
+        acc[student.id] = student;
+        return acc;
+      }, {} as Record<string, any>);
+      
+      const companyMap = companies.reduce((acc, company) => {
+        acc[company.id] = company.name;
+        return acc;
+      }, {} as Record<string, string>);
+
+      // Preparar dados dos estágios obrigatórios
+      const mandatoryData = advisorMandatory.map(internship => ({
+        id: internship.id,
+        type: 'mandatory',
+        studentName: studentMap[internship.studentId]?.name || 'N/A',
+        studentRegistration: studentMap[internship.studentId]?.registrationNumber || 'N/A',
+        company: companyMap[internship.companyId] || 'N/A',
+        startDate: internship.startDate,
+        endDate: internship.endDate,
+        status: internship.status,
+        workload: internship.workload
+      }));
+
+      // Preparar dados dos estágios não obrigatórios
+      const nonMandatoryData = advisorNonMandatory.map(internship => ({
+        id: internship.id,
+        type: 'non-mandatory',
+        studentName: studentMap[internship.studentId]?.name || 'N/A',
+        studentRegistration: studentMap[internship.studentId]?.registrationNumber || 'N/A',
+        company: companyMap[internship.companyId] || 'N/A',
+        startDate: internship.startDate,
+        endDate: internship.endDate,
+        status: internship.status,
+        workload: internship.workload
+      }));
+
+      // Filtrar estágios concluídos para certificados
+      const completedNonMandatory = nonMandatoryData.filter(i => i.status === 'concluido');
+
+      // Combinar todos os dados
+      const allInternships = [...mandatoryData, ...nonMandatoryData];
+
+      res.json({
+        advisor: {
+          name: currentAdvisor.name,
+          siape: currentAdvisor.siape,
+          department: currentAdvisor.department,
+          email: currentAdvisor.email
+        },
+        internships: {
+          mandatory: mandatoryData,
+          nonMandatory: nonMandatoryData,
+          total: allInternships.length
+        },
+        certificates: {
+          available: completedNonMandatory,
+          count: completedNonMandatory.length
+        }
+      });
+      
+    } catch (error) {
+      console.error('Erro ao buscar dados do perfil do orientador:', error);
+      res.status(500).json({
+        success: false,
+        message: "Erro interno ao buscar dados"
+      });
+    }
+  });
+
   // Endpoint público para registro de novos usuários (sem autenticação)
   app.post("/api/public/register", async (req, res) => {
     try {
