@@ -46,20 +46,9 @@ export function StudentSearchModal({
     refetchOnWindowFocus: false,
   });
 
-  // Debug logging
-  console.log("StudentSearchModal - Query state:", {
-    isOpen,
-    isLoading,
-    error: error?.message,
-    studentsCount: students?.length || 0,
-    students: students,
-    hasStudents: students && students.length > 0
-  });
-
   // Force refetch when modal opens if no data
   useEffect(() => {
     if (isOpen && !students && !isLoading) {
-      console.log("StudentSearchModal - Force refetch due to no data");
       refetch();
     }
   }, [isOpen, students, isLoading, refetch]);
@@ -182,10 +171,7 @@ export function StudentSearchModal({
                 {searchTerm.trim() === "" && (
                   <Button 
                     variant="outline" 
-                    onClick={() => {
-                      console.log("Manual refetch triggered");
-                      refetch();
-                    }}
+                    onClick={() => refetch()}
                     className="mt-4"
                   >
                     Tentar novamente
