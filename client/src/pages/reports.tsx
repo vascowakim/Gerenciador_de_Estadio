@@ -89,21 +89,33 @@ export default function Reports() {
       // Carregar e adicionar a imagem
       doc.addImage(ufvjmLogo, 'PNG', logoX, 10, logoWidth, logoHeight);
       
-      // Nome da universidade
-      doc.setFontSize(16);
+      // Ministério da Educação
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.text("MINISTÉRIO DA EDUCAÇÃO", pageWidth / 2, 35, { align: "center" });
+      
+      // Nome da universidade (fonte menor para caber em uma linha)
+      doc.setFontSize(12);
       doc.setFont("helvetica", "bold");
-      doc.text("UNIVERSIDADE FEDERAL DOS VALES DO JEQUITINHONHA E MUCURI", pageWidth / 2, 40, { align: "center" });
-      doc.text("UFVJM", pageWidth / 2, 50, { align: "center" });
+      doc.text("UNIVERSIDADE FEDERAL DOS VALES DO JEQUITINHONHA E MUCURI", pageWidth / 2, 45, { align: "center" });
+      doc.text("UFVJM", pageWidth / 2, 55, { align: "center" });
       
       // Título do relatório
       doc.setFontSize(14);
       doc.text("RELATÓRIO DE ORIENTAÇÃO DE ESTÁGIOS", pageWidth / 2, 70, { align: "center" });
       
+      // Subtítulo
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "normal");
+      doc.text("Obrigatório e não obrigatório", pageWidth / 2, 80, { align: "center" });
+      
+      // Semestre (formato invertido)
       const [year, sem] = selectedSemester.split('-');
       doc.setFontSize(12);
-      doc.text(`${year}/${sem}º Semestre`, pageWidth / 2, 80, { align: "center"});
+      doc.setFont("helvetica", "bold");
+      doc.text(`Semestre ${year}/${sem}º`, pageWidth / 2, 90, { align: "center"});
       
-      let yPosition = 100;
+      let yPosition = 110;
       
       // Para cada orientador
       reportData.forEach((advisor: ReportData) => {
