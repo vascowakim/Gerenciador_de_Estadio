@@ -42,7 +42,7 @@ export function StudentSearchModal({
     enabled: isOpen,
     retry: 3,
     staleTime: 0, // Always fresh data in production
-    cacheTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
+    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
     refetchOnMount: true,
     refetchOnWindowFocus: false,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
