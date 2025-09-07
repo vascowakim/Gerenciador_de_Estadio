@@ -175,7 +175,7 @@ export default function AdvisorReports() {
       });
       
       // Salvar o arquivo
-      const fileName = `orientacao_estagio_${selectedSemestre.replace('-', '_')}semestre.pdf`;
+      const fileName = `orientacao_estagio_${selectedSemester.replace('-', '_')}semestre.pdf`;
       doc.save(fileName);
       
       toast({
