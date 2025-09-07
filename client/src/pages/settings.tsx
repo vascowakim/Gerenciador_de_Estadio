@@ -83,7 +83,7 @@ export default function SystemSettings() {
         title: "Sucesso",
         description: "Configurações atualizadas com sucesso!",
       });
-      console.log("✅ Configurações salvas:", response.settings);
+      console.log("✅ Configurações salvas:", response);
     },
     onError: (error: any) => {
       console.error("❌ Erro ao salvar configurações:", error);
