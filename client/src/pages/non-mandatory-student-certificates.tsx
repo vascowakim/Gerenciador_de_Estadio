@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Award, ArrowLeft, Download, GraduationCap } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
+import { SemesterSelector } from "@/components/SemesterSelector";
 import jsPDF from 'jspdf';
 
 interface CompletedInternship {
@@ -22,9 +23,11 @@ interface CompletedInternship {
 
 export default function NonMandatoryStudentCertificates() {
   const { toast } = useToast();
+  const [selectedSemester, setSelectedSemester] = useState<string>("all");
 
   const { data: completedInternships, isLoading } = useQuery<CompletedInternship[]>({
-    queryKey: ['/api/certificates/non-mandatory-completed'],
+    queryKey: ['/api/certificates/non-mandatory-completed', selectedSemester],
+    enabled: !!selectedSemester,
   });
 
   const generateCertificatePDF = (internship: CompletedInternship) => {
