@@ -19,6 +19,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useLocation, Link } from "wouter";
 import { format } from "date-fns";
 import { ObjectUploader } from "@/components/ObjectUploader";
+import { StudentSelector } from "@/components/StudentSelector";
 import type { UploadResult } from "@uppy/core";
 
 export default function MandatoryInternships() {
@@ -474,20 +475,11 @@ export default function MandatoryInternships() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Estudante</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger data-testid="select-student">
-                              <SelectValue placeholder="Selecione o estudante" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {students?.map((student: Student) => (
-                              <SelectItem key={student.id} value={student.id}>
-                                {student.name} - {student.registrationNumber}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <StudentSelector
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="Clique em 'Buscar' para selecionar um estudante"
+                        />
                         <FormMessage />
                       </FormItem>
                     )}
