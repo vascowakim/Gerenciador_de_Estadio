@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Dialog,
@@ -37,21 +37,32 @@ export function StudentSearchModal({
 }: StudentSearchModalProps) {
   const [searchTerm, setSearchTerm] = useState("");
 
-  const { data: students, isLoading, error } = useQuery<Student[]>({
+  const { data: students, isLoading, error, refetch } = useQuery<Student[]>({
     queryKey: ["/api/students"],
     enabled: isOpen,
-    retry: 1,
-    staleTime: 30000, // 30 seconds
+    retry: 2,
+    staleTime: 10000, // 10 seconds
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
   });
 
   // Debug logging
   console.log("StudentSearchModal - Query state:", {
     isOpen,
     isLoading,
-    error,
+    error: error?.message,
     studentsCount: students?.length || 0,
-    students: students
+    students: students,
+    hasStudents: students && students.length > 0
   });
+
+  // Force refetch when modal opens if no data
+  useEffect(() => {
+    if (isOpen && !students && !isLoading) {
+      console.log("StudentSearchModal - Force refetch due to no data");
+      refetch();
+    }
+  }, [isOpen, students, isLoading, refetch]);
 
   // Filtrar estudantes baseado no termo de busca
   // Se não há termo de busca, mostra todos os estudantes
@@ -168,6 +179,18 @@ export function StudentSearchModal({
                     : "Nenhum estudante cadastrado no sistema"
                   }
                 </p>
+                {searchTerm.trim() === "" && (
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      console.log("Manual refetch triggered");
+                      refetch();
+                    }}
+                    className="mt-4"
+                  >
+                    Tentar novamente
+                  </Button>
+                )}
               </div>
             ) : null}
           </ScrollArea>
