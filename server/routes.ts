@@ -1402,6 +1402,104 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Endpoint para relatório de orientação de estágios
+  app.get("/api/reports/orientation/:semester", requireAuth, async (req, res) => {
+    try {
+      const { semester } = req.params;
+      
+      if (!semester || !semester.match(/^\d{4}-[12]$/)) {
+        return res.status(400).json({
+          success: false,
+          message: "Formato de semestre inválido. Use YYYY-1 ou YYYY-2"
+        });
+      }
+      
+      const [year, sem] = semester.split('-');
+      const yearNum = parseInt(year);
+      
+      // Definir range de datas do semestre
+      let startDate: Date, endDate: Date;
+      if (sem === '1') {
+        startDate = new Date(yearNum, 0, 1);  // Janeiro
+        endDate = new Date(yearNum, 5, 30);   // Junho
+      } else {
+        startDate = new Date(yearNum, 6, 1);  // Julho
+        endDate = new Date(yearNum, 11, 31);  // Dezembro
+      }
+      
+      // Buscar todos os orientadores ativos
+      const advisors = await storage.getAllAdvisors();
+      const activeAdvisors = advisors.filter(advisor => advisor.isActive);
+      
+      // Buscar todos os estágios no período
+      const internships = await storage.getAllInternships();
+      const semesterInternships = internships.filter(internship => {
+        if (!internship.startDate) return false;
+        const internshipStart = new Date(internship.startDate);
+        return internshipStart >= startDate && internshipStart <= endDate;
+      });
+      
+      // Buscar dados dos estudantes e empresas
+      const students = await storage.getAllStudents();
+      const companies = await storage.getAllCompanies();
+      
+      // Construir mapa de empresas por ID
+      const companyMap = companies.reduce((acc, company) => {
+        acc[company.id] = company.name;
+        return acc;
+      }, {} as Record<string, string>);
+      
+      // Construir mapa de estudantes por ID
+      const studentMap = students.reduce((acc, student) => {
+        acc[student.id] = {
+          name: student.name,
+          registrationNumber: student.registrationNumber
+        };
+        return acc;
+      }, {} as Record<string, { name: string; registrationNumber: string }>);
+      
+      // Agrupar estágios por orientador
+      const advisorInternships = semesterInternships.reduce((acc, internship) => {
+        if (!acc[internship.advisorId]) {
+          acc[internship.advisorId] = [];
+        }
+        acc[internship.advisorId].push(internship);
+        return acc;
+      }, {} as Record<string, any[]>);
+      
+      // Construir dados do relatório
+      const reportData = activeAdvisors.map(advisor => {
+        const advisorInternshipsList = advisorInternships[advisor.id] || [];
+        const studentsData = advisorInternshipsList.map(internship => {
+          const student = studentMap[internship.studentId];
+          const companyName = companyMap[internship.companyId];
+          
+          return {
+            name: student?.name || 'Nome não encontrado',
+            registrationNumber: student?.registrationNumber || 'N/A',
+            company: companyName || 'Empresa não encontrada'
+          };
+        });
+        
+        return {
+          id: advisor.id,
+          name: advisor.name,
+          siape: advisor.siape || 'N/A',
+          students: studentsData
+        };
+      });
+      
+      res.json(reportData);
+      
+    } catch (error) {
+      console.error('Erro ao gerar relatório de orientação:', error);
+      res.status(500).json({
+        success: false,
+        message: "Erro interno ao gerar relatório"
+      });
+    }
+  });
+
   // Endpoint público para registro de novos usuários (sem autenticação)
   app.post("/api/public/register", async (req, res) => {
     try {

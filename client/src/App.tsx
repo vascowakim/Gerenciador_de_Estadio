@@ -16,6 +16,7 @@ import MandatoryInternshipControl from "@/pages/mandatory-internship-control";
 import AlertsPage from "@/pages/alerts";
 import NonMandatoryInternships from "@/pages/non-mandatory-internships";
 import ProfilePage from "./pages/profile";
+import Reports from "@/pages/reports";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -71,6 +72,11 @@ function Router() {
       <Route path="/profile">
         <MainLayout>
           <ProfilePage />
+        </MainLayout>
+      </Route>
+      <Route path="/reports">
+        <MainLayout>
+          <Reports />
         </MainLayout>
       </Route>
       <Route component={NotFound} />
