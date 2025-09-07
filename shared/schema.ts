@@ -79,10 +79,13 @@ export const companies = pgTable("companies", {
 // Tabela de configurações do sistema
 export const settings = pgTable("settings", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  key: text("key").notNull().unique(),
-  value: text("value").notNull(),
-  description: text("description"),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  internshipCoordinatorName: text("internship_coordinator_name").notNull().default(""),
+  courseCoordinatorName: text("course_coordinator_name").notNull().default(""), 
+  courseName: text("course_name").notNull().default("Ciências Contábeis"),
+  universityName: text("university_name").notNull().default("Universidade Federal dos Vales do Jequitinhonha e Mucuri"),
+  universityAbbreviation: text("university_abbreviation").notNull().default("UFVJM"),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  updatedBy: varchar("updated_by").notNull().default("system"),
 });
 
 export const internships = pgTable("internships", {
