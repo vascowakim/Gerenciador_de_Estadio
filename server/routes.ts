@@ -1431,9 +1431,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const advisors = await storage.getAllAdvisors();
       const activeAdvisors = advisors.filter(advisor => advisor.isActive);
       
-      // Buscar todos os estágios no período
+      // Buscar todos os tipos de estágios no período
       const internships = await storage.getAllInternships();
+      const mandatoryInternships = await storage.getAllMandatoryInternships();
+      const nonMandatoryInternships = await storage.getAllNonMandatoryInternships();
+      
+      // Filtrar estágios por período
       const semesterInternships = internships.filter(internship => {
+        if (!internship.startDate) return false;
+        const internshipStart = new Date(internship.startDate);
+        return internshipStart >= startDate && internshipStart <= endDate;
+      });
+      
+      const semesterMandatoryInternships = mandatoryInternships.filter(internship => {
+        if (!internship.startDate) return false;
+        const internshipStart = new Date(internship.startDate);
+        return internshipStart >= startDate && internshipStart <= endDate;
+      });
+      
+      const semesterNonMandatoryInternships = nonMandatoryInternships.filter(internship => {
         if (!internship.startDate) return false;
         const internshipStart = new Date(internship.startDate);
         return internshipStart >= startDate && internshipStart <= endDate;
@@ -1458,26 +1474,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return acc;
       }, {} as Record<string, { name: string; registrationNumber: string }>);
       
-      // Agrupar estágios por orientador
-      const advisorInternships = semesterInternships.reduce((acc, internship) => {
-        if (!acc[internship.advisorId]) {
-          acc[internship.advisorId] = [];
+      // Agrupar todos os estágios por orientador
+      const advisorInternships = {} as Record<string, any[]>;
+      
+      // Adicionar estágios genéricos
+      semesterInternships.forEach(internship => {
+        if (!advisorInternships[internship.advisorId]) {
+          advisorInternships[internship.advisorId] = [];
         }
-        acc[internship.advisorId].push(internship);
-        return acc;
-      }, {} as Record<string, any[]>);
+        advisorInternships[internship.advisorId].push({
+          ...internship,
+          internshipType: internship.type === 'mandatory' ? 'Obrigatório' : 'Não Obrigatório'
+        });
+      });
+      
+      // Adicionar estágios obrigatórios específicos
+      semesterMandatoryInternships.forEach(internship => {
+        if (!advisorInternships[internship.advisorId]) {
+          advisorInternships[internship.advisorId] = [];
+        }
+        advisorInternships[internship.advisorId].push({
+          ...internship,
+          internshipType: 'Obrigatório',
+          company: companies.find(c => c.id === internship.companyId)?.name || 'Empresa não encontrada'
+        });
+      });
+      
+      // Adicionar estágios não obrigatórios específicos
+      semesterNonMandatoryInternships.forEach(internship => {
+        if (!advisorInternships[internship.advisorId]) {
+          advisorInternships[internship.advisorId] = [];
+        }
+        advisorInternships[internship.advisorId].push({
+          ...internship,
+          internshipType: 'Não Obrigatório',
+          company: companies.find(c => c.id === internship.companyId)?.name || 'Empresa não encontrada'
+        });
+      });
       
       // Construir dados do relatório
       const reportData = activeAdvisors.map(advisor => {
         const advisorInternshipsList = advisorInternships[advisor.id] || [];
         const studentsData = advisorInternshipsList.map(internship => {
           const student = studentMap[internship.studentId];
-          const companyName = companyMap[internship.companyId];
+          const companyName = internship.company || companyMap[internship.companyId] || 'Empresa não encontrada';
           
           return {
             name: student?.name || 'Nome não encontrado',
             registrationNumber: student?.registrationNumber || 'N/A',
-            company: companyName || 'Empresa não encontrada'
+            company: companyName,
+            type: internship.internshipType || 'Não informado'
           };
         });
         

@@ -17,6 +17,7 @@ interface ReportData {
     name: string;
     registrationNumber: string;
     company: string;
+    type: string;
   }[];
 }
 
@@ -120,16 +121,23 @@ export default function Reports() {
           const tableData = advisor.students.map(student => [
             student.name,
             student.registrationNumber,
-            student.company || "Não informada"
+            student.company || "Não informada",
+            student.type || "Não informado"
           ]);
           
           autoTable(doc, {
-            head: [['Nome do Estudante', 'Matrícula', 'Empresa']],
+            head: [['Nome do Estudante', 'Matrícula', 'Empresa', 'Tipo de Estágio']],
             body: tableData,
             startY: yPosition,
             margin: { left: 20, right: 20 },
-            styles: { fontSize: 10 },
-            headStyles: { fillColor: [41, 128, 185] },
+            styles: { fontSize: 9 },
+            headStyles: { fillColor: [41, 128, 185], fontSize: 9 },
+            columnStyles: {
+              0: { cellWidth: 50 }, // Nome
+              1: { cellWidth: 30 }, // Matrícula  
+              2: { cellWidth: 45 }, // Empresa
+              3: { cellWidth: 35 }  // Tipo
+            },
             theme: 'striped'
           });
           
@@ -219,7 +227,8 @@ export default function Reports() {
                 <li>• Nome do arquivo: orientacao_estagio_{selectedSemester.replace('-', '_')}semestre.pdf</li>
                 <li>• Inclui logo da UFVJM e nome da universidade</li>
                 <li>• Lista todos os orientadores com nome e SIAPE em negrito</li>
-                <li>• Mostra estudantes supervisionados com nome, matrícula e empresa</li>
+                <li>• Mostra estudantes supervisionados com nome, matrícula, empresa e tipo de estágio</li>
+                <li>• Diferencia entre estágios obrigatórios e não obrigatórios</li>
               </ul>
             </div>
           )}
