@@ -37,9 +37,20 @@ export function StudentSearchModal({
 }: StudentSearchModalProps) {
   const [searchTerm, setSearchTerm] = useState("");
 
-  const { data: students, isLoading } = useQuery<Student[]>({
+  const { data: students, isLoading, error } = useQuery<Student[]>({
     queryKey: ["/api/students"],
     enabled: isOpen,
+    retry: 1,
+    staleTime: 30000, // 30 seconds
+  });
+
+  // Debug logging
+  console.log("StudentSearchModal - Query state:", {
+    isOpen,
+    isLoading,
+    error,
+    studentsCount: students?.length || 0,
+    students: students
   });
 
   // Filtrar estudantes baseado no termo de busca
@@ -141,6 +152,12 @@ export function StudentSearchModal({
                     </div>
                   </div>
                 ))}
+              </div>
+            ) : error ? (
+              <div className="text-center p-8">
+                <User className="h-12 w-12 mx-auto mb-4 text-red-400" />
+                <p className="text-red-500 mb-2">Erro ao carregar estudantes</p>
+                <p className="text-sm text-gray-500">{error.message}</p>
               </div>
             ) : filteredStudents && filteredStudents.length === 0 ? (
               <div className="text-center p-8">
