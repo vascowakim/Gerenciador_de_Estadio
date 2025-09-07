@@ -19,7 +19,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useLocation, Link } from "wouter";
 import { format } from "date-fns";
 import { ObjectUploader } from "@/components/ObjectUploader";
-import { StudentSelector } from "@/components/StudentSelector";
+import { StudentDropdown } from "@/components/StudentDropdown";
 import type { UploadResult } from "@uppy/core";
 
 export default function MandatoryInternships() {
@@ -475,10 +475,10 @@ export default function MandatoryInternships() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Estudante</FormLabel>
-                        <StudentSelector
+                        <StudentDropdown
                           value={field.value}
                           onChange={field.onChange}
-                          placeholder="Clique em 'Buscar' para selecionar um estudante"
+                          placeholder="Selecione um estudante..."
                         />
                         <FormMessage />
                       </FormItem>

@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { ObjectUploader } from "@/components/ObjectUploader";
-import { StudentSelector } from "@/components/StudentSelector";
+import { StudentDropdown } from "@/components/StudentDropdown";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -389,10 +389,10 @@ export default function NonMandatoryInternshipsPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Aluno</FormLabel>
-                        <StudentSelector
+                        <StudentDropdown
                           value={field.value}
                           onChange={field.onChange}
-                          placeholder="Clique em 'Buscar' para selecionar um aluno"
+                          placeholder="Selecione um estudante..."
                         />
                         <FormMessage />
                       </FormItem>
