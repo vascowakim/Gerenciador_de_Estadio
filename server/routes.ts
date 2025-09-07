@@ -2070,6 +2070,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Endpoints de configurações do sistema (apenas para administradores)
+  app.get("/api/settings", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const systemSettings = await storage.getSettings();
+      
+      if (!systemSettings) {
+        // Inicializar configurações se não existirem
+        const newSettings = await storage.initializeSettings();
+        return res.json(newSettings);
+      }
+      
+      res.json(systemSettings);
+    } catch (error) {
+      console.error("Erro ao buscar configurações:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  app.put("/api/settings", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const { internshipCoordinatorName, courseCoordinatorName } = req.body;
+      
+      // Validação básica
+      if (!internshipCoordinatorName || !courseCoordinatorName) {
+        return res.status(400).json({ 
+          message: "Nome do coordenador de estágio e coordenador do curso são obrigatórios" 
+        });
+      }
+
+      const updatedSettings = await storage.updateSettings({
+        internshipCoordinatorName,
+        courseCoordinatorName,
+        updatedBy: req.session.user?.id || "system"
+      });
+
+      console.log(`⚙️ Configurações atualizadas por ${req.session.user?.username}:`, {
+        internshipCoordinatorName,
+        courseCoordinatorName
+      });
+
+      res.json({
+        success: true,
+        settings: updatedSettings,
+        message: "Configurações atualizadas com sucesso"
+      });
+    } catch (error) {
+      console.error("Erro ao atualizar configurações:", error);
+      res.status(500).json({ 
+        success: false,
+        message: "Erro interno ao atualizar configurações" 
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
