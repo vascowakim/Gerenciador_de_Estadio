@@ -892,6 +892,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       const { partialWorkload, notes } = req.body;
       
+      // Primeiro, atualizar a carga horária
       const mandatoryInternship = await storage.updateMandatoryInternshipWorkload(id, {
         partialWorkload,
         workloadNotes: notes
@@ -901,7 +902,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Estágio obrigatório não encontrado" });
       }
       
-      res.json(mandatoryInternship);
+      // Verificar se atingiu 390h e automaticamente concluir
+      if (partialWorkload >= 390 && mandatoryInternship.status !== "completed") {
+        const completedInternship = await storage.updateMandatoryInternship(id, {
+          status: "completed"
+        });
+        
+        console.log(`🎓 Estágio obrigatório ${id} concluído automaticamente - carga horária: ${partialWorkload}h`);
+        res.json(completedInternship || mandatoryInternship);
+      } else {
+        res.json(mandatoryInternship);
+      }
     } catch (error) {
       console.error("Erro ao atualizar carga horária:", error);
       res.status(400).json({ message: "Erro ao atualizar carga horária" });
@@ -1755,6 +1766,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
     } catch (error) {
       console.error('Erro ao buscar estágios concluídos para certificados:', error);
+      res.status(500).json({
+        success: false,
+        message: "Erro interno ao buscar dados"
+      });
+    }
+  });
+
+  // Endpoint para buscar estágios obrigatórios concluídos para certificados
+  app.get("/api/certificates/mandatory-completed", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId;
+      
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: "Usuário não autenticado"
+        });
+      }
+
+      // Buscar o orientador pelo userId
+      const advisors = await storage.getAllAdvisors();
+      const currentAdvisor = advisors.find(advisor => advisor.userId === userId);
+      
+      if (!currentAdvisor) {
+        return res.status(403).json({
+          success: false,
+          message: "Usuário não é um orientador"
+        });
+      }
+
+      // Buscar estágios obrigatórios concluídos do orientador
+      const mandatoryInternships = await storage.getAllMandatoryInternships();
+      const completedInternships = mandatoryInternships.filter(internship => 
+        internship.advisorId === currentAdvisor.id && 
+        internship.status === 'completed'
+      );
+
+      // Buscar dados dos estudantes e empresas
+      const students = await storage.getAllStudents();
+      const companies = await storage.getAllCompanies();
+      
+      const studentMap = students.reduce((acc, student) => {
+        acc[student.id] = student;
+        return acc;
+      }, {} as Record<string, any>);
+      
+      const companyMap = companies.reduce((acc, company) => {
+        acc[company.id] = company.name;
+        return acc;
+      }, {} as Record<string, string>);
+      
+      // Montar dados para os certificados
+      const certificateData = completedInternships.map(internship => {
+        const student = studentMap[internship.studentId];
+        return {
+          id: internship.id,
+          studentName: student?.name || 'N/A',
+          studentRegistration: student?.registrationNumber || 'N/A',
+          course: student?.course || 'N/A',
+          startDate: internship.startDate,
+          endDate: internship.endDate,
+          advisorName: currentAdvisor.name,
+          company: companyMap[internship.companyId] || 'N/A',
+          workload: internship.partialWorkload || 390,
+          crc: internship.crc
+        };
+      });
+      
+      res.json(certificateData);
+      
+    } catch (error) {
+      console.error('Erro ao buscar estágios obrigatórios concluídos para certificados:', error);
       res.status(500).json({
         success: false,
         message: "Erro interno ao buscar dados"
