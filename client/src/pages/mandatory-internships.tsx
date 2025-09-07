@@ -221,8 +221,8 @@ export default function MandatoryInternships() {
     setEditingInternship(internship);
     form.reset({
       ...internship,
-      startDate: internship.startDate ? new Date(internship.startDate).toISOString().split('T')[0] : "",
-      endDate: internship.endDate ? new Date(internship.endDate).toISOString().split('T')[0] : "",
+      startDate: internship.startDate ? new Date(internship.startDate).toISOString().split('T')[0] : undefined,
+      endDate: internship.endDate ? new Date(internship.endDate).toISOString().split('T')[0] : undefined,
     });
     setIsDialogOpen(true);
   };
@@ -278,7 +278,7 @@ export default function MandatoryInternships() {
 
   // Upload handlers
   const handleGetUploadParameters = async () => {
-    const response = await apiRequest("POST", "/api/objects/upload");
+    const response: any = await apiRequest("POST", "/api/objects/upload");
     return {
       method: "PUT" as const,
       url: response.uploadURL,
@@ -314,7 +314,7 @@ export default function MandatoryInternships() {
     return company ? company.name : "Empresa não encontrada";
   };
 
-  const filteredInternships = mandatoryInternships ? mandatoryInternships.filter((internship: MandatoryInternship) => {
+  const filteredInternships = (mandatoryInternships || []).filter((internship: MandatoryInternship) => {
     const studentName = getStudentName(internship.studentId);
     const advisorName = getAdvisorName(internship.advisorId);
     const companyName = getCompanyName(internship.companyId);
@@ -323,7 +323,7 @@ export default function MandatoryInternships() {
            advisorName.toLowerCase().includes(searchTerm.toLowerCase()) ||
            companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
            (internship.supervisor && internship.supervisor.toLowerCase().includes(searchTerm.toLowerCase()));
-  }) : [];
+  });
 
   return (
     <div className="p-6 space-y-6">
@@ -353,7 +353,7 @@ export default function MandatoryInternships() {
               <div>
                 <p className="text-sm text-gray-600">Ativos</p>
                 <p className="text-2xl font-bold text-yellow-600">
-                  {mandatoryInternships ? mandatoryInternships.filter((i: MandatoryInternship) => i.status === "pending").length : 0}
+                  {(mandatoryInternships || []).filter((i: MandatoryInternship) => i.status === "pending").length}
                 </p>
               </div>
             </div>
@@ -367,7 +367,7 @@ export default function MandatoryInternships() {
               <div>
                 <p className="text-sm text-gray-600">Aprovados</p>
                 <p className="text-2xl font-bold text-green-600">
-                  {mandatoryInternships ? mandatoryInternships.filter((i: MandatoryInternship) => i.status === "approved").length : 0}
+                  {(mandatoryInternships || []).filter((i: MandatoryInternship) => i.status === "approved").length}
                 </p>
               </div>
             </div>
@@ -381,7 +381,7 @@ export default function MandatoryInternships() {
               <div>
                 <p className="text-sm text-gray-600">Concluídos</p>
                 <p className="text-2xl font-bold text-blue-600">
-                  {mandatoryInternships ? mandatoryInternships.filter((i: MandatoryInternship) => i.status === "completed").length : 0}
+                  {(mandatoryInternships || []).filter((i: MandatoryInternship) => i.status === "completed").length}
                 </p>
               </div>
             </div>
@@ -395,11 +395,10 @@ export default function MandatoryInternships() {
               <div>
                 <p className="text-sm text-gray-600">Relatórios Pendentes</p>
                 <p className="text-2xl font-bold text-purple-600">
-                  {mandatoryInternships ? 
-                    mandatoryInternships.reduce((acc: number, i: MandatoryInternship) => {
+                  {(mandatoryInternships || []).reduce((acc: number, i: MandatoryInternship) => {
                       const reports = [i.r1, i.r2, i.r3, i.r4, i.r5, i.r6, i.r7, i.r8, i.r9, i.r10];
                       return acc + (10 - reports.filter(Boolean).length);
-                    }, 0) : 0
+                    }, 0)
                   }
                 </p>
               </div>
