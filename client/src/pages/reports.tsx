@@ -7,6 +7,7 @@ import { FileText, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import ufvjmLogo from "@assets/ufvjm_1757276310462.png";
 
 // Interface para dados do relatório
 interface ReportData {
@@ -79,21 +80,30 @@ export default function Reports() {
     try {
       const doc = new jsPDF();
       
-      // Logo UFVJM (centralizada) - placeholder
+      // Adicionar logo UFVJM centralizada no topo
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const logoWidth = 30;
+      const logoHeight = 20;
+      const logoX = (pageWidth - logoWidth) / 2;
+      
+      // Carregar e adicionar a imagem
+      doc.addImage(ufvjmLogo, 'PNG', logoX, 10, logoWidth, logoHeight);
+      
+      // Nome da universidade
       doc.setFontSize(16);
       doc.setFont("helvetica", "bold");
-      doc.text("UNIVERSIDADE FEDERAL DOS VALES DO JEQUITINHONHA E MUCURI", doc.internal.pageSize.getWidth() / 2, 30, { align: "center" });
-      doc.text("UFVJM", doc.internal.pageSize.getWidth() / 2, 45, { align: "center" });
+      doc.text("UNIVERSIDADE FEDERAL DOS VALES DO JEQUITINHONHA E MUCURI", pageWidth / 2, 40, { align: "center" });
+      doc.text("UFVJM", pageWidth / 2, 50, { align: "center" });
       
       // Título do relatório
       doc.setFontSize(14);
-      doc.text("RELATÓRIO DE ORIENTAÇÃO DE ESTÁGIOS", doc.internal.pageSize.getWidth() / 2, 65, { align: "center" });
+      doc.text("RELATÓRIO DE ORIENTAÇÃO DE ESTÁGIOS", pageWidth / 2, 70, { align: "center" });
       
       const [year, sem] = selectedSemester.split('-');
       doc.setFontSize(12);
-      doc.text(`${year}/${sem}º Semestre`, doc.internal.pageSize.getWidth() / 2, 75, { align: "center"});
+      doc.text(`${year}/${sem}º Semestre`, pageWidth / 2, 80, { align: "center"});
       
-      let yPosition = 95;
+      let yPosition = 100;
       
       // Para cada orientador
       reportData.forEach((advisor: ReportData) => {
