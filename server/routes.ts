@@ -848,10 +848,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
       
       const mandatoryInternshipData = insertMandatoryInternshipSchema.partial().parse(processedBody);
-      const mandatoryInternship = await storage.updateMandatoryInternship(id, mandatoryInternshipData);
+      
+      // Primeiro, atualizar os dados
+      let mandatoryInternship = await storage.updateMandatoryInternship(id, mandatoryInternshipData);
       if (!mandatoryInternship) {
         return res.status(404).json({ message: "Estágio obrigatório não encontrado" });
       }
+      
+      // Verificar se a carga horária foi atualizada e atingiu 390h para conclusão automática
+      if (mandatoryInternshipData.partialWorkload && 
+          mandatoryInternshipData.partialWorkload >= 390 && 
+          mandatoryInternship.status !== "completed") {
+        
+        // Automaticamente concluir o estágio
+        const completedInternship = await storage.updateMandatoryInternship(id, {
+          status: "completed"
+        });
+        
+        console.log(`🎓 Estágio obrigatório ${id} concluído automaticamente - carga horária: ${mandatoryInternshipData.partialWorkload}h`);
+        mandatoryInternship = completedInternship || mandatoryInternship;
+      }
+      
       res.json(mandatoryInternship);
     } catch (error) {
       console.error("Error updating mandatory internship:", error);
