@@ -21,6 +21,15 @@ interface CompletedInternship {
   company: string;
 }
 
+interface SystemSettings {
+  id: string;
+  internshipCoordinatorName: string;
+  courseCoordinatorName: string;
+  courseName: string;
+  universityName: string;
+  universityAbbreviation: string;
+}
+
 export default function NonMandatoryStudentCertificates() {
   const { toast } = useToast();
   const [selectedSemester, setSelectedSemester] = useState<string>("all");
@@ -28,6 +37,11 @@ export default function NonMandatoryStudentCertificates() {
   const { data: completedInternships, isLoading } = useQuery<CompletedInternship[]>({
     queryKey: ['/api/certificates/non-mandatory-completed', selectedSemester],
     enabled: !!selectedSemester,
+  });
+
+  // Buscar configurações do sistema
+  const { data: settings } = useQuery<SystemSettings>({
+    queryKey: ['/api/settings'],
   });
 
   const generateCertificatePDF = (internship: CompletedInternship) => {
@@ -113,13 +127,16 @@ export default function NonMandatoryStudentCertificates() {
       
       doc.setFont("helvetica", "bold");
       doc.setFontSize(12);
-      doc.text("PROF. DR. VASCONCELOS R. WAKIM", pageWidth / 2, yPosition, { align: "center" });
+      
+      // Usar o nome do coordenador das configurações ou fallback para o valor padrão
+      const coordinatorName = settings?.internshipCoordinatorName || "COORDENADOR DE ESTÁGIO";
+      doc.text(coordinatorName.toUpperCase(), pageWidth / 2, yPosition, { align: "center" });
       
       yPosition += 10;
       
       doc.setFont("helvetica", "normal");
       doc.setFontSize(10);
-      doc.text("PERITO CONTADOR CRCMG 082870/O-8", pageWidth / 2, yPosition, { align: "center" });
+      doc.text("COORDENADOR DE ESTÁGIO", pageWidth / 2, yPosition, { align: "center" });
       
       // Data de emissão no canto inferior direito
       const currentDate = new Date().toLocaleDateString('pt-BR');

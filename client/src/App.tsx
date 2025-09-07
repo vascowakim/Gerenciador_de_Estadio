@@ -25,6 +25,7 @@ import StudentCertificates from "@/pages/student-certificates";
 import AdvisorCertificates from "@/pages/advisor-certificates";
 import MandatoryStudentCertificates from "@/pages/mandatory-student-certificates";
 import NonMandatoryStudentCertificates from "@/pages/non-mandatory-student-certificates";
+import SystemSettings from "@/pages/settings";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -125,6 +126,11 @@ function Router() {
       <Route path="/non-mandatory-student-certificates">
         <MainLayout>
           <NonMandatoryStudentCertificates />
+        </MainLayout>
+      </Route>
+      <Route path="/settings">
+        <MainLayout>
+          <SystemSettings />
         </MainLayout>
       </Route>
       <Route component={NotFound} />
