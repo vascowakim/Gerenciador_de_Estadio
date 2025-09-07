@@ -235,7 +235,6 @@ export default function MandatoryStudentCertificates() {
         <SemesterSelector 
           value={selectedSemester} 
           onValueChange={setSelectedSemester}
-          includeAll={true}
         />
         <Badge variant="secondary">
           {completedInternships?.length || 0} estágios concluídos
