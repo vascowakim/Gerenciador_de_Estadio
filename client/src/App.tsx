@@ -17,6 +17,7 @@ import AlertsPage from "@/pages/alerts";
 import NonMandatoryInternships from "@/pages/non-mandatory-internships";
 import ProfilePage from "./pages/profile";
 import SettingsPage from "./pages/settings";
+import ReportsPage from "./pages/reports";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -72,6 +73,11 @@ function Router() {
       <Route path="/settings">
         <MainLayout>
           <SettingsPage />
+        </MainLayout>
+      </Route>
+      <Route path="/reports">
+        <MainLayout>
+          <ReportsPage />
         </MainLayout>
       </Route>
       <Route path="/profile">
