@@ -76,10 +76,11 @@ export default function MandatoryInternships() {
     },
   });
 
-  // Fetch mandatory internships
-  const { data: mandatoryInternships = [], isLoading } = useQuery<MandatoryInternship[]>({
+  // Fetch mandatory internships with enhanced cache strategy
+  const { data: mandatoryInternships = [], isLoading, refetch } = useQuery<MandatoryInternship[]>({
     queryKey: ["/api/mandatory-internships"],
     enabled: !!user,
+    refetchOnMount: true,
   });
 
   // Fetch students, advisors, and companies for form
@@ -105,17 +106,10 @@ export default function MandatoryInternships() {
       return response.json();
     },
     onSuccess: async (responseData) => {
-      // Invalidar e forçar refetch imediato da lista de estágios obrigatórios
-      await queryClient.invalidateQueries({ 
-        queryKey: ["/api/mandatory-internships"],
-        refetchType: 'all'
-      });
-      
-      // Refetch forçado para garantir que a lista seja atualizada
-      await queryClient.refetchQueries({ 
-        queryKey: ["/api/mandatory-internships"],
-        type: 'all'
-      });
+      // Invalidar cache e forçar refetch imediato
+      queryClient.removeQueries({ queryKey: ["/api/mandatory-internships"] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/mandatory-internships"] });
+      await refetch();
       
       setIsDialogOpen(false);
       form.reset({

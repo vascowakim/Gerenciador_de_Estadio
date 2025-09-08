@@ -54,9 +54,10 @@ export default function NonMandatoryInternshipsPage() {
     },
   });
 
-  // Queries
-  const { data: internships = [], isLoading: internshipsLoading } = useQuery<NonMandatoryInternship[]>({
+  // Queries with enhanced cache strategy
+  const { data: internships = [], isLoading: internshipsLoading, refetch } = useQuery<NonMandatoryInternship[]>({
     queryKey: ["/api/non-mandatory-internships"],
+    refetchOnMount: true,
   });
 
   const { data: students = [] } = useQuery<Student[]>({
@@ -95,17 +96,10 @@ export default function NonMandatoryInternshipsPage() {
       return response.json();
     },
     onSuccess: async (responseData) => {
-      // Invalidar e forçar refetch imediato da lista de estágios não obrigatórios
-      await queryClient.invalidateQueries({ 
-        queryKey: ["/api/non-mandatory-internships"],
-        refetchType: 'all'
-      });
-      
-      // Refetch forçado para garantir que a lista seja atualizada
-      await queryClient.refetchQueries({ 
-        queryKey: ["/api/non-mandatory-internships"],
-        type: 'all'
-      });
+      // Invalidar cache e forçar refetch imediato
+      queryClient.removeQueries({ queryKey: ["/api/non-mandatory-internships"] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/non-mandatory-internships"] });
+      await refetch();
       
       setIsDialogOpen(false);
       form.reset({
