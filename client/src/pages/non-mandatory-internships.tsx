@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { ObjectUploader } from "@/components/ObjectUploader";
+import { StudentCombobox } from "@/components/StudentCombobox";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -388,20 +389,13 @@ export default function NonMandatoryInternshipsPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Aluno</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Selecione um aluno" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {students.map((student: Student) => (
-                              <SelectItem key={student.id} value={student.id}>
-                                {student.name} - {student.registrationNumber}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <FormControl>
+                          <StudentCombobox
+                            value={field.value}
+                            onValueChange={field.onChange}
+                            placeholder="Digite para buscar o aluno..."
+                          />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
