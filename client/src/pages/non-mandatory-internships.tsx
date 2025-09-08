@@ -39,7 +39,6 @@ export default function NonMandatoryInternshipsPage() {
   const { toast } = useToast();
 
   const form = useForm<FormData>({
-    resolver: zodResolver(formSchema),
     defaultValues: {
       studentId: "",
       advisorId: "",
@@ -47,8 +46,8 @@ export default function NonMandatoryInternshipsPage() {
       supervisor: "",
       crc: "",
       status: "pending",
-      startDate: undefined,
-      endDate: undefined,
+      startDate: "",
+      endDate: "",
       isActive: true,
     },
   });
