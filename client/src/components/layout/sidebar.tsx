@@ -111,8 +111,15 @@ export function Sidebar({ user }: SidebarProps) {
   ];
 
   const filteredItems = navigationItems.filter(item => {
-    // Tanto administradores quanto professores veem todos os itens
-    return user?.role === "administrator" || user?.role === "professor";
+    if (user?.role === "administrator") {
+      return true; // Administradores veem tudo
+    }
+    if (user?.role === "professor") {
+      // Professores só veem: Dashboard, Estágio Obrigatório, Não Obrigatório e Certificados
+      const allowedRoutes = ["/dashboard", "/mandatory-internships", "/non-mandatory-internships", "/certificates"];
+      return allowedRoutes.includes(item.href);
+    }
+    return false;
   });
 
   return (
