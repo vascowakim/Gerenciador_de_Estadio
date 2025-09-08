@@ -108,13 +108,6 @@ export function Sidebar({ user }: SidebarProps) {
       adminOnly: true,
       professorAccess: false,
     },
-    {
-      title: "Backup",
-      href: "/backup",
-      icon: Archive,
-      adminOnly: true,
-      professorAccess: false,
-    },
   ];
 
   const filteredItems = navigationItems.filter(item => {
