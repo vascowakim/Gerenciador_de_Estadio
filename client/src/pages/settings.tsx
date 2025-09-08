@@ -42,7 +42,7 @@ export default function SettingsPage() {
 
   // Carregar dados no formulário quando as configurações chegarem
   useEffect(() => {
-    if (settings && settings.length > 0) {
+    if (settings && Array.isArray(settings) && settings.length > 0) {
       const settingsMap: Record<string, string> = {};
       settings.forEach((setting: any) => {
         settingsMap[setting.key] = setting.value;
@@ -61,22 +61,22 @@ export default function SettingsPage() {
     mutationFn: async (data: SettingsFormData) => {
       // Salvar cada configuração individualmente
       const promises = [
-        apiRequest('/api/settings', 'POST', {
+        apiRequest('POST', '/api/settings', {
           key: 'course_coordinator_name',
           value: data.courseCoordinatorName,
           description: 'Nome do coordenador do curso para relatórios e certificados'
         }),
-        apiRequest('/api/settings', 'POST', {
+        apiRequest('POST', '/api/settings', {
           key: 'internship_coordinator_name',
           value: data.internshipCoordinatorName,
           description: 'Nome do coordenador de estágio para relatórios e certificados'
         }),
-        apiRequest('/api/settings', 'POST', {
+        apiRequest('POST', '/api/settings', {
           key: 'institution_name',
           value: data.institutionName,
           description: 'Nome oficial da instituição'
         }),
-        apiRequest('/api/settings', 'POST', {
+        apiRequest('POST', '/api/settings', {
           key: 'department_name',
           value: data.departmentName,
           description: 'Nome do departamento'
@@ -94,9 +94,24 @@ export default function SettingsPage() {
     },
     onError: (error: any) => {
       console.error("Erro ao salvar configurações:", error);
+      
+      let errorMessage = "Ocorreu um erro ao salvar as configurações.";
+      
+      if (error.message) {
+        if (error.message.includes("401")) {
+          errorMessage = "Você não tem permissão para alterar as configurações. Faça login como administrador.";
+        } else if (error.message.includes("403")) {
+          errorMessage = "Acesso negado. Apenas administradores podem alterar as configurações.";
+        } else if (error.message.includes("400")) {
+          errorMessage = "Dados inválidos. Verifique se todos os campos foram preenchidos.";
+        } else if (error.message.includes("500")) {
+          errorMessage = "Erro interno do servidor. Tente novamente em alguns instantes.";
+        }
+      }
+      
       toast({
-        title: "Erro",
-        description: "Ocorreu um erro ao salvar as configurações. Tente novamente.",
+        title: "Erro ao salvar configurações",
+        description: errorMessage,
         variant: "destructive",
       });
     },
