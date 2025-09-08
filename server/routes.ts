@@ -759,9 +759,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Mandatory Internships routes
   app.get("/api/mandatory-internships", requireAuth, async (req: any, res) => {
     try {
-      console.log(`📋 ${req.session.user.username} buscando todos os estágios obrigatórios`);
-      const mandatoryInternships = await storage.getAllMandatoryInternships();
-      console.log(`📋 Encontrou ${mandatoryInternships.length} estágios obrigatórios`);
+      let mandatoryInternships;
+      if (req.session.user.role === "administrator") {
+        console.log('📋 Admin buscando todos os estágios obrigatórios');
+        mandatoryInternships = await storage.getAllMandatoryInternships();
+        console.log(`📋 Admin encontrou ${mandatoryInternships.length} estágios obrigatórios`);
+      } else {
+        // Professores só veem estágios que orientam
+        console.log(`👨‍🏫 Professor ${req.session.user.username} (ID: ${req.session.user.id}) buscando estágios obrigatórios que orienta`);
+        mandatoryInternships = await storage.getMandatoryInternshipsByAdvisor(req.session.user.id);
+        console.log(`👨‍🏫 Professor encontrou ${mandatoryInternships.length} estágios obrigatórios:`, 
+          mandatoryInternships.map(i => `ID: ${i.id}, AdvisorId: ${i.advisorId}`));
+      }
       res.json(mandatoryInternships);
     } catch (error) {
       console.error('❌ Erro ao buscar estágios obrigatórios:', error);
@@ -928,9 +937,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Non-Mandatory Internships routes
   app.get("/api/non-mandatory-internships", requireAuth, async (req: any, res) => {
     try {
-      console.log(`📋 ${req.session.user.username} buscando todos os estágios não obrigatórios`);
-      const nonMandatoryInternships = await storage.getAllNonMandatoryInternships();
-      console.log(`📋 Encontrou ${nonMandatoryInternships.length} estágios não obrigatórios`);
+      let nonMandatoryInternships;
+      if (req.session.user.role === "administrator") {
+        console.log('📋 Admin buscando todos os estágios não obrigatórios');
+        nonMandatoryInternships = await storage.getAllNonMandatoryInternships();
+        console.log(`📋 Admin encontrou ${nonMandatoryInternships.length} estágios não obrigatórios`);
+      } else {
+        // Professores só veem estágios que orientam
+        console.log(`👨‍🏫 Professor ${req.session.user.username} (ID: ${req.session.user.id}) buscando estágios não obrigatórios que orienta`);
+        nonMandatoryInternships = await storage.getNonMandatoryInternshipsByAdvisor(req.session.user.id);
+        console.log(`👨‍🏫 Professor encontrou ${nonMandatoryInternships.length} estágios não obrigatórios:`, 
+          nonMandatoryInternships.map(i => `ID: ${i.id}, AdvisorId: ${i.advisorId}`));
+      }
       res.json(nonMandatoryInternships);
     } catch (error) {
       console.error('❌ Erro ao buscar estágios não obrigatórios:', error);
