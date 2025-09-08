@@ -811,7 +811,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      const mandatoryInternship = await storage.createMandatoryInternship(mandatoryInternshipData);
+      // Adicionar o ID do usuário que está criando o estágio
+      const mandatoryInternshipWithCreator = {
+        ...mandatoryInternshipData,
+        createdBy: (req.session as any).user.id
+      };
+      
+      const mandatoryInternship = await storage.createMandatoryInternship(mandatoryInternshipWithCreator);
       res.status(201).json({
         success: true,
         data: mandatoryInternship,
@@ -990,7 +996,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      const nonMandatoryInternship = await storage.createNonMandatoryInternship(nonMandatoryInternshipData);
+      // Adicionar o ID do usuário que está criando o estágio
+      const nonMandatoryInternshipWithCreator = {
+        ...nonMandatoryInternshipData,
+        createdBy: (req.session as any).user.id
+      };
+      
+      const nonMandatoryInternship = await storage.createNonMandatoryInternship(nonMandatoryInternshipWithCreator);
       res.status(201).json({
         success: true,
         data: nonMandatoryInternship,
