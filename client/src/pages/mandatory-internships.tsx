@@ -221,9 +221,26 @@ export default function MandatoryInternships() {
   const handleEdit = (internship: MandatoryInternship) => {
     setEditingInternship(internship);
     form.reset({
-      ...internship,
+      studentId: internship.studentId,
+      advisorId: internship.advisorId,
+      companyId: internship.companyId || "",
+      supervisor: internship.supervisor || "",
+      crc: internship.crc || "",
+      workload: internship.workload || "390",
       startDate: internship.startDate ? new Date(internship.startDate).toISOString().split('T')[0] : "",
       endDate: internship.endDate ? new Date(internship.endDate).toISOString().split('T')[0] : "",
+      status: internship.status,
+      r1: internship.r1 || false,
+      r2: internship.r2 || false,
+      r3: internship.r3 || false,
+      r4: internship.r4 || false,
+      r5: internship.r5 || false,
+      r6: internship.r6 || false,
+      r7: internship.r7 || false,
+      r8: internship.r8 || false,
+      r9: internship.r9 || false,
+      r10: internship.r10 || false,
+      isActive: internship.isActive,
     });
     setIsDialogOpen(true);
   };
