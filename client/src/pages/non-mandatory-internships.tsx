@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Edit2, Trash2, Search, CheckCircle, XCircle, Calendar, FileText, Users, Building, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -76,6 +76,17 @@ export default function NonMandatoryInternshipsPage() {
   const { data: currentUser } = useQuery<{ id: string; role: string }>({
     queryKey: ["/api/auth/me"],
   });
+
+  // Definir valor padrão do filtro de orientador baseado no usuário logado
+  useEffect(() => {
+    if (currentUser && currentUser.role === "professor") {
+      // Para professores, pré-selecionar o próprio professor
+      setSelectedAdvisorId(currentUser.id);
+    } else if (currentUser && currentUser.role === "administrator") {
+      // Para administradores, mostrar todos por padrão
+      setSelectedAdvisorId("todos");
+    }
+  }, [currentUser]);
 
   // Mutations
   const createMutation = useMutation({
