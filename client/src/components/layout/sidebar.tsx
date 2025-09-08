@@ -102,7 +102,7 @@ export function Sidebar({ user }: SidebarProps) {
       professorAccess: false,
     },
     {
-      title: "Configuracoes",
+      title: "Configurações",
       href: "/settings",
       icon: Settings,
       adminOnly: true,
