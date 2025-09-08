@@ -484,195 +484,225 @@ export default function MandatoryInternships() {
             </DialogHeader>
 
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="studentId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Estudante</FormLabel>
-                        <StudentDropdown
-                          value={field.value}
-                          onChange={field.onChange}
-                          placeholder="Selecione um estudante..."
-                        />
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="advisorId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Orientador</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger data-testid="select-advisor">
-                              <SelectValue placeholder="Selecione o orientador" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {advisors?.map((advisor: Advisor) => (
-                              <SelectItem key={advisor.id} value={advisor.id}>
-                                {advisor.name} - {advisor.department}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="companyId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Empresa</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value || ""}>
-                          <FormControl>
-                            <SelectTrigger data-testid="select-company">
-                              <SelectValue placeholder="Selecione a empresa" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {companies?.map((company: Company) => (
-                              <SelectItem key={company.id} value={company.id}>
-                                {company.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="supervisor"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Supervisor</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Nome do supervisor" {...field} data-testid="input-supervisor" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="crc"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>CRC</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Número do CRC" {...field} data-testid="input-crc" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="workload"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Carga Horária Total</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Ex: 390" {...field} data-testid="input-workload" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="startDate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Data de Início</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="date" 
-                            value={field.value ? new Date(field.value).toISOString().split('T')[0] : ''}
-                            onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : undefined)}
-                            data-testid="input-start-date" 
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                {/* Seção Principal */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-900">Informações Básicas</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="studentId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Estudante *</FormLabel>
+                          <StudentDropdown
+                            value={field.value}
+                            onChange={field.onChange}
+                            placeholder="Selecione um estudante..."
                           />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                  <FormField
-                    control={form.control}
-                    name="endDate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Data de Término</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="date" 
-                            value={field.value ? new Date(field.value).toISOString().split('T')[0] : ''}
-                            onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : undefined)}
-                            data-testid="input-end-date" 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                    <FormField
+                      control={form.control}
+                      name="advisorId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Orientador *</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-advisor">
+                                <SelectValue placeholder="Selecione o orientador" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {advisors?.map((advisor: Advisor) => (
+                                <SelectItem key={advisor.id} value={advisor.id}>
+                                  {advisor.name} - {advisor.department}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                  <FormField
-                    control={form.control}
-                    name="status"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Status</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                    <FormField
+                      control={form.control}
+                      name="companyId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Empresa</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value || ""}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-company">
+                                <SelectValue placeholder="Selecione a empresa" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {companies?.map((company: Company) => (
+                                <SelectItem key={company.id} value={company.id}>
+                                  {company.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="supervisor"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Supervisor</FormLabel>
                           <FormControl>
-                            <SelectTrigger data-testid="select-status">
-                              <SelectValue placeholder="Selecione o status" />
-                            </SelectTrigger>
+                            <Input 
+                              placeholder="Nome do supervisor na empresa" 
+                              {...field} 
+                              data-testid="input-supervisor" 
+                            />
                           </FormControl>
-                          <SelectContent>
-                            <SelectItem value="pending">Ativo</SelectItem>
-                            <SelectItem value="approved">Aprovado</SelectItem>
-                            <SelectItem value="completed">Concluído</SelectItem>
-                            <SelectItem value="rejected">Rejeitado</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                 </div>
 
-                <div className="flex justify-end space-x-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setIsDialogOpen(false)}
-                    data-testid="button-cancel"
-                  >
-                    Cancelar
-                  </Button>
-                  <Button 
-                    type="submit" 
-                    disabled={createMutation.isPending || updateMutation.isPending}
-                    data-testid="button-submit"
-                  >
-                    {editingInternship ? "Atualizar" : "Criar"}
-                  </Button>
+                {/* Seção de Detalhes */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-900">Detalhes do Estágio</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="crc"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>CRC</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="Número do CRC (se aplicável)" 
+                              {...field} 
+                              data-testid="input-crc" 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="workload"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Carga Horária Total *</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="Ex: 390 horas" 
+                              {...field} 
+                              data-testid="input-workload" 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="startDate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Data de Início</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="date" 
+                              {...field}
+                              data-testid="input-start-date" 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="endDate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Data de Término</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="date" 
+                              {...field}
+                              data-testid="input-end-date" 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="status"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Status *</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-status">
+                                <SelectValue placeholder="Selecione o status" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="pending">Ativo</SelectItem>
+                              <SelectItem value="approved">Aprovado</SelectItem>
+                              <SelectItem value="completed">Concluído</SelectItem>
+                              <SelectItem value="rejected">Rejeitado</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+
+                <div className="border-t pt-4">
+                  <div className="flex justify-end space-x-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsDialogOpen(false)}
+                      data-testid="button-cancel"
+                    >
+                      Cancelar
+                    </Button>
+                    <Button 
+                      type="submit" 
+                      disabled={createMutation.isPending || updateMutation.isPending}
+                      data-testid="button-submit"
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      {createMutation.isPending || updateMutation.isPending ? (
+                        <>
+                          <span className="animate-spin mr-2">⏳</span>
+                          Salvando...
+                        </>
+                      ) : (
+                        editingInternship ? "Atualizar Estágio" : "Criar Estágio"
+                      )}
+                    </Button>
+                  </div>
                 </div>
               </form>
             </Form>
