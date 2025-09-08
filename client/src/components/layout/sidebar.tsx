@@ -95,11 +95,11 @@ export function Sidebar({ user }: SidebarProps) {
       professorAccess: true,
     },
     {
-      title: "Relatorios",
+      title: "Central de Relatórios",
       href: "/reports",
       icon: BarChart3,
       adminOnly: false,
-      professorAccess: false,
+      professorAccess: true,
     },
     {
       title: "Configurações",
