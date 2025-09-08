@@ -103,6 +103,22 @@ export default function ReportsPage() {
     queryKey: ["/api/alerts"],
   });
 
+  // Buscar configurações do sistema
+  const { data: settings = [] } = useQuery({
+    queryKey: ["/api/settings"],
+  });
+
+  // Extrair nomes dos coordenadores das configurações
+  const settingsMap: Record<string, string> = {};
+  if (Array.isArray(settings)) {
+    settings.forEach((setting: any) => {
+      settingsMap[setting.key] = setting.value;
+    });
+  }
+  
+  const courseCoordinatorName = settingsMap['course_coordinator_name'] || 'Prof. Dr. Nome do Coordenador';
+  const internshipCoordinatorName = settingsMap['internship_coordinator_name'] || 'Profa. Dra. Nome da Coordenadora';
+
   // Filtrar dados por semestre
   const filteredMandatory = filterBySemester(mandatoryInternships, 'createdAt');
   const filteredNonMandatory = filterBySemester(nonMandatoryInternships, 'createdAt');
@@ -544,12 +560,12 @@ export default function ReportsPage() {
               <div style="margin-top: 40px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; max-width: 800px; margin-left: auto; margin-right: auto;">
                 <div style="text-align: center; padding: 20px; border-top: 2px solid #1e40af;">
                   <p style="margin-top: 15px; font-weight: 600; color: #1e40af; font-size: 16px;">Coordenador de Curso</p>
-                  <p style="color: #4a5568; font-size: 14px; margin-top: 5px;">Prof. Dr. Nome do Coordenador</p>
+                  <p style="color: #4a5568; font-size: 14px; margin-top: 5px;">${courseCoordinatorName}</p>
                   <p style="color: #6b7280; font-size: 12px;">Ciências Contábeis - UFVJM</p>
                 </div>
                 <div style="text-align: center; padding: 20px; border-top: 2px solid #059669;">
                   <p style="margin-top: 15px; font-weight: 600; color: #059669; font-size: 16px;">Coordenadora de Estágio</p>
-                  <p style="color: #4a5568; font-size: 14px; margin-top: 5px;">Profa. Dra. Nome da Coordenadora</p>
+                  <p style="color: #4a5568; font-size: 14px; margin-top: 5px;">${internshipCoordinatorName}</p>
                   <p style="color: #6b7280; font-size: 12px;">Coordenação de Estágios - UFVJM</p>
                 </div>
               </div>
