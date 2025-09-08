@@ -473,8 +473,7 @@ export default function MandatoryInternships() {
                 Novo Estágio Obrigatório
               </Button>
             </DialogTrigger>
-
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingInternship ? "Editar Estágio Obrigatório" : "Novo Estágio Obrigatório"}
@@ -679,6 +678,7 @@ export default function MandatoryInternships() {
             </Form>
           </DialogContent>
         </Dialog>
+        )}
 
         {/* Management Dialog */}
         <Dialog open={isManagementDialogOpen} onOpenChange={setIsManagementDialogOpen}>

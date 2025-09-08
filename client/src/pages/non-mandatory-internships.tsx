@@ -367,13 +367,14 @@ export default function NonMandatoryInternshipsPage() {
           />
         </div>
         
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={handleOpenDialog} data-testid="button-add-internship">
-              <Plus className="h-4 w-4 mr-2" />
-              Novo Estágio Não Obrigatório
-            </Button>
-          </DialogTrigger>
+        {currentUser?.role === "administrator" && (
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={handleOpenDialog} data-testid="button-add-internship">
+                <Plus className="h-4 w-4 mr-2" />
+                Novo Estágio Não Obrigatório
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
@@ -551,6 +552,7 @@ export default function NonMandatoryInternshipsPage() {
             </Form>
           </DialogContent>
         </Dialog>
+        )}
       </div>
 
       {/* Internships Grid */}
