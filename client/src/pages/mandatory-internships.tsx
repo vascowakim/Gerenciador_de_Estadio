@@ -100,6 +100,17 @@ export default function MandatoryInternships() {
     enabled: !!user,
   });
 
+  // Definir valor padrão do filtro de orientador baseado no usuário logado
+  useEffect(() => {
+    if (user && user.user.role === "professor") {
+      // Para professores, pré-selecionar o próprio professor
+      setSelectedAdvisorId(user.user.id);
+    } else if (user && user.user.role === "administrator") {
+      // Para administradores, mostrar todos por padrão
+      setSelectedAdvisorId("todos");
+    }
+  }, [user]);
+
   // Create mandatory internship mutation
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
