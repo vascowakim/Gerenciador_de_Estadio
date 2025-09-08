@@ -212,6 +212,7 @@ export default function MandatoryInternships() {
 
   const onSubmit = async (data: any) => {
     console.log('📝 Dados do formulário:', data);
+    console.log('👤 Usuário atual:', user);
     
     // Validação básica dos campos obrigatórios
     if (!data.studentId || data.studentId.trim() === '') {
@@ -544,7 +545,7 @@ export default function MandatoryInternships() {
                   setEditingInternship(null);
                   form.reset({
                     studentId: "",
-                    advisorId: user?.role === "professor" ? user.id : "",
+                    advisorId: (user?.role === "professor" && user?.id) ? user.id : "",
                     companyId: "",
                     supervisor: "",
                     crc: "",
@@ -583,95 +584,95 @@ export default function MandatoryInternships() {
 
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                {/* Seção Principal */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Informações Básicas</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="studentId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Estudante *</FormLabel>
-                          <StudentDropdown
-                            value={field.value}
-                            onChange={field.onChange}
-                            placeholder="Selecione um estudante..."
-                          />
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="advisorId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Orientador *</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger data-testid="select-advisor">
-                                <SelectValue placeholder="Selecione o orientador" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {advisors?.map((advisor: Advisor) => (
-                                <SelectItem key={advisor.id} value={advisor.id}>
-                                  {advisor.name} - {advisor.department}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="companyId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Empresa</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value || ""}>
-                            <FormControl>
-                              <SelectTrigger data-testid="select-company">
-                                <SelectValue placeholder="Selecione a empresa" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {companies?.map((company: Company) => (
-                                <SelectItem key={company.id} value={company.id}>
-                                  {company.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="supervisor"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Supervisor</FormLabel>
-                          <FormControl>
-                            <Input 
-                              placeholder="Nome do supervisor na empresa" 
-                              {...field} 
-                              data-testid="input-supervisor" 
+                  {/* Seção Principal */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-gray-900">Informações Básicas</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="studentId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Estudante *</FormLabel>
+                            <StudentDropdown
+                              value={field.value}
+                              onChange={field.onChange}
+                              placeholder="Selecione um estudante..."
                             />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="advisorId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Orientador *</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger data-testid="select-advisor">
+                                  <SelectValue placeholder="Selecione o orientador" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {Array.isArray(advisors) && advisors.map((advisor: Advisor) => (
+                                  <SelectItem key={advisor.id} value={advisor.id}>
+                                    {advisor.name} - {advisor.department}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="companyId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Empresa</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value || ""}>
+                              <FormControl>
+                                <SelectTrigger data-testid="select-company">
+                                  <SelectValue placeholder="Selecione a empresa" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {Array.isArray(companies) && companies.map((company: Company) => (
+                                  <SelectItem key={company.id} value={company.id}>
+                                    {company.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="supervisor"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Supervisor</FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder="Nome do supervisor na empresa" 
+                                {...field} 
+                                data-testid="input-supervisor" 
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
                   </div>
-                </div>
 
                 {/* Seção de Detalhes */}
                 <div className="space-y-4">
