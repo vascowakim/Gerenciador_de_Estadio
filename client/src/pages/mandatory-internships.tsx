@@ -26,7 +26,7 @@ import type { UploadResult } from "@uppy/core";
 export default function MandatoryInternships() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  // Dialog state removed - now managed by MandatoryInternshipForm component
   const [editingInternship, setEditingInternship] = useState<MandatoryInternship | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [isManagementDialogOpen, setIsManagementDialogOpen] = useState(false);
@@ -37,31 +37,7 @@ export default function MandatoryInternships() {
     r6: false, r7: false, r8: false, r9: false, r10: false
   });
 
-  const form = useForm<any>({
-    mode: "onChange",
-    defaultValues: {
-      studentId: "",
-      advisorId: "",
-      companyId: "",
-      supervisor: "",
-      crc: "",
-      workload: "390",
-      startDate: "",
-      endDate: "",
-      status: "pending",
-      r1: false,
-      r2: false,
-      r3: false,
-      r4: false,
-      r5: false,
-      r6: false,
-      r7: false,
-      r8: false,
-      r9: false,
-      r10: false,
-      isActive: true,
-    },
-  });
+  // Form removed - now using MandatoryInternshipForm component
 
   // Check authentication
   const { data: user, isLoading: authLoading } = useQuery({
