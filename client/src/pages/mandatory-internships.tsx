@@ -37,7 +37,6 @@ export default function MandatoryInternships() {
   });
 
   const form = useForm({
-    resolver: zodResolver(insertMandatoryInternshipSchema),
     defaultValues: {
       studentId: "",
       advisorId: "",
