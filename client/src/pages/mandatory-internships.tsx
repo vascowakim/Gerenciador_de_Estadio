@@ -210,11 +210,110 @@ export default function MandatoryInternships() {
     return <div>Redirecionando...</div>;
   }
 
-  const onSubmit = (data: any) => {
-    if (editingInternship) {
-      updateMutation.mutate({ id: editingInternship.id, data });
-    } else {
-      createMutation.mutate(data);
+  const onSubmit = async (data: any) => {
+    console.log('📝 Dados do formulário:', data);
+    
+    // Validação básica dos campos obrigatórios
+    if (!data.studentId || data.studentId.trim() === '') {
+      toast({
+        title: "Erro de validação",
+        description: "Por favor, selecione um estudante.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!data.advisorId || data.advisorId.trim() === '') {
+      toast({
+        title: "Erro de validação", 
+        description: "Por favor, selecione um orientador.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!data.workload || data.workload.trim() === '') {
+      toast({
+        title: "Erro de validação",
+        description: "Por favor, informe a carga horária total.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const submitData = {
+        studentId: data.studentId,
+        advisorId: data.advisorId,
+        companyId: data.companyId || null,
+        supervisor: data.supervisor || null,
+        crc: data.crc || null,
+        workload: data.workload,
+        startDate: data.startDate || null,
+        endDate: data.endDate || null,
+        status: data.status || "pending",
+        r1: false,
+        r2: false,
+        r3: false,
+        r4: false,
+        r5: false,
+        r6: false,
+        r7: false,
+        r8: false,
+        r9: false,
+        r10: false,
+        isActive: true,
+      };
+
+      console.log('📤 Dados sendo enviados:', submitData);
+
+      if (editingInternship) {
+        await updateMutation.mutateAsync({
+          id: editingInternship.id,
+          data: submitData,
+        });
+        toast({
+          title: "✅ Estágio atualizado",
+          description: "Estágio obrigatório atualizado com sucesso!",
+        });
+      } else {
+        await createMutation.mutateAsync(submitData);
+        toast({
+          title: "✅ Estágio criado",
+          description: "Estágio obrigatório criado com sucesso!",
+        });
+      }
+      
+      setIsDialogOpen(false);
+      form.reset({
+        studentId: "",
+        advisorId: "",
+        companyId: "",
+        supervisor: "",
+        crc: "",
+        workload: "390",
+        startDate: "",
+        endDate: "",
+        status: "pending",
+        r1: false,
+        r2: false,
+        r3: false,
+        r4: false,
+        r5: false,
+        r6: false,
+        r7: false,
+        r8: false,
+        r9: false,
+        r10: false,
+        isActive: true,
+      });
+    } catch (error) {
+      console.error('❌ Erro no submit:', error);
+      toast({
+        title: "Erro",
+        description: "Ocorreu um erro ao salvar o estágio. Verifique os dados e tente novamente.",
+        variant: "destructive",
+      });
     }
   };
 
