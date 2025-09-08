@@ -30,6 +30,14 @@ export function Sidebar({ user }: SidebarProps) {
   
   // Garantir que sempre temos um objeto user válido
   const safeUser = user || { role: 'professor', name: 'Usuário', username: 'user' };
+  
+  // Debug logs
+  console.log('🔍 Sidebar Debug:', { 
+    user, 
+    safeUser, 
+    userRole: safeUser.role,
+    location 
+  });
 
   const handleLogout = () => {
     // Limpar dados locais de autenticação se houver
@@ -124,6 +132,9 @@ export function Sidebar({ user }: SidebarProps) {
     }
     return false;
   });
+  
+  // Debug dos itens filtrados
+  console.log('📋 Filtered Items:', filteredItems.length, filteredItems.map(i => i.title));
 
   return (
     <div className="w-64 bg-blue-600 text-white h-full">
