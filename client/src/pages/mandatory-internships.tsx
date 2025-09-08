@@ -681,7 +681,7 @@ export default function MandatoryInternships() {
                       <div className="font-medium">{getStudentName(internship.studentId)}</div>
                     </TableCell>
                     <TableCell>{getAdvisorName(internship.advisorId)}</TableCell>
-                    <TableCell>{getCompanyName(internship.companyId)}</TableCell>
+                    <TableCell>{internship.companyId ? getCompanyName(internship.companyId) : "-"}</TableCell>
                     <TableCell>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                         internship.status === "approved" ? "bg-green-100 text-green-800" :
