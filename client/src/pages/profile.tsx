@@ -31,31 +31,31 @@ export default function ProfilePage() {
     queryKey: ["/api", "auth", "me"],
   });
 
-  // Buscar estágios obrigatórios e não obrigatórios para professores
-  const { data: mandatoryInternships } = useQuery({
+  // Buscar estágios obrigatórios e não obrigatórios para todos os usuários
+  const { data: mandatoryInternships = [] } = useQuery<any[]>({
     queryKey: ["/api/mandatory-internships"],
-    enabled: user?.user?.role === "professor",
+    enabled: !!user,
   });
 
-  const { data: nonMandatoryInternships } = useQuery({
+  const { data: nonMandatoryInternships = [] } = useQuery<any[]>({
     queryKey: ["/api/non-mandatory-internships"],
-    enabled: user?.user?.role === "professor",
+    enabled: !!user,
   });
 
-  const { data: students } = useQuery({
+  const { data: students = [] } = useQuery<any[]>({
     queryKey: ["/api/students"],
-    enabled: user?.user?.role === "professor",
+    enabled: !!user,
   });
 
-  const { data: companies } = useQuery({
+  const { data: companies = [] } = useQuery<any[]>({
     queryKey: ["/api/companies"],
-    enabled: user?.user?.role === "professor",
+    enabled: !!user,
   });
 
-  // Filtrar estágios criados por administradores onde o professor é orientador
-  const internshipsCreatedByAdmins = user?.user?.role === "professor" ? [
-    ...(mandatoryInternships || []).filter((i: any) => i.createdByUser && i.createdByUser.role === "administrator"),
-    ...(nonMandatoryInternships || []).filter((i: any) => i.createdByUser && i.createdByUser.role === "administrator")
+  // Filtrar estágios criados por administradores
+  const internshipsCreatedByAdmins = user ? [
+    ...mandatoryInternships.filter((i: any) => i.createdByUser && i.createdByUser.role === "administrator"),
+    ...nonMandatoryInternships.filter((i: any) => i.createdByUser && i.createdByUser.role === "administrator")
   ] : [];
 
   const form = useForm<ChangePasswordFormData>({
@@ -207,31 +207,36 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
 
-        {/* Estágios criados por administradores - apenas para professores */}
-        {user?.user?.role === "professor" && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <GraduationCap className="w-5 h-5" />
-                Estágios Atribuídos por Administradores
-              </CardTitle>
-              <CardDescription>
-                Estágios onde você é orientador e foram criados por administradores
-              </CardDescription>
-            </CardHeader>
+        {/* Estágios criados por administradores - visível para todos */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <GraduationCap className="w-5 h-5" />
+              Estágios Criados por Administradores
+            </CardTitle>
+            <CardDescription>
+              {user?.user?.role === "professor" 
+                ? "Estágios onde você é orientador e foram criados por administradores"
+                : "Estágios que foram criados por administradores"
+              }
+            </CardDescription>
+          </CardHeader>
             <CardContent>
               {internshipsCreatedByAdmins.length === 0 ? (
                 <div className="text-center py-6">
                   <GraduationCap className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                   <p className="text-gray-600">
-                    Nenhum estágio foi atribuído a você por administradores ainda.
+                    {user?.user?.role === "professor" 
+                      ? "Nenhum estágio foi atribuído a você por administradores ainda."
+                      : "Nenhum estágio foi criado por administradores ainda."
+                    }
                   </p>
                 </div>
               ) : (
                 <div className="space-y-3">
                   {internshipsCreatedByAdmins.map((internship: any) => {
-                    const student = students?.find((s: any) => s.id === internship.studentId);
-                    const company = companies?.find((c: any) => c.id === internship.companyId);
+                    const student = students.find((s: any) => s.id === internship.studentId);
+                    const company = companies.find((c: any) => c.id === internship.companyId);
                     
                     return (
                       <div
@@ -280,8 +285,7 @@ export default function ProfilePage() {
                 </div>
               )}
             </CardContent>
-          </Card>
-        )}
+        </Card>
 
         {/* Alteração de Senha */}
         <Card>
