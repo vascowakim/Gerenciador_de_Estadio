@@ -77,7 +77,7 @@ export default function MandatoryInternships() {
   });
 
   // Fetch mandatory internships
-  const { data: mandatoryInternships, isLoading } = useQuery({
+  const { data: mandatoryInternships = [], isLoading } = useQuery<MandatoryInternship[]>({
     queryKey: ["/api/mandatory-internships"],
     enabled: !!user,
   });
@@ -405,12 +405,8 @@ export default function MandatoryInternships() {
     return company ? company.name : "Empresa não encontrada";
   };
 
-  // Debug: Log dos dados recebidos
-  console.log('🔍 Debug - mandatoryInternships:', mandatoryInternships);
-  console.log('🔍 Debug - mandatoryInternships length:', mandatoryInternships?.length);
-  
-  const filteredInternships = (mandatoryInternships || []).filter((internship: MandatoryInternship) => {
-    if (!searchTerm) return true; // Se não há termo de busca, mostrar todos
+  const filteredInternships = mandatoryInternships.filter((internship: MandatoryInternship) => {
+    if (!searchTerm) return true;
     
     const studentName = getStudentName(internship.studentId);
     const advisorName = getAdvisorName(internship.advisorId);
@@ -421,9 +417,6 @@ export default function MandatoryInternships() {
            companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
            (internship.supervisor && internship.supervisor.toLowerCase().includes(searchTerm.toLowerCase()));
   });
-  
-  console.log('🔍 Debug - filteredInternships:', filteredInternships);
-  console.log('🔍 Debug - filteredInternships length:', filteredInternships?.length);
 
   return (
     <div className="p-6 space-y-6">
@@ -453,7 +446,7 @@ export default function MandatoryInternships() {
               <div>
                 <p className="text-sm text-gray-600">Ativos</p>
                 <p className="text-2xl font-bold text-yellow-600">
-                  {(mandatoryInternships || []).filter((i: MandatoryInternship) => i.status === "pending").length}
+                  {mandatoryInternships.filter((i: MandatoryInternship) => i.status === "pending").length}
                 </p>
               </div>
             </div>
@@ -467,7 +460,7 @@ export default function MandatoryInternships() {
               <div>
                 <p className="text-sm text-gray-600">Aprovados</p>
                 <p className="text-2xl font-bold text-green-600">
-                  {(mandatoryInternships || []).filter((i: MandatoryInternship) => i.status === "approved").length}
+                  {mandatoryInternships.filter((i: MandatoryInternship) => i.status === "approved").length}
                 </p>
               </div>
             </div>
@@ -481,7 +474,7 @@ export default function MandatoryInternships() {
               <div>
                 <p className="text-sm text-gray-600">Concluídos</p>
                 <p className="text-2xl font-bold text-blue-600">
-                  {(mandatoryInternships || []).filter((i: MandatoryInternship) => i.status === "completed").length}
+                  {mandatoryInternships.filter((i: MandatoryInternship) => i.status === "completed").length}
                 </p>
               </div>
             </div>
@@ -495,10 +488,7 @@ export default function MandatoryInternships() {
               <div>
                 <p className="text-sm text-gray-600">Relatórios Pendentes</p>
                 <p className="text-2xl font-bold text-purple-600">
-                  {(mandatoryInternships || []).reduce((acc: number, i: MandatoryInternship) => {
-                    const reports = [i.r1, i.r2, i.r3, i.r4, i.r5, i.r6, i.r7, i.r8, i.r9, i.r10];
-                    return acc + (10 - reports.filter(Boolean).length);
-                  }, 0)}
+                  0
                 </p>
               </div>
             </div>
@@ -942,43 +932,14 @@ export default function MandatoryInternships() {
         <CardContent>
           {isLoading ? (
             <div className="text-center py-8">Carregando estágios obrigatórios...</div>
+          ) : filteredInternships.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              {mandatoryInternships.length === 0 
+                ? "Nenhum estágio obrigatório cadastrado." 
+                : "Nenhum estágio obrigatório encontrado para os critérios de busca."}
+            </div>
           ) : (
-            <div>
-              <div className="mb-4 p-3 bg-blue-50 rounded border">
-                <p className="text-sm text-blue-700">
-                  <strong>Debug Info:</strong> 
-                  Dados brutos: {mandatoryInternships?.length || 0} estágios | 
-                  Filtrados: {filteredInternships?.length || 0} estágios |
-                  Termo busca: "{searchTerm || 'vazio'}"
-                </p>
-              </div>
-              
-              {(!filteredInternships || filteredInternships.length === 0) ? (
-                <div>
-                  <div className="text-center py-8 text-gray-500 mb-4">
-                    Nenhum estágio obrigatório encontrado na pesquisa.
-                  </div>
-                  
-                  {/* Forçar exibição dos dados brutos se existirem */}
-                  {mandatoryInternships && mandatoryInternships.length > 0 && (
-                    <div className="border border-red-200 rounded p-4 bg-red-50">
-                      <h4 className="font-semibold text-red-800 mb-2">Dados Encontrados (Força Exibição):</h4>
-                      <div className="space-y-2">
-                        {mandatoryInternships.map((internship: MandatoryInternship) => (
-                          <div key={internship.id} className="p-2 bg-white rounded border text-sm">
-                            <strong>ID:</strong> {internship.id}<br/>
-                            <strong>Estudante:</strong> {getStudentName(internship.studentId)}<br/>
-                            <strong>Orientador:</strong> {getAdvisorName(internship.advisorId)}<br/>
-                            <strong>Empresa:</strong> {getCompanyName(internship.companyId)}<br/>
-                            <strong>Status:</strong> {internship.status}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <Table>
+            <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Estudante</TableHead>
@@ -1053,9 +1014,7 @@ export default function MandatoryInternships() {
                   </TableRow>
                 ))}
               </TableBody>
-                </Table>
-              )}
-            </div>
+            </Table>
           )}
         </CardContent>
       </Card>

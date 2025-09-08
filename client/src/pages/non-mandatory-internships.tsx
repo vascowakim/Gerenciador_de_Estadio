@@ -299,12 +299,8 @@ export default function NonMandatoryInternshipsPage() {
     setIsDialogOpen(true);
   };
 
-  // Debug: Log dos dados recebidos
-  console.log('🔍 Debug - internships:', internships);
-  console.log('🔍 Debug - internships length:', internships?.length);
-  
   const filteredInternships = internships.filter((internship: NonMandatoryInternship) => {
-    if (!searchTerm) return true; // Se não há termo de busca, mostrar todos
+    if (!searchTerm) return true;
     
     const student = students.find((s: Student) => s.id === internship.studentId);
     const advisor = advisors.find((a: Advisor) => a.id === internship.advisorId);
@@ -320,9 +316,6 @@ export default function NonMandatoryInternshipsPage() {
       internship.status.toLowerCase().includes(searchLower)
     );
   });
-  
-  console.log('🔍 Debug - filteredInternships:', filteredInternships);
-  console.log('🔍 Debug - filteredInternships length:', filteredInternships?.length);
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
@@ -624,43 +617,9 @@ export default function NonMandatoryInternshipsPage() {
         </Dialog>
       </div>
 
-      {/* Debug Info */}
-      <div className="mb-4 p-3 bg-blue-50 rounded border">
-        <p className="text-sm text-blue-700">
-          <strong>Debug Info:</strong> 
-          Dados brutos: {internships?.length || 0} estágios | 
-          Filtrados: {filteredInternships?.length || 0} estágios |
-          Termo busca: "{searchTerm || 'vazio'}"
-        </p>
-      </div>
-      
-      {/* Force Display if No Filtered Results */}
-      {(!filteredInternships || filteredInternships.length === 0) && internships && internships.length > 0 && (
-        <div className="border border-red-200 rounded p-4 bg-red-50 mb-4">
-          <h4 className="font-semibold text-red-800 mb-2">Dados Encontrados (Força Exibição):</h4>
-          <div className="space-y-2">
-            {internships.map((internship: NonMandatoryInternship) => {
-              const student = students.find((s: Student) => s.id === internship.studentId);
-              const advisor = advisors.find((a: Advisor) => a.id === internship.advisorId);
-              const company = companies.find((c: Company) => c.id === internship.companyId);
-              
-              return (
-                <div key={internship.id} className="p-2 bg-white rounded border text-sm">
-                  <strong>ID:</strong> {internship.id}<br/>
-                  <strong>Estudante:</strong> {student?.name || 'Não encontrado'}<br/>
-                  <strong>Orientador:</strong> {advisor?.name || 'Não encontrado'}<br/>
-                  <strong>Empresa:</strong> {company?.name || 'Não encontrada'}<br/>
-                  <strong>Status:</strong> {internship.status}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
       {/* Internships Grid */}
       <div className="grid grid-cols-1 gap-4">
-        {filteredInternships && filteredInternships.length > 0 ? filteredInternships.map((internship: NonMandatoryInternship) => {
+        {filteredInternships.length > 0 ? filteredInternships.map((internship: NonMandatoryInternship) => {
           const student = students.find((s: Student) => s.id === internship.studentId);
           const advisor = advisors.find((a: Advisor) => a.id === internship.advisorId);
           const company = companies.find((c: Company) => c.id === internship.companyId);
