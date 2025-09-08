@@ -22,6 +22,15 @@ export const documentStatusEnum = pgEnum("document_status", ["pending", "approve
 export const alertTypeEnum = pgEnum("alert_type", ["expiration_warning", "document_missing", "system_alert"]);
 export const alertStatusEnum = pgEnum("alert_status", ["pending", "sent", "read", "dismissed"]);
 
+export const systemSettings = pgTable("system_settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  key: text("key").notNull().unique(),
+  value: text("value").notNull(),
+  description: text("description"),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  updatedBy: varchar("updated_by").references(() => users.id),
+});
+
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   username: text("username").notNull().unique(),
@@ -335,6 +344,11 @@ export const insertInternshipAlertSchema = createInsertSchema(internshipAlerts).
   updatedAt: true,
 });
 
+export const insertSystemSettingSchema = createInsertSchema(systemSettings).omit({
+  id: true,
+  updatedAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -362,3 +376,6 @@ export type InsertInternshipDocument = z.infer<typeof insertInternshipDocumentSc
 
 export type InternshipAlert = typeof internshipAlerts.$inferSelect;
 export type InsertInternshipAlert = z.infer<typeof insertInternshipAlertSchema>;
+
+export type SystemSetting = typeof systemSettings.$inferSelect;
+export type InsertSystemSetting = z.infer<typeof insertSystemSettingSchema>;
