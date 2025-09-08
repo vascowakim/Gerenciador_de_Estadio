@@ -335,6 +335,8 @@ export const insertNonMandatoryInternshipSchema = createInsertSchema(nonMandator
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  status: z.enum(["pending", "approved", "rejected", "completed"]).default("pending"),
 });
 
 export const insertInternshipDocumentSchema = createInsertSchema(internshipDocuments).omit({

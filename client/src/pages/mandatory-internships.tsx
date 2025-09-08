@@ -228,7 +228,7 @@ export default function MandatoryInternships() {
       workload: internship.workload || "390",
       startDate: internship.startDate ? new Date(internship.startDate).toISOString().split('T')[0] : "",
       endDate: internship.endDate ? new Date(internship.endDate).toISOString().split('T')[0] : "",
-      status: internship.status as "pending" | "approved" | "rejected" | "completed",
+      status: internship.status || "pending",
       r1: internship.r1 || false,
       r2: internship.r2 || false,
       r3: internship.r3 || false,
