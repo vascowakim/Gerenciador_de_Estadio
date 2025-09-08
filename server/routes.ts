@@ -272,7 +272,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const token = jwt.sign(tokenPayload, JWT_SECRET, {
           expiresIn: '24h',
           issuer: 'estagiopro-ufvjm',
-          audience: req.get('host') || 'localhost'
+          audience: req.get('host') || 'estagiopro-ufvjm.replit.app'
         });
         
         const duration = Date.now() - startTime;
