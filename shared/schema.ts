@@ -107,6 +107,7 @@ export const mandatoryInternships = pgTable("mandatory_internships", {
   studentId: varchar("student_id").notNull().references(() => students.id),
   advisorId: varchar("advisor_id").notNull().references(() => advisors.id),
   companyId: varchar("company_id").references(() => companies.id),
+  createdBy: varchar("created_by").notNull().references(() => users.id),
   supervisor: text("supervisor"),
   crc: text("crc"),
   workload: text("workload"),
@@ -148,6 +149,7 @@ export const nonMandatoryInternships = pgTable("non_mandatory_internships", {
   studentId: varchar("student_id").notNull().references(() => students.id),
   advisorId: varchar("advisor_id").notNull().references(() => advisors.id),
   companyId: varchar("company_id").references(() => companies.id),
+  createdBy: varchar("created_by").notNull().references(() => users.id),
   supervisor: text("supervisor"),
   crc: text("crc"),
   workload: text("workload"),
@@ -213,6 +215,8 @@ export const internshipAlerts = pgTable("internship_alerts", {
 export const usersRelations = relations(users, ({ many }) => ({
   uploadedDocuments: many(internshipDocuments, { relationName: "uploadedBy" }),
   reviewedDocuments: many(internshipDocuments, { relationName: "reviewedBy" }),
+  createdMandatoryInternships: many(mandatoryInternships),
+  createdNonMandatoryInternships: many(nonMandatoryInternships),
 }));
 
 export const advisorsRelations = relations(advisors, ({ many }) => ({
@@ -261,6 +265,10 @@ export const mandatoryInternshipsRelations = relations(mandatoryInternships, ({ 
     fields: [mandatoryInternships.companyId],
     references: [companies.id],
   }),
+  createdBy: one(users, {
+    fields: [mandatoryInternships.createdBy],
+    references: [users.id],
+  }),
   documents: many(internshipDocuments),
 }));
 
@@ -276,6 +284,10 @@ export const nonMandatoryInternshipsRelations = relations(nonMandatoryInternship
   company: one(companies, {
     fields: [nonMandatoryInternships.companyId],
     references: [companies.id],
+  }),
+  createdBy: one(users, {
+    fields: [nonMandatoryInternships.createdBy],
+    references: [users.id],
   }),
   documents: many(internshipDocuments),
 }));
@@ -322,12 +334,14 @@ export const insertInternshipSchema = createInsertSchema(internships).omit({
 
 export const insertMandatoryInternshipSchema = createInsertSchema(mandatoryInternships).omit({
   id: true,
+  createdBy: true,
   createdAt: true,
   updatedAt: true,
 });
 
 export const insertNonMandatoryInternshipSchema = createInsertSchema(nonMandatoryInternships).omit({
   id: true,
+  createdBy: true,
   createdAt: true,
   updatedAt: true,
 });
