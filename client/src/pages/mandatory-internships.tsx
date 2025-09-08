@@ -102,10 +102,10 @@ export default function MandatoryInternships() {
 
   // Definir valor padrão do filtro de orientador baseado no usuário logado
   useEffect(() => {
-    if (user && user.user.role === "professor") {
+    if (user && user.user && user.user.role === "professor") {
       // Para professores, pré-selecionar o próprio professor
       setSelectedAdvisorId(user.user.id);
-    } else if (user && user.user.role === "administrator") {
+    } else if (user && user.user && user.user.role === "administrator") {
       // Para administradores, mostrar todos por padrão
       setSelectedAdvisorId("todos");
     }

@@ -73,16 +73,16 @@ export default function NonMandatoryInternshipsPage() {
     queryKey: ["/api/companies"],
   });
 
-  const { data: currentUser } = useQuery<{ id: string; role: string }>({
+  const { data: currentUser } = useQuery<{ user: { id: string; role: string } }>({
     queryKey: ["/api/auth/me"],
   });
 
   // Definir valor padrão do filtro de orientador baseado no usuário logado
   useEffect(() => {
-    if (currentUser && currentUser.role === "professor") {
+    if (currentUser && currentUser.user && currentUser.user.role === "professor") {
       // Para professores, pré-selecionar o próprio professor
-      setSelectedAdvisorId(currentUser.id);
-    } else if (currentUser && currentUser.role === "administrator") {
+      setSelectedAdvisorId(currentUser.user.id);
+    } else if (currentUser && currentUser.user && currentUser.user.role === "administrator") {
       // Para administradores, mostrar todos por padrão
       setSelectedAdvisorId("todos");
     }
