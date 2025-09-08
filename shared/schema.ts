@@ -327,6 +327,8 @@ export const insertMandatoryInternshipSchema = createInsertSchema(mandatoryInter
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  status: z.enum(["pending", "approved", "rejected", "completed"]).default("pending"),
 });
 
 export const insertNonMandatoryInternshipSchema = createInsertSchema(nonMandatoryInternships).omit({
