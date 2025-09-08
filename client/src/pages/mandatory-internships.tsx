@@ -114,7 +114,7 @@ export default function MandatoryInternships() {
       setIsDialogOpen(false);
       form.reset({
         studentId: "",
-        advisorId: user?.role === "professor" ? user.id : "",
+        advisorId: "",
         companyId: "",
         supervisor: "",
         crc: "",
@@ -510,7 +510,7 @@ export default function MandatoryInternships() {
                 setEditingInternship(null);
                 form.reset({
                   studentId: "",
-                  advisorId: user?.role === "professor" ? user.id : "",
+                  advisorId: "",
                   companyId: "",
                   supervisor: "",
                   crc: "",
