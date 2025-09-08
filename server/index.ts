@@ -78,8 +78,8 @@ app.use((req, res, next) => {
     console.log('🚀 Modo produção detectado - verificando inicialização...');
     try {
       // Importar storage aqui para evitar problemas de dependência circular
-      const { PgStorage } = await import('./storage.js');
-      const storage = new PgStorage();
+      const { DatabaseStorage } = await import('./storage.js');
+      const storage = new DatabaseStorage();
       
       // Verificar se banco tem usuários
       const users = await storage.getAllUsers();
