@@ -24,6 +24,7 @@ interface AuthenticatedRequest extends Request {
     };
     loginTime?: string;
     clientIP?: string;
+    userId?: string;
   } & session.Session;
 }
 
