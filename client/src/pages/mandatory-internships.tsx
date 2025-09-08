@@ -405,7 +405,13 @@ export default function MandatoryInternships() {
     return company ? company.name : "Empresa não encontrada";
   };
 
+  // Debug: Log dos dados recebidos
+  console.log('🔍 Debug - mandatoryInternships:', mandatoryInternships);
+  console.log('🔍 Debug - mandatoryInternships length:', mandatoryInternships?.length);
+  
   const filteredInternships = (mandatoryInternships || []).filter((internship: MandatoryInternship) => {
+    if (!searchTerm) return true; // Se não há termo de busca, mostrar todos
+    
     const studentName = getStudentName(internship.studentId);
     const advisorName = getAdvisorName(internship.advisorId);
     const companyName = getCompanyName(internship.companyId);
@@ -415,6 +421,9 @@ export default function MandatoryInternships() {
            companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
            (internship.supervisor && internship.supervisor.toLowerCase().includes(searchTerm.toLowerCase()));
   });
+  
+  console.log('🔍 Debug - filteredInternships:', filteredInternships);
+  console.log('🔍 Debug - filteredInternships length:', filteredInternships?.length);
 
   return (
     <div className="p-6 space-y-6">
@@ -932,13 +941,44 @@ export default function MandatoryInternships() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="text-center py-8">Carregando...</div>
-          ) : filteredInternships.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              Nenhum estágio obrigatório encontrado.
-            </div>
+            <div className="text-center py-8">Carregando estágios obrigatórios...</div>
           ) : (
-            <Table>
+            <div>
+              <div className="mb-4 p-3 bg-blue-50 rounded border">
+                <p className="text-sm text-blue-700">
+                  <strong>Debug Info:</strong> 
+                  Dados brutos: {mandatoryInternships?.length || 0} estágios | 
+                  Filtrados: {filteredInternships?.length || 0} estágios |
+                  Termo busca: "{searchTerm || 'vazio'}"
+                </p>
+              </div>
+              
+              {(!filteredInternships || filteredInternships.length === 0) ? (
+                <div>
+                  <div className="text-center py-8 text-gray-500 mb-4">
+                    Nenhum estágio obrigatório encontrado na pesquisa.
+                  </div>
+                  
+                  {/* Forçar exibição dos dados brutos se existirem */}
+                  {mandatoryInternships && mandatoryInternships.length > 0 && (
+                    <div className="border border-red-200 rounded p-4 bg-red-50">
+                      <h4 className="font-semibold text-red-800 mb-2">Dados Encontrados (Força Exibição):</h4>
+                      <div className="space-y-2">
+                        {mandatoryInternships.map((internship: MandatoryInternship) => (
+                          <div key={internship.id} className="p-2 bg-white rounded border text-sm">
+                            <strong>ID:</strong> {internship.id}<br/>
+                            <strong>Estudante:</strong> {getStudentName(internship.studentId)}<br/>
+                            <strong>Orientador:</strong> {getAdvisorName(internship.advisorId)}<br/>
+                            <strong>Empresa:</strong> {getCompanyName(internship.companyId)}<br/>
+                            <strong>Status:</strong> {internship.status}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Estudante</TableHead>
@@ -1013,7 +1053,9 @@ export default function MandatoryInternships() {
                   </TableRow>
                 ))}
               </TableBody>
-            </Table>
+                </Table>
+              )}
+            </div>
           )}
         </CardContent>
       </Card>
