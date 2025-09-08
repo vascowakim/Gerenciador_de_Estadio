@@ -537,8 +537,7 @@ export default function MandatoryInternships() {
           />
         </div>
         
-        {user?.role === "administrator" && (
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button 
                 onClick={() => {
@@ -807,7 +806,6 @@ export default function MandatoryInternships() {
             </Form>
           </DialogContent>
         </Dialog>
-        )}
 
         {/* Management Dialog */}
         <Dialog open={isManagementDialogOpen} onOpenChange={setIsManagementDialogOpen}>
