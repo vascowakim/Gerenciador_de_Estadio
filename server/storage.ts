@@ -49,6 +49,7 @@ export interface IStorage {
   // Mandatory Internship operations
   getMandatoryInternship(id: string): Promise<MandatoryInternship | undefined>;
   getAllMandatoryInternships(): Promise<MandatoryInternship[]>;
+  getAllMandatoryInternshipsWithCreator(): Promise<(MandatoryInternship & { createdByUser?: { name: string; email: string; role: string } })[]>;
   getMandatoryInternshipsByAdvisor(advisorId: string): Promise<MandatoryInternship[]>;
   getMandatoryInternshipsByStudent(studentId: string): Promise<MandatoryInternship[]>;
   createMandatoryInternship(mandatoryInternship: InsertMandatoryInternship): Promise<MandatoryInternship>;
@@ -58,6 +59,7 @@ export interface IStorage {
   // Non-Mandatory Internship operations
   getNonMandatoryInternship(id: string): Promise<NonMandatoryInternship | undefined>;
   getAllNonMandatoryInternships(): Promise<NonMandatoryInternship[]>;
+  getAllNonMandatoryInternshipsWithCreator(): Promise<(NonMandatoryInternship & { createdByUser?: { name: string; email: string; role: string } })[]>;
   getNonMandatoryInternshipsByAdvisor(advisorId: string): Promise<NonMandatoryInternship[]>;
   getNonMandatoryInternshipsByStudent(studentId: string): Promise<NonMandatoryInternship[]>;
   createNonMandatoryInternship(nonMandatoryInternship: InsertNonMandatoryInternship): Promise<NonMandatoryInternship>;
@@ -412,6 +414,25 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(mandatoryInternships);
   }
 
+  async getAllMandatoryInternshipsWithCreator(): Promise<(MandatoryInternship & { createdByUser?: { name: string; email: string; role: string } })[]> {
+    const result = await db
+      .select({
+        internship: mandatoryInternships,
+        createdByUser: {
+          name: users.name,
+          email: users.email,
+          role: users.role,
+        },
+      })
+      .from(mandatoryInternships)
+      .leftJoin(users, eq(mandatoryInternships.createdBy, users.id));
+    
+    return result.map(row => ({
+      ...row.internship,
+      createdByUser: row.createdByUser,
+    }));
+  }
+
   async getMandatoryInternshipsByAdvisor(advisorId: string): Promise<MandatoryInternship[]> {
     return await db.select().from(mandatoryInternships).where(eq(mandatoryInternships.advisorId, advisorId));
   }
@@ -450,6 +471,25 @@ export class DatabaseStorage implements IStorage {
 
   async getAllNonMandatoryInternships(): Promise<NonMandatoryInternship[]> {
     return await db.select().from(nonMandatoryInternships);
+  }
+
+  async getAllNonMandatoryInternshipsWithCreator(): Promise<(NonMandatoryInternship & { createdByUser?: { name: string; email: string; role: string } })[]> {
+    const result = await db
+      .select({
+        internship: nonMandatoryInternships,
+        createdByUser: {
+          name: users.name,
+          email: users.email,
+          role: users.role,
+        },
+      })
+      .from(nonMandatoryInternships)
+      .leftJoin(users, eq(nonMandatoryInternships.createdBy, users.id));
+    
+    return result.map(row => ({
+      ...row.internship,
+      createdByUser: row.createdByUser,
+    }));
   }
 
   async getNonMandatoryInternshipsByAdvisor(advisorId: string): Promise<NonMandatoryInternship[]> {

@@ -762,12 +762,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let mandatoryInternships;
       if (req.session.user.role === "administrator") {
         console.log('📋 Admin buscando todos os estágios obrigatórios');
-        mandatoryInternships = await storage.getAllMandatoryInternships();
+        mandatoryInternships = await storage.getAllMandatoryInternshipsWithCreator();
         console.log(`📋 Admin encontrou ${mandatoryInternships.length} estágios obrigatórios`);
       } else {
-        // Professores só veem estágios que orientam
+        // Professores só veem estágios que orientam (também com informações do criador)
         console.log(`👨‍🏫 Professor ${req.session.user.username} (ID: ${req.session.user.id}) buscando estágios obrigatórios que orienta`);
-        mandatoryInternships = await storage.getMandatoryInternshipsByAdvisor(req.session.user.id);
+        const internshipsByAdvisor = await storage.getMandatoryInternshipsByAdvisor(req.session.user.id);
+        // Para professores, também buscar dados do criador
+        mandatoryInternships = await storage.getAllMandatoryInternshipsWithCreator();
+        mandatoryInternships = mandatoryInternships.filter(i => i.advisorId === req.session.user.id);
         console.log(`👨‍🏫 Professor encontrou ${mandatoryInternships.length} estágios obrigatórios:`, 
           mandatoryInternships.map(i => `ID: ${i.id}, AdvisorId: ${i.advisorId}`));
       }
@@ -946,12 +949,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let nonMandatoryInternships;
       if (req.session.user.role === "administrator") {
         console.log('📋 Admin buscando todos os estágios não obrigatórios');
-        nonMandatoryInternships = await storage.getAllNonMandatoryInternships();
+        nonMandatoryInternships = await storage.getAllNonMandatoryInternshipsWithCreator();
         console.log(`📋 Admin encontrou ${nonMandatoryInternships.length} estágios não obrigatórios`);
       } else {
-        // Professores só veem estágios que orientam
+        // Professores só veem estágios que orientam (também com informações do criador)
         console.log(`👨‍🏫 Professor ${req.session.user.username} (ID: ${req.session.user.id}) buscando estágios não obrigatórios que orienta`);
-        nonMandatoryInternships = await storage.getNonMandatoryInternshipsByAdvisor(req.session.user.id);
+        const internshipsByAdvisor = await storage.getNonMandatoryInternshipsByAdvisor(req.session.user.id);
+        // Para professores, também buscar dados do criador
+        nonMandatoryInternships = await storage.getAllNonMandatoryInternshipsWithCreator();
+        nonMandatoryInternships = nonMandatoryInternships.filter(i => i.advisorId === req.session.user.id);
         console.log(`👨‍🏫 Professor encontrou ${nonMandatoryInternships.length} estágios não obrigatórios:`, 
           nonMandatoryInternships.map(i => `ID: ${i.id}, AdvisorId: ${i.advisorId}`));
       }

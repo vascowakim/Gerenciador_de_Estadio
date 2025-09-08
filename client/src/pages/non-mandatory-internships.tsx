@@ -27,6 +27,7 @@ type FormData = z.infer<typeof formSchema>;
 
 export default function NonMandatoryInternshipsPage() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedAdvisorId, setSelectedAdvisorId] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingInternship, setEditingInternship] = useState<NonMandatoryInternship | null>(null);
   const [isManagementDialogOpen, setIsManagementDialogOpen] = useState(false);
@@ -294,21 +295,31 @@ export default function NonMandatoryInternshipsPage() {
   };
 
   const filteredInternships = internships.filter((internship: NonMandatoryInternship) => {
-    if (!searchTerm) return true;
+    // Filtrar por termo de busca
+    let matchesSearch = true;
+    if (searchTerm) {
+      const student = students.find((s: Student) => s.id === internship.studentId);
+      const advisor = advisors.find((a: Advisor) => a.id === internship.advisorId);
+      const company = companies.find((c: Company) => c.id === internship.companyId);
+      
+      const searchLower = searchTerm.toLowerCase();
+      matchesSearch = (
+        student?.name.toLowerCase().includes(searchLower) ||
+        student?.registrationNumber.toLowerCase().includes(searchLower) ||
+        advisor?.name.toLowerCase().includes(searchLower) ||
+        company?.name.toLowerCase().includes(searchLower) ||
+        internship.supervisor?.toLowerCase().includes(searchLower) ||
+        internship.status.toLowerCase().includes(searchLower)
+      );
+    }
     
-    const student = students.find((s: Student) => s.id === internship.studentId);
-    const advisor = advisors.find((a: Advisor) => a.id === internship.advisorId);
-    const company = companies.find((c: Company) => c.id === internship.companyId);
+    // Filtrar por orientador selecionado
+    let matchesAdvisor = true;
+    if (selectedAdvisorId) {
+      matchesAdvisor = internship.advisorId === selectedAdvisorId;
+    }
     
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      student?.name.toLowerCase().includes(searchLower) ||
-      student?.registrationNumber.toLowerCase().includes(searchLower) ||
-      advisor?.name.toLowerCase().includes(searchLower) ||
-      company?.name.toLowerCase().includes(searchLower) ||
-      internship.supervisor?.toLowerCase().includes(searchLower) ||
-      internship.status.toLowerCase().includes(searchLower)
-    );
+    return matchesSearch && matchesAdvisor;
   });
 
   const getStatusBadge = (status: string) => {
@@ -411,16 +422,32 @@ export default function NonMandatoryInternshipsPage() {
       </div>
 
       {/* Search and Actions */}
-      <div className="flex justify-between items-center">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-          <Input
-            placeholder="Buscar por aluno, orientador, empresa..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-            data-testid="input-search-internships"
-          />
+      <div className="flex justify-between items-center gap-4">
+        <div className="flex gap-4 flex-1">
+          <div className="relative max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder="Buscar por aluno, orientador, empresa..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+              data-testid="input-search-internships"
+            />
+          </div>
+          
+          <Select value={selectedAdvisorId} onValueChange={setSelectedAdvisorId}>
+            <SelectTrigger className="w-64">
+              <SelectValue placeholder="Filtrar por orientador" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">Todos os orientadores</SelectItem>
+              {advisors?.map((advisor: Advisor) => (
+                <SelectItem key={advisor.id} value={advisor.id}>
+                  {advisor.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>

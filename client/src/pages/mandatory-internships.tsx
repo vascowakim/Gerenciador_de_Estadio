@@ -28,6 +28,7 @@ export default function MandatoryInternships() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingInternship, setEditingInternship] = useState<MandatoryInternship | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedAdvisorId, setSelectedAdvisorId] = useState("");
   const [isManagementDialogOpen, setIsManagementDialogOpen] = useState(false);
   const [managingInternship, setManagingInternship] = useState<MandatoryInternship | null>(null);
   const [partialWorkload, setPartialWorkload] = useState(0);
@@ -400,16 +401,26 @@ export default function MandatoryInternships() {
   };
 
   const filteredInternships = mandatoryInternships.filter((internship: MandatoryInternship) => {
-    if (!searchTerm) return true;
+    // Filtrar por termo de busca
+    let matchesSearch = true;
+    if (searchTerm) {
+      const studentName = getStudentName(internship.studentId);
+      const advisorName = getAdvisorName(internship.advisorId);
+      const companyName = getCompanyName(internship.companyId);
+      
+      matchesSearch = studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+             advisorName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+             companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+             (internship.supervisor && internship.supervisor.toLowerCase().includes(searchTerm.toLowerCase()));
+    }
     
-    const studentName = getStudentName(internship.studentId);
-    const advisorName = getAdvisorName(internship.advisorId);
-    const companyName = getCompanyName(internship.companyId);
+    // Filtrar por orientador selecionado
+    let matchesAdvisor = true;
+    if (selectedAdvisorId) {
+      matchesAdvisor = internship.advisorId === selectedAdvisorId;
+    }
     
-    return studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-           advisorName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-           companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-           (internship.supervisor && internship.supervisor.toLowerCase().includes(searchTerm.toLowerCase()));
+    return matchesSearch && matchesAdvisor;
   });
 
   return (
@@ -491,16 +502,32 @@ export default function MandatoryInternships() {
       </div>
 
       {/* Search and Actions */}
-      <div className="flex justify-between items-center">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-          <Input
-            placeholder="Buscar por estudante, orientador ou empresa..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-            data-testid="input-search"
-          />
+      <div className="flex justify-between items-center gap-4">
+        <div className="flex gap-4 flex-1">
+          <div className="relative max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder="Buscar por estudante, orientador ou empresa..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+              data-testid="input-search"
+            />
+          </div>
+          
+          <Select value={selectedAdvisorId} onValueChange={setSelectedAdvisorId}>
+            <SelectTrigger className="w-64">
+              <SelectValue placeholder="Filtrar por orientador" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">Todos os orientadores</SelectItem>
+              {advisors?.map((advisor: Advisor) => (
+                <SelectItem key={advisor.id} value={advisor.id}>
+                  {advisor.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
