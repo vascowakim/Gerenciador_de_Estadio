@@ -111,13 +111,8 @@ export function Sidebar({ user }: SidebarProps) {
   ];
 
   const filteredItems = navigationItems.filter(item => {
-    if (user?.role === "administrator") {
-      return true; // Administradores veem tudo
-    }
-    if (user?.role === "professor") {
-      return item.professorAccess; // Professores só veem itens permitidos
-    }
-    return false;
+    // Tanto administradores quanto professores veem todos os itens
+    return user?.role === "administrator" || user?.role === "professor";
   });
 
   return (
