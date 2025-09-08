@@ -76,46 +76,72 @@ app.use((req, res, next) => {
   // Inicialização automática em produção
   if (process.env.NODE_ENV === 'production') {
     console.log('🚀 Modo produção detectado - verificando inicialização...');
-    try {
-      // Importar storage aqui para evitar problemas de dependência circular
-      const { DatabaseStorage } = await import('./storage.js');
-      const storage = new DatabaseStorage();
-      
-      // Verificar se banco tem usuários
-      const users = await storage.getAllUsers();
-      if (users.length === 0) {
-        console.log('📊 Banco de produção vazio - criando usuários iniciais...');
+    
+    let retryCount = 0;
+    const maxRetries = 3;
+    
+    while (retryCount < maxRetries) {
+      try {
+        // Importar storage aqui para evitar problemas de dependência circular
+        const { DatabaseStorage } = await import('./storage.js');
+        const storage = new DatabaseStorage();
         
-        const bcrypt = await import('bcrypt');
+        // Verificar conectividade do banco com timeout
+        console.log('🔍 Testando conexão com banco de dados...');
+        const users = await storage.getAllUsers();
         
-        // Criar admin
-        const hashedPasswordAdmin = await bcrypt.hash("admin123", 10);
-        await storage.createUser({
-          username: "admin",
-          email: "admin@ufvjm.edu.br",
-          password: hashedPasswordAdmin,
-          role: "administrator",
-          name: "Administrador do Sistema"
-        });
+        if (users.length === 0) {
+          console.log('📊 Banco de produção vazio - criando usuários iniciais...');
+          
+          const bcrypt = await import('bcrypt');
+          
+          // Criar admin
+          const hashedPasswordAdmin = await bcrypt.hash("admin123", 10);
+          await storage.createUser({
+            username: "admin",
+            email: "admin@ufvjm.edu.br",
+            password: hashedPasswordAdmin,
+            role: "administrator",
+            name: "Administrador do Sistema"
+          });
+          
+          // Criar professor
+          const hashedPasswordProf = await bcrypt.hash("prof123", 10);
+          await storage.createUser({
+            username: "vasconcelos.wakim",
+            email: "vasconcelos.wakim@ufvjm.edu.br",
+            password: hashedPasswordProf,
+            role: "professor",
+            name: "VASCONCELOS REIS WAKIM"
+          });
+          
+          console.log('✅ Usuários criados em produção:');
+          console.log('   - admin / admin123 (administrator)');
+          console.log('   - vasconcelos.wakim / prof123 (professor)');
+        } else {
+          console.log(`✅ Banco já possui ${users.length} usuários`);
+        }
         
-        // Criar professor
-        const hashedPasswordProf = await bcrypt.hash("prof123", 10);
-        await storage.createUser({
-          username: "vasconcelos.wakim",
-          email: "vasconcelos.wakim@ufvjm.edu.br",
-          password: hashedPasswordProf,
-          role: "professor",
-          name: "VASCONCELOS REIS WAKIM"
-        });
+        // Se chegou aqui, inicialização foi bem-sucedida
+        break;
         
-        console.log('✅ Usuários criados em produção:');
-        console.log('   - admin / admin123 (administrator)');
-        console.log('   - vasconcelos.wakim / prof123 (professor)');
-      } else {
-        console.log(`✅ Banco já possui ${users.length} usuários`);
+      } catch (error) {
+        retryCount++;
+        console.error(`❌ Tentativa ${retryCount}/${maxRetries} - Erro na inicialização:`, error);
+        
+        if (retryCount >= maxRetries) {
+          console.error('💥 Falha crítica: Não foi possível inicializar o banco de dados após várias tentativas.');
+          console.error('Verifique:');
+          console.error('  - Se DATABASE_URL está configurado corretamente');
+          console.error('  - Se o banco de dados está acessível');
+          console.error('  - Se as variáveis de ambiente de produção estão definidas');
+          console.error('A aplicação continuará funcionando, mas pode haver problemas de autenticação.');
+          break;
+        } else {
+          console.log(`⏳ Aguardando ${2 * retryCount} segundos antes da próxima tentativa...`);
+          await new Promise(resolve => setTimeout(resolve, 2000 * retryCount));
+        }
       }
-    } catch (error) {
-      console.error('❌ Erro na inicialização automática:', error);
     }
   }
 

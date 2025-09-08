@@ -88,21 +88,55 @@ export default function NonMandatoryInternshipsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      if (!response.ok) throw new Error("Falha ao criar estágio");
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(`${response.status}: ${errorData}`);
+      }
       return response.json();
     },
-    onSuccess: (newInternship) => {
+    onSuccess: (responseData) => {
       queryClient.invalidateQueries({ queryKey: ["/api/non-mandatory-internships"] });
       setIsDialogOpen(false);
       form.reset();
-      setNewlyCreatedId(newInternship.id);
-      // Remove destaque após 3 segundos
-      setTimeout(() => setNewlyCreatedId(null), 3000);
-      toast({ title: "Estágio não obrigatório criado com sucesso!" });
+      
+      // Garantir que o advisorId seja definido novamente para professores após reset
+      if (currentUser?.role === "professor") {
+        form.setValue("advisorId", currentUser.id);
+      }
+      
+      if (responseData.data?.id) {
+        setNewlyCreatedId(responseData.data.id);
+        // Remove destaque após 3 segundos
+        setTimeout(() => setNewlyCreatedId(null), 3000);
+      }
+      toast({ 
+        title: "Sucesso",
+        description: responseData.message || "Estágio não obrigatório criado com sucesso!" 
+      });
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       console.error("Erro ao criar estágio não obrigatório:", error);
-      toast({ title: "Erro ao criar estágio não obrigatório", variant: "destructive" });
+      
+      // Extrair mensagem de erro detalhada do servidor
+      let errorMessage = "Erro ao criar estágio não obrigatório";
+      try {
+        const errorText = error.message;
+        if (errorText.includes("409:")) {
+          errorMessage = "O estudante já possui um estágio não obrigatório ativo na mesma empresa. Complete ou cancele o estágio atual primeiro.";
+        } else if (errorText.includes("400:")) {
+          errorMessage = "Dados inválidos. Verifique se todos os campos obrigatórios estão preenchidos corretamente.";
+        } else if (errorText.includes("INVALID_REFERENCES")) {
+          errorMessage = "Estudante, orientador ou empresa não encontrados.";
+        }
+      } catch (e) {
+        // Use mensagem padrão se não conseguir parsear o erro
+      }
+      
+      toast({ 
+        title: "Erro",
+        description: errorMessage,
+        variant: "destructive" 
+      });
     },
   });
 
@@ -233,12 +267,17 @@ export default function NonMandatoryInternshipsPage() {
 
   const handleOpenDialog = () => {
     setEditingInternship(null);
-    form.reset();
-    
-    // Se for professor, preencher automaticamente o orientador
-    if (currentUser?.role === "professor") {
-      form.setValue("advisorId", currentUser.id);
-    }
+    form.reset({
+      studentId: "",
+      advisorId: currentUser?.role === "professor" ? currentUser.id : "",
+      companyId: "",
+      supervisor: "",
+      crc: "",
+      status: "pending",
+      startDate: undefined,
+      endDate: undefined,
+      isActive: true,
+    });
     
     setIsDialogOpen(true);
   };

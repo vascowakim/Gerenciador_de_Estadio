@@ -107,7 +107,28 @@ export default function MandatoryInternships() {
     onSuccess: (responseData) => {
       queryClient.invalidateQueries({ queryKey: ["/api/mandatory-internships"] });
       setIsDialogOpen(false);
-      form.reset();
+      form.reset({
+        studentId: "",
+        advisorId: user?.role === "professor" ? user.id : "",
+        companyId: "",
+        supervisor: "",
+        crc: "",
+        workload: "390",
+        startDate: undefined,
+        endDate: undefined,
+        status: "pending",
+        r1: false,
+        r2: false,
+        r3: false,
+        r4: false,
+        r5: false,
+        r6: false,
+        r7: false,
+        r8: false,
+        r9: false,
+        r10: false,
+        isActive: true,
+      });
       if (responseData.data?.id) {
         setNewlyCreatedId(responseData.data.id);
         // Remove destaque após 3 segundos
