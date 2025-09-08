@@ -315,7 +315,7 @@ export default function NonMandatoryInternshipsPage() {
     
     // Filtrar por orientador selecionado
     let matchesAdvisor = true;
-    if (selectedAdvisorId) {
+    if (selectedAdvisorId && selectedAdvisorId !== "todos") {
       matchesAdvisor = internship.advisorId === selectedAdvisorId;
     }
     
@@ -440,7 +440,7 @@ export default function NonMandatoryInternshipsPage() {
               <SelectValue placeholder="Filtrar por orientador" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todos os orientadores</SelectItem>
+              <SelectItem value="todos">Todos os orientadores</SelectItem>
               {advisors?.map((advisor: Advisor) => (
                 <SelectItem key={advisor.id} value={advisor.id}>
                   {advisor.name}
