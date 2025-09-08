@@ -25,9 +25,6 @@ export function MainLayout({ children }: MainLayoutProps) {
   // Sempre renderiza o layout, mesmo durante carregamento
   // Se user for null após carregamento, o AuthService já redireciona
 
-  // Debug do MainLayout
-  console.log('🏠 MainLayout Debug:', { user, isLoading });
-
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar fixa */}
