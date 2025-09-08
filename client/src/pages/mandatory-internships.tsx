@@ -100,23 +100,44 @@ export default function MandatoryInternships() {
 
   // Create mandatory internship mutation
   const createMutation = useMutation({
-    mutationFn: (data: any) => apiRequest("POST", "/api/mandatory-internships", data),
-    onSuccess: (newInternship) => {
+    mutationFn: async (data: any) => {
+      const response = await apiRequest("POST", "/api/mandatory-internships", data);
+      return response.json();
+    },
+    onSuccess: (responseData) => {
       queryClient.invalidateQueries({ queryKey: ["/api/mandatory-internships"] });
       setIsDialogOpen(false);
       form.reset();
-      setNewlyCreatedId(newInternship.id);
-      // Remove destaque após 3 segundos
-      setTimeout(() => setNewlyCreatedId(null), 3000);
+      if (responseData.data?.id) {
+        setNewlyCreatedId(responseData.data.id);
+        // Remove destaque após 3 segundos
+        setTimeout(() => setNewlyCreatedId(null), 3000);
+      }
       toast({
         title: "Sucesso",
-        description: "Estágio obrigatório criado com sucesso!",
+        description: responseData.message || "Estágio obrigatório criado com sucesso!",
       });
     },
-    onError: () => {
+    onError: (error: Error) => {
+      console.error("Erro ao criar estágio obrigatório:", error);
+      // Extrair mensagem de erro detalhada do servidor
+      let errorMessage = "Erro ao criar estágio obrigatório";
+      try {
+        const errorText = error.message;
+        if (errorText.includes("409:")) {
+          errorMessage = "O estudante já possui um estágio obrigatório ativo. Complete ou cancele o estágio atual primeiro.";
+        } else if (errorText.includes("400:")) {
+          errorMessage = "Dados inválidos. Verifique se todos os campos obrigatórios estão preenchidos corretamente.";
+        } else if (errorText.includes("INVALID_REFERENCES")) {
+          errorMessage = "Estudante, orientador ou empresa não encontrados.";
+        }
+      } catch (e) {
+        // Use mensagem padrão se não conseguir parsear o erro
+      }
+      
       toast({
         title: "Erro",
-        description: "Erro ao criar estágio obrigatório",
+        description: errorMessage,
         variant: "destructive",
       });
     },
@@ -124,8 +145,10 @@ export default function MandatoryInternships() {
 
   // Update mandatory internship mutation
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) => 
-      apiRequest("PUT", `/api/mandatory-internships/${id}`, data),
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const response = await apiRequest("PUT", `/api/mandatory-internships/${id}`, data);
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/mandatory-internships"] });
       setIsDialogOpen(false);
@@ -136,7 +159,8 @@ export default function MandatoryInternships() {
         description: "Estágio obrigatório atualizado com sucesso!",
       });
     },
-    onError: () => {
+    onError: (error: Error) => {
+      console.error("Erro ao atualizar estágio obrigatório:", error);
       toast({
         title: "Erro",
         description: "Erro ao atualizar estágio obrigatório",
@@ -147,7 +171,10 @@ export default function MandatoryInternships() {
 
   // Delete mandatory internship mutation
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => apiRequest("DELETE", `/api/mandatory-internships/${id}`),
+    mutationFn: async (id: string) => {
+      const response = await apiRequest("DELETE", `/api/mandatory-internships/${id}`);
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/mandatory-internships"] });
       toast({
@@ -155,7 +182,8 @@ export default function MandatoryInternships() {
         description: "Estágio obrigatório excluído com sucesso!",
       });
     },
-    onError: () => {
+    onError: (error: Error) => {
+      console.error("Erro ao excluir estágio obrigatório:", error);
       toast({
         title: "Erro",
         description: "Erro ao excluir estágio obrigatório",
@@ -166,8 +194,10 @@ export default function MandatoryInternships() {
 
   // Update workload mutation
   const updateWorkloadMutation = useMutation({
-    mutationFn: ({ id, partialWorkload, notes }: { id: string; partialWorkload: number; notes?: string }) => 
-      apiRequest("PUT", `/api/mandatory-internships/${id}/workload`, { partialWorkload, notes }),
+    mutationFn: async ({ id, partialWorkload, notes }: { id: string; partialWorkload: number; notes?: string }) => {
+      const response = await apiRequest("PUT", `/api/mandatory-internships/${id}/workload`, { partialWorkload, notes });
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/mandatory-internships"] });
       setIsManagementDialogOpen(false);
@@ -177,7 +207,8 @@ export default function MandatoryInternships() {
         description: "Carga horária atualizada com sucesso!",
       });
     },
-    onError: () => {
+    onError: (error: Error) => {
+      console.error("Erro ao atualizar carga horária:", error);
       toast({
         title: "Erro",
         description: "Erro ao atualizar carga horária",
@@ -188,8 +219,10 @@ export default function MandatoryInternships() {
 
   // Upload report mutation
   const uploadReportMutation = useMutation({
-    mutationFn: ({ internshipId, reportNumber, fileUrl }: { internshipId: string; reportNumber: number; fileUrl: string }) => 
-      apiRequest("POST", `/api/mandatory-internships/${internshipId}/reports/${reportNumber}/upload`, { fileUrl }),
+    mutationFn: async ({ internshipId, reportNumber, fileUrl }: { internshipId: string; reportNumber: number; fileUrl: string }) => {
+      const response = await apiRequest("POST", `/api/mandatory-internships/${internshipId}/reports/${reportNumber}/upload`, { fileUrl });
+      return response.json();
+    },
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/mandatory-internships"] });
       toast({
@@ -197,7 +230,8 @@ export default function MandatoryInternships() {
         description: `Relatório R${variables.reportNumber} enviado com sucesso!`,
       });
     },
-    onError: () => {
+    onError: (error: Error) => {
+      console.error("Erro ao enviar relatório:", error);
       toast({
         title: "Erro",
         description: "Erro ao enviar relatório",
@@ -226,8 +260,8 @@ export default function MandatoryInternships() {
     setEditingInternship(internship);
     form.reset({
       ...internship,
-      startDate: internship.startDate ? new Date(internship.startDate).toISOString().split('T')[0] : "",
-      endDate: internship.endDate ? new Date(internship.endDate).toISOString().split('T')[0] : "",
+      startDate: internship.startDate ? new Date(internship.startDate).toISOString().split('T')[0] : undefined,
+      endDate: internship.endDate ? new Date(internship.endDate).toISOString().split('T')[0] : undefined,
     });
     setIsDialogOpen(true);
   };
