@@ -23,45 +23,44 @@ import { StudentDropdown } from "@/components/StudentDropdown";
 import type { UploadResult } from "@uppy/core";
 
 export default function MandatoryInternships() {
-  try {
-    const [, setLocation] = useLocation();
-    const { toast } = useToast();
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [editingInternship, setEditingInternship] = useState<MandatoryInternship | null>(null);
-    const [searchTerm, setSearchTerm] = useState("");
-    const [isManagementDialogOpen, setIsManagementDialogOpen] = useState(false);
-    const [managingInternship, setManagingInternship] = useState<MandatoryInternship | null>(null);
-    const [partialWorkload, setPartialWorkload] = useState(0);
-    const [reports, setReports] = useState({
-      r1: false, r2: false, r3: false, r4: false, r5: false,
-      r6: false, r7: false, r8: false, r9: false, r10: false
-    });
+  const [, setLocation] = useLocation();
+  const { toast } = useToast();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingInternship, setEditingInternship] = useState<MandatoryInternship | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isManagementDialogOpen, setIsManagementDialogOpen] = useState(false);
+  const [managingInternship, setManagingInternship] = useState<MandatoryInternship | null>(null);
+  const [partialWorkload, setPartialWorkload] = useState(0);
+  const [reports, setReports] = useState({
+    r1: false, r2: false, r3: false, r4: false, r5: false,
+    r6: false, r7: false, r8: false, r9: false, r10: false
+  });
 
-    const form = useForm({
-      resolver: zodResolver(insertMandatoryInternshipSchema),
-      defaultValues: {
-        studentId: "",
-        advisorId: "",
-        companyId: "",
-        supervisor: "",
-        crc: "",
-        workload: "390",
-        startDate: "",
-        endDate: "",
-        status: "pending" as const,
-        r1: false,
-        r2: false,
-        r3: false,
-        r4: false,
-        r5: false,
-        r6: false,
-        r7: false,
-        r8: false,
-        r9: false,
-        r10: false,
-        isActive: true,
-      },
-    });
+  const form = useForm({
+    resolver: zodResolver(insertMandatoryInternshipSchema),
+    defaultValues: {
+      studentId: "",
+      advisorId: "",
+      companyId: "",
+      supervisor: "",
+      crc: "",
+      workload: "390",
+      startDate: "",
+      endDate: "",
+      status: "pending" as const,
+      r1: false,
+      r2: false,
+      r3: false,
+      r4: false,
+      r5: false,
+      r6: false,
+      r7: false,
+      r8: false,
+      r9: false,
+      r10: false,
+      isActive: true,
+    },
+  });
 
   // Check authentication
   const { data: user, isLoading: authLoading } = useQuery({
@@ -230,7 +229,7 @@ export default function MandatoryInternships() {
       workload: internship.workload || "390",
       startDate: internship.startDate ? new Date(internship.startDate).toISOString().split('T')[0] : "",
       endDate: internship.endDate ? new Date(internship.endDate).toISOString().split('T')[0] : "",
-      status: internship.status,
+      status: internship.status || "pending",
       r1: internship.r1 || false,
       r2: internship.r2 || false,
       r3: internship.r3 || false,
