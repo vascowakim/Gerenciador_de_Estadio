@@ -70,12 +70,10 @@ export default function Students() {
         description: "Estudante criado com sucesso.",
       });
     },
-    onError: (error: any) => {
-      console.error("Erro ao criar estudante:", error);
-      const errorMessage = error.message || "Erro desconhecido ao criar estudante";
+    onError: () => {
       toast({
-        title: "Erro ao criar estudante",
-        description: errorMessage,
+        title: "Erro",
+        description: "Erro ao criar estudante.",
         variant: "destructive",
       });
     },
@@ -96,12 +94,10 @@ export default function Students() {
         description: "Estudante atualizado com sucesso.",
       });
     },
-    onError: (error: any) => {
-      console.error("Erro ao atualizar estudante:", error);
-      const errorMessage = error.message || "Erro desconhecido ao atualizar estudante";
+    onError: () => {
       toast({
-        title: "Erro ao atualizar estudante",
-        description: errorMessage,
+        title: "Erro",
+        description: "Erro ao atualizar estudante.",
         variant: "destructive",
       });
     },
@@ -118,12 +114,10 @@ export default function Students() {
         description: "Estudante excluído com sucesso.",
       });
     },
-    onError: (error: any) => {
-      console.error("Erro ao excluir estudante:", error);
-      const errorMessage = error.message || "Erro desconhecido ao excluir estudante";
+    onError: () => {
       toast({
-        title: "Erro ao excluir estudante",
-        description: errorMessage,
+        title: "Erro",
+        description: "Erro ao excluir estudante.",
         variant: "destructive",
       });
     },
@@ -140,14 +134,9 @@ export default function Students() {
   const handleEdit = (student: Student) => {
     setEditingStudent(student);
     form.reset({
-      name: student.name,
-      email: student.email,
-      registrationNumber: student.registrationNumber,
-      course: student.course,
-      phone: student.phone || "",
+      ...student,
       cpf: student.cpf || "",
-      address: student.address || "",
-      isActive: student.isActive
+      address: student.address || ""
     });
     setIsDialogOpen(true);
   };
@@ -158,7 +147,7 @@ export default function Students() {
     }
   };
 
-  const filteredStudents = (students && Array.isArray(students)) ? students.filter((student: Student) => 
+  const filteredStudents = students ? students.filter((student: Student) => 
     student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     student.registrationNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (student.cpf && student.cpf.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -368,7 +357,7 @@ export default function Students() {
             <div className="text-center py-8">
               <p>Carregando estudantes...</p>
             </div>
-          ) : !students || !Array.isArray(students) || students.length === 0 ? (
+          ) : !students || students.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-gray-500" data-testid="text-no-students">Nenhum estudante cadastrado</p>
             </div>

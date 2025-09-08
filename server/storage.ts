@@ -1,4 +1,4 @@
-import { users, advisors, students, companies, internships, mandatoryInternships, nonMandatoryInternships, internshipDocuments, internshipAlerts, settings, type User, type InsertUser, type Advisor, type InsertAdvisor, type Student, type InsertStudent, type Company, type InsertCompany, type Internship, type InsertInternship, type MandatoryInternship, type InsertMandatoryInternship, type NonMandatoryInternship, type InsertNonMandatoryInternship, type InternshipDocument, type InsertInternshipDocument, type InternshipAlert, type InsertInternshipAlert, type Settings, type InsertSettings } from "@shared/schema";
+import { users, advisors, students, companies, internships, mandatoryInternships, nonMandatoryInternships, internshipDocuments, internshipAlerts, type User, type InsertUser, type Advisor, type InsertAdvisor, type Student, type InsertStudent, type Company, type InsertCompany, type Internship, type InsertInternship, type MandatoryInternship, type InsertMandatoryInternship, type NonMandatoryInternship, type InsertNonMandatoryInternship, type InternshipDocument, type InsertInternshipDocument, type InternshipAlert, type InsertInternshipAlert } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, inArray, sql } from "drizzle-orm";
 import bcrypt from "bcrypt";
@@ -16,7 +16,6 @@ export interface IStorage {
 
   // Advisor operations
   getAdvisor(id: string): Promise<Advisor | undefined>;
-  getAdvisorByUserId(userId: string): Promise<Advisor | undefined>;
   getAllAdvisors(): Promise<Advisor[]>;
   createAdvisor(advisor: InsertAdvisor): Promise<Advisor>;
   createAdvisorWithUser(advisor: InsertAdvisor, userData: { email: string; password: string; role: string }): Promise<{ advisor: Advisor; user: User }>;
@@ -71,11 +70,6 @@ export interface IStorage {
   createDocument(document: InsertInternshipDocument): Promise<InternshipDocument>;
   updateDocument(id: string, document: Partial<InsertInternshipDocument>): Promise<InternshipDocument | undefined>;
   deleteDocument(id: string): Promise<boolean>;
-
-  // Settings operations
-  getSettings(): Promise<Settings | undefined>;
-  updateSettings(settings: Partial<InsertSettings>): Promise<Settings>;
-  initializeSettings(): Promise<Settings>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -92,6 +86,11 @@ export class DatabaseStorage implements IStorage {
 
   async getUserByEmail(email: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user || undefined;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
     return user || undefined;
   }
 
@@ -131,11 +130,6 @@ export class DatabaseStorage implements IStorage {
   // Advisor operations
   async getAdvisor(id: string): Promise<Advisor | undefined> {
     const [advisor] = await db.select().from(advisors).where(eq(advisors.id, id));
-    return advisor || undefined;
-  }
-
-  async getAdvisorByUserId(userId: string): Promise<Advisor | undefined> {
-    const [advisor] = await db.select().from(advisors).where(eq(advisors.id, userId));
     return advisor || undefined;
   }
 
@@ -590,45 +584,6 @@ export class DatabaseStorage implements IStorage {
   async deleteDocument(id: string): Promise<boolean> {
     const result = await db.delete(internshipDocuments).where(eq(internshipDocuments.id, id));
     return (result.rowCount || 0) > 0;
-  }
-
-  // Settings operations
-  async getSettings(): Promise<Settings | undefined> {
-    const [systemSettings] = await db.select().from(settings);
-    return systemSettings || undefined;
-  }
-
-  async updateSettings(settingsUpdate: Partial<InsertSettings>): Promise<Settings> {
-    // Primeiro, verificar se existe um registro de configurações
-    const existingSettings = await this.getSettings();
-    
-    if (existingSettings) {
-      // Atualizar configurações existentes
-      const [updatedSettings] = await db
-        .update(settings)
-        .set({ ...settingsUpdate, updatedAt: new Date() })
-        .where(eq(settings.id, existingSettings.id))
-        .returning();
-      return updatedSettings;
-    } else {
-      // Criar novo registro de configurações
-      return await this.initializeSettings();
-    }
-  }
-
-  async initializeSettings(): Promise<Settings> {
-    const [newSettings] = await db
-      .insert(settings)
-      .values({
-        internshipCoordinatorName: "",
-        courseCoordinatorName: "",
-        courseName: "Ciências Contábeis",
-        universityName: "Universidade Federal dos Vales do Jequitinhonha e Mucuri",
-        universityAbbreviation: "UFVJM",
-        updatedBy: "system"
-      })
-      .returning();
-    return newSettings;
   }
 }
 

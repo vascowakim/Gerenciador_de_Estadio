@@ -3,7 +3,6 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { MainLayout } from "@/components/layout/main-layout";
 import Login from "@/pages/login";
 import RegisterPage from "@/pages/register";
@@ -17,16 +16,6 @@ import MandatoryInternshipControl from "@/pages/mandatory-internship-control";
 import AlertsPage from "@/pages/alerts";
 import NonMandatoryInternships from "@/pages/non-mandatory-internships";
 import ProfilePage from "./pages/profile";
-import Reports from "@/pages/reports";
-import AdvisorReports from "@/pages/advisor-reports";
-import MandatoryStudentReports from "@/pages/mandatory-student-reports";
-import NonMandatoryStudentReports from "@/pages/non-mandatory-student-reports";
-import Certificates from "@/pages/certificates";
-import StudentCertificates from "@/pages/student-certificates";
-import AdvisorCertificates from "@/pages/advisor-certificates";
-import MandatoryStudentCertificates from "@/pages/mandatory-student-certificates";
-import NonMandatoryStudentCertificates from "@/pages/non-mandatory-student-certificates";
-import SystemSettings from "@/pages/settings";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -84,56 +73,6 @@ function Router() {
           <ProfilePage />
         </MainLayout>
       </Route>
-      <Route path="/reports">
-        <MainLayout>
-          <Reports />
-        </MainLayout>
-      </Route>
-      <Route path="/advisor-reports">
-        <MainLayout>
-          <AdvisorReports />
-        </MainLayout>
-      </Route>
-      <Route path="/mandatory-student-reports">
-        <MainLayout>
-          <MandatoryStudentReports />
-        </MainLayout>
-      </Route>
-      <Route path="/non-mandatory-student-reports">
-        <MainLayout>
-          <NonMandatoryStudentReports />
-        </MainLayout>
-      </Route>
-      <Route path="/certificates">
-        <MainLayout>
-          <Certificates />
-        </MainLayout>
-      </Route>
-      <Route path="/student-certificates">
-        <MainLayout>
-          <StudentCertificates />
-        </MainLayout>
-      </Route>
-      <Route path="/advisor-certificates">
-        <MainLayout>
-          <AdvisorCertificates />
-        </MainLayout>
-      </Route>
-      <Route path="/mandatory-student-certificates">
-        <MainLayout>
-          <MandatoryStudentCertificates />
-        </MainLayout>
-      </Route>
-      <Route path="/non-mandatory-student-certificates">
-        <MainLayout>
-          <NonMandatoryStudentCertificates />
-        </MainLayout>
-      </Route>
-      <Route path="/settings">
-        <MainLayout>
-          <SystemSettings />
-        </MainLayout>
-      </Route>
       <Route component={NotFound} />
     </Switch>
   );
@@ -141,14 +80,12 @@ function Router() {
 
 function App() {
   return (
-    <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider>
-      </QueryClientProvider>
-    </ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Router />
+      </TooltipProvider>
+    </QueryClientProvider>
   );
 }
 

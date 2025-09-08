@@ -19,7 +19,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useLocation, Link } from "wouter";
 import { format } from "date-fns";
 import { ObjectUploader } from "@/components/ObjectUploader";
-import { StudentDropdown } from "@/components/StudentDropdown";
 import type { UploadResult } from "@uppy/core";
 
 export default function MandatoryInternships() {
@@ -36,8 +35,8 @@ export default function MandatoryInternships() {
     r6: false, r7: false, r8: false, r9: false, r10: false
   });
 
-  const form = useForm<any>({
-    mode: "onChange",
+  const form = useForm({
+    resolver: zodResolver(insertMandatoryInternshipSchema),
     defaultValues: {
       studentId: "",
       advisorId: "",
@@ -45,8 +44,8 @@ export default function MandatoryInternships() {
       supervisor: "",
       crc: "",
       workload: "390",
-      startDate: "",
-      endDate: "",
+      startDate: undefined,
+      endDate: undefined,
       status: "pending",
       r1: false,
       r2: false,
@@ -75,7 +74,29 @@ export default function MandatoryInternships() {
     },
   });
 
-  // Create mutation
+  // Fetch mandatory internships
+  const { data: mandatoryInternships, isLoading } = useQuery({
+    queryKey: ["/api/mandatory-internships"],
+    enabled: !!user,
+  });
+
+  // Fetch students, advisors, and companies for form
+  const { data: students = [] } = useQuery<Student[]>({
+    queryKey: ["/api/students"],
+    enabled: !!user,
+  });
+
+  const { data: advisors = [] } = useQuery<Advisor[]>({
+    queryKey: ["/api/advisors"],
+    enabled: !!user,
+  });
+
+  const { data: companies = [] } = useQuery<Company[]>({
+    queryKey: ["/api/companies"],
+    enabled: !!user,
+  });
+
+  // Create mandatory internship mutation
   const createMutation = useMutation({
     mutationFn: (data: any) => apiRequest("POST", "/api/mandatory-internships", data),
     onSuccess: () => {
@@ -96,7 +117,7 @@ export default function MandatoryInternships() {
     },
   });
 
-  // Update mutation
+  // Update mandatory internship mutation
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) => 
       apiRequest("PUT", `/api/mandatory-internships/${id}`, data),
@@ -119,7 +140,7 @@ export default function MandatoryInternships() {
     },
   });
 
-  // Delete mutation
+  // Delete mandatory internship mutation
   const deleteMutation = useMutation({
     mutationFn: (id: string) => apiRequest("DELETE", `/api/mandatory-internships/${id}`),
     onSuccess: () => {
@@ -138,153 +159,70 @@ export default function MandatoryInternships() {
     },
   });
 
-  // Queries
-  const { data: internships = [], isLoading: internshipsLoading } = useQuery<MandatoryInternship[]>({
-    queryKey: ["/api/mandatory-internships"],
-    enabled: !!user,
-  });
-
-  const { data: students = [], isLoading: studentsLoading } = useQuery<Student[]>({
-    queryKey: ["/api/students"],
-    enabled: !!user,
-  });
-
-  const { data: advisors = [], isLoading: advisorsLoading } = useQuery<Advisor[]>({
-    queryKey: ["/api/advisors"],
-    enabled: !!user,
-  });
-
-  const { data: companies = [], isLoading: companiesLoading } = useQuery<Company[]>({
-    queryKey: ["/api/companies"],
-    enabled: !!user,
-  });
-
-  const onSubmit = async (data: any) => {
-    console.log('📝 Dados do formulário:', data);
-    console.log('👤 Usuário atual:', user);
-    
-    // Validação básica dos campos obrigatórios
-    if (!data.studentId || data.studentId.trim() === '') {
+  // Update workload mutation
+  const updateWorkloadMutation = useMutation({
+    mutationFn: ({ id, partialWorkload, notes }: { id: string; partialWorkload: number; notes?: string }) => 
+      apiRequest("PUT", `/api/mandatory-internships/${id}/workload`, { partialWorkload, notes }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/mandatory-internships"] });
+      setIsManagementDialogOpen(false);
+      setManagingInternship(null);
       toast({
-        title: "Erro de validação",
-        description: "Por favor, selecione um estudante.",
+        title: "Sucesso",
+        description: "Carga horária atualizada com sucesso!",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar carga horária",
         variant: "destructive",
       });
-      return;
-    }
+    },
+  });
 
-    if (!data.advisorId || data.advisorId.trim() === '') {
+  // Upload report mutation
+  const uploadReportMutation = useMutation({
+    mutationFn: ({ internshipId, reportNumber, fileUrl }: { internshipId: string; reportNumber: number; fileUrl: string }) => 
+      apiRequest("POST", `/api/mandatory-internships/${internshipId}/reports/${reportNumber}/upload`, { fileUrl }),
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/mandatory-internships"] });
       toast({
-        title: "Erro de validação", 
-        description: "Por favor, selecione um orientador.",
+        title: "Sucesso",
+        description: `Relatório R${variables.reportNumber} enviado com sucesso!`,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erro",
+        description: "Erro ao enviar relatório",
         variant: "destructive",
       });
-      return;
-    }
+    },
+  });
 
-    if (!data.workload || data.workload.trim() === '') {
-      toast({
-        title: "Erro de validação",
-        description: "Por favor, informe a carga horária total.",
-        variant: "destructive",
-      });
-      return;
-    }
+  if (authLoading) {
+    return <div>Carregando...</div>;
+  }
 
-    try {
-      const submitData = {
-        studentId: data.studentId,
-        advisorId: data.advisorId,
-        companyId: data.companyId || null,
-        supervisor: data.supervisor || null,
-        crc: data.crc || null,
-        workload: data.workload,
-        startDate: data.startDate || null,
-        endDate: data.endDate || null,
-        status: data.status || "pending",
-        r1: false,
-        r2: false,
-        r3: false,
-        r4: false,
-        r5: false,
-        r6: false,
-        r7: false,
-        r8: false,
-        r9: false,
-        r10: false,
-        isActive: true,
-      };
+  if (!user) {
+    return <div>Redirecionando...</div>;
+  }
 
-      console.log('📤 Dados sendo enviados:', submitData);
-
-      if (editingInternship) {
-        await updateMutation.mutateAsync({
-          id: editingInternship.id,
-          data: submitData,
-        });
-        toast({
-          title: "✅ Estágio atualizado",
-          description: "Estágio obrigatório atualizado com sucesso!",
-        });
-      } else {
-        await createMutation.mutateAsync(submitData);
-        toast({
-          title: "✅ Estágio criado",
-          description: "Estágio obrigatório criado com sucesso!",
-        });
-      }
-      
-      setIsDialogOpen(false);
-      form.reset({
-        studentId: "",
-        advisorId: "",
-        companyId: "",
-        supervisor: "",
-        crc: "",
-        workload: "390",
-        startDate: "",
-        endDate: "",
-        status: "pending",
-        r1: false,
-        r2: false,
-        r3: false,
-        r4: false,
-        r5: false,
-        r6: false,
-        r7: false,
-        r8: false,
-        r9: false,
-        r10: false,
-        isActive: true,
-      });
-    } catch (error) {
-      console.error("❌ Erro no submit:", error);
+  const onSubmit = (data: any) => {
+    if (editingInternship) {
+      updateMutation.mutate({ id: editingInternship.id, data });
+    } else {
+      createMutation.mutate(data);
     }
   };
 
   const handleEdit = (internship: MandatoryInternship) => {
     setEditingInternship(internship);
     form.reset({
-      studentId: internship.studentId || "",
-      advisorId: internship.advisorId || "",
-      companyId: internship.companyId || "",
-      supervisor: internship.supervisor || "",
-      crc: internship.crc || "",
-      workload: internship.workload || "390",
+      ...internship,
       startDate: internship.startDate ? new Date(internship.startDate).toISOString().split('T')[0] : "",
       endDate: internship.endDate ? new Date(internship.endDate).toISOString().split('T')[0] : "",
-      status: internship.status || "pending",
-      r1: internship.r1 || false,
-      r2: internship.r2 || false,
-      r3: internship.r3 || false,
-      r4: internship.r4 || false,
-      r5: internship.r5 || false,
-      r6: internship.r6 || false,
-      r7: internship.r7 || false,
-      r8: internship.r8 || false,
-      r9: internship.r9 || false,
-      r10: internship.r10 || false,
-      isActive: internship.isActive !== false,
     });
     setIsDialogOpen(true);
   };
@@ -297,8 +235,7 @@ export default function MandatoryInternships() {
 
   const handleManage = (internship: MandatoryInternship) => {
     setManagingInternship(internship);
-    setIsManagementDialogOpen(true);
-    setPartialWorkload(0);
+    setPartialWorkload(internship.partialWorkload || 0);
     setReports({
       r1: internship.r1 || false,
       r2: internship.r2 || false,
@@ -311,33 +248,82 @@ export default function MandatoryInternships() {
       r9: internship.r9 || false,
       r10: internship.r10 || false,
     });
+    setIsManagementDialogOpen(true);
   };
 
-  // Helper functions
+  const handleSaveWorkload = () => {
+    if (managingInternship) {
+      updateWorkloadMutation.mutate({ 
+        id: managingInternship.id, 
+        partialWorkload 
+      });
+    }
+  };
+
+  const handleSaveReports = () => {
+    if (managingInternship) {
+      updateMutation.mutate({
+        id: managingInternship.id,
+        data: reports
+      });
+    }
+  };
+
+  const handleReportChange = (reportNumber: number, checked: boolean) => {
+    setReports(prev => ({
+      ...prev,
+      [`r${reportNumber}`]: checked
+    }));
+  };
+
+  // Upload handlers
+  const handleGetUploadParameters = async () => {
+    const response = await apiRequest("POST", "/api/objects/upload");
+    return {
+      method: "PUT" as const,
+      url: response.uploadURL,
+    };
+  };
+
+  const handleUploadComplete = (reportNumber: number) => async (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
+    if (result.successful && result.successful[0] && managingInternship) {
+      const uploadURL = result.successful[0].uploadURL;
+      if (uploadURL) {
+        uploadReportMutation.mutate({
+          internshipId: managingInternship.id,
+          reportNumber,
+          fileUrl: uploadURL
+        });
+      }
+    }
+  };
+
   const getStudentName = (studentId: string) => {
-    const student = students.find((s: Student) => s.id === studentId);
+    const student = students?.find((s: Student) => s.id === studentId);
     return student ? student.name : "Estudante não encontrado";
   };
 
   const getAdvisorName = (advisorId: string) => {
-    const advisor = advisors.find((a: Advisor) => a.id === advisorId);
+    const advisor = advisors?.find((a: Advisor) => a.id === advisorId);
     return advisor ? advisor.name : "Orientador não encontrado";
   };
 
-  const getCompanyName = (companyId: string) => {
-    const company = companies.find((c: Company) => c.id === companyId);
+  const getCompanyName = (companyId: string | null) => {
+    if (!companyId) return "-";
+    const company = companies?.find((c: Company) => c.id === companyId);
     return company ? company.name : "Empresa não encontrada";
   };
 
-  // Filter internships
-  const filteredInternships = internships.filter((internship: MandatoryInternship) => {
+  const filteredInternships = mandatoryInternships ? mandatoryInternships.filter((internship: MandatoryInternship) => {
     const studentName = getStudentName(internship.studentId);
     const advisorName = getAdvisorName(internship.advisorId);
-    const searchString = `${studentName} ${advisorName} ${internship.supervisor || ""} ${internship.crc || ""}`.toLowerCase();
-    return searchString.includes(searchTerm.toLowerCase());
-  });
-
-  if (!user) return null;
+    const companyName = getCompanyName(internship.companyId);
+    
+    return studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+           advisorName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+           companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+           (internship.supervisor && internship.supervisor.toLowerCase().includes(searchTerm.toLowerCase()));
+  }) : [];
 
   return (
     <div className="p-6 space-y-6">
@@ -347,10 +333,8 @@ export default function MandatoryInternships() {
           <div className="flex items-center space-x-3">
             <GraduationCap className="h-8 w-8" />
             <div>
-              <h1 className="text-2xl font-bold" data-testid="text-mandatory-internships-title">
-                Estágios Obrigatórios
-              </h1>
-              <p className="text-blue-100">Gestão de estágios obrigatórios do curso</p>
+              <h1 className="text-2xl font-bold" data-testid="text-mandatory-internships-title">Gestão de Estágio Obrigatório</h1>
+              <p className="text-blue-100">Cadastro e gerenciamento de estágios obrigatórios</p>
             </div>
           </div>
           <div className="text-right">
@@ -358,6 +342,70 @@ export default function MandatoryInternships() {
             <div className="text-blue-100">Total de Estágios</div>
           </div>
         </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <Calendar className="h-5 w-5 text-yellow-600" />
+              <div>
+                <p className="text-sm text-gray-600">Ativos</p>
+                <p className="text-2xl font-bold text-yellow-600">
+                  {mandatoryInternships ? mandatoryInternships.filter((i: MandatoryInternship) => i.status === "pending").length : 0}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <CheckCircle className="h-5 w-5 text-green-600" />
+              <div>
+                <p className="text-sm text-gray-600">Aprovados</p>
+                <p className="text-2xl font-bold text-green-600">
+                  {mandatoryInternships ? mandatoryInternships.filter((i: MandatoryInternship) => i.status === "approved").length : 0}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <XCircle className="h-5 w-5 text-blue-600" />
+              <div>
+                <p className="text-sm text-gray-600">Concluídos</p>
+                <p className="text-2xl font-bold text-blue-600">
+                  {mandatoryInternships ? mandatoryInternships.filter((i: MandatoryInternship) => i.status === "completed").length : 0}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <FileText className="h-5 w-5 text-purple-600" />
+              <div>
+                <p className="text-sm text-gray-600">Relatórios Pendentes</p>
+                <p className="text-2xl font-bold text-purple-600">
+                  {mandatoryInternships ? 
+                    mandatoryInternships.reduce((acc: number, i: MandatoryInternship) => {
+                      const reports = [i.r1, i.r2, i.r3, i.r4, i.r5, i.r6, i.r7, i.r8, i.r9, i.r10];
+                      return acc + (10 - reports.filter(Boolean).length);
+                    }, 0) : 0
+                  }
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Search and Actions */}
@@ -380,13 +428,13 @@ export default function MandatoryInternships() {
                 setEditingInternship(null);
                 form.reset({
                   studentId: "",
-                  advisorId: (user?.role === "professor" && user?.id) ? user.id : "",
+                  advisorId: user?.role === "professor" ? user.id : "",
                   companyId: "",
                   supervisor: "",
                   crc: "",
                   workload: "390",
-                  startDate: "",
-                  endDate: "",
+                  startDate: undefined,
+                  endDate: undefined,
                   status: "pending",
                   r1: false,
                   r2: false,
@@ -407,6 +455,7 @@ export default function MandatoryInternships() {
               Novo Estágio Obrigatório
             </Button>
           </DialogTrigger>
+
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
@@ -418,249 +467,393 @@ export default function MandatoryInternships() {
             </DialogHeader>
 
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                {/* Seção Principal */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Informações Básicas</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="studentId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Estudante *</FormLabel>
-                          <StudentDropdown
-                            value={field.value}
-                            onChange={field.onChange}
-                            placeholder="Selecione um estudante..."
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="studentId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Estudante</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-student">
+                              <SelectValue placeholder="Selecione o estudante" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {students?.map((student: Student) => (
+                              <SelectItem key={student.id} value={student.id}>
+                                {student.name} - {student.registrationNumber}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="advisorId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Orientador</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-advisor">
+                              <SelectValue placeholder="Selecione o orientador" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {advisors?.map((advisor: Advisor) => (
+                              <SelectItem key={advisor.id} value={advisor.id}>
+                                {advisor.name} - {advisor.department}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="companyId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Empresa</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value || ""}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-company">
+                              <SelectValue placeholder="Selecione a empresa" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {companies?.map((company: Company) => (
+                              <SelectItem key={company.id} value={company.id}>
+                                {company.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="supervisor"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Supervisor</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Nome do supervisor" {...field} data-testid="input-supervisor" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="crc"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>CRC</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Número do CRC" {...field} data-testid="input-crc" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="workload"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Carga Horária Total</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Ex: 390" {...field} data-testid="input-workload" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="startDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Data de Início</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="date" 
+                            value={field.value ? new Date(field.value).toISOString().split('T')[0] : ''}
+                            onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : undefined)}
+                            data-testid="input-start-date" 
                           />
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                    <FormField
-                      control={form.control}
-                      name="advisorId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Orientador *</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger data-testid="select-advisor">
-                                <SelectValue placeholder="Selecione o orientador" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {advisors.map((advisor: Advisor) => (
-                                <SelectItem key={advisor.id} value={advisor.id}>
-                                  {advisor.name} - {advisor.department}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                  <FormField
+                    control={form.control}
+                    name="endDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Data de Término</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="date" 
+                            value={field.value ? new Date(field.value).toISOString().split('T')[0] : ''}
+                            onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : undefined)}
+                            data-testid="input-end-date" 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                    <FormField
-                      control={form.control}
-                      name="companyId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Empresa</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value || ""}>
-                            <FormControl>
-                              <SelectTrigger data-testid="select-company">
-                                <SelectValue placeholder="Selecione a empresa" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {companies.map((company: Company) => (
-                                <SelectItem key={company.id} value={company.id}>
-                                  {company.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="supervisor"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Supervisor</FormLabel>
+                  <FormField
+                    control={form.control}
+                    name="status"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Status</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
-                            <Input 
-                              placeholder="Nome do supervisor na empresa" 
-                              {...field} 
-                              data-testid="input-supervisor" 
-                            />
+                            <SelectTrigger data-testid="select-status">
+                              <SelectValue placeholder="Selecione o status" />
+                            </SelectTrigger>
                           </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+                          <SelectContent>
+                            <SelectItem value="pending">Ativo</SelectItem>
+                            <SelectItem value="approved">Aprovado</SelectItem>
+                            <SelectItem value="completed">Concluído</SelectItem>
+                            <SelectItem value="rejected">Rejeitado</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
 
-                {/* Seção de Detalhes */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Detalhes do Estágio</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="crc"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>CRC</FormLabel>
-                          <FormControl>
-                            <Input 
-                              placeholder="Número do CRC (se aplicável)" 
-                              {...field} 
-                              data-testid="input-crc" 
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="workload"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Carga Horária Total *</FormLabel>
-                          <FormControl>
-                            <Input 
-                              placeholder="Ex: 390 horas" 
-                              {...field} 
-                              data-testid="input-workload" 
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="startDate"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Data de Início</FormLabel>
-                          <FormControl>
-                            <Input 
-                              type="date" 
-                              {...field}
-                              data-testid="input-start-date" 
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="endDate"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Data de Término</FormLabel>
-                          <FormControl>
-                            <Input 
-                              type="date" 
-                              {...field}
-                              data-testid="input-end-date" 
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="status"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Status *</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger data-testid="select-status">
-                                <SelectValue placeholder="Selecione o status" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="pending">Ativo</SelectItem>
-                              <SelectItem value="approved">Aprovado</SelectItem>
-                              <SelectItem value="completed">Concluído</SelectItem>
-                              <SelectItem value="rejected">Rejeitado</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-
-                <div className="border-t pt-4">
-                  <div className="flex justify-end space-x-3">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setIsDialogOpen(false)}
-                      data-testid="button-cancel"
-                    >
-                      Cancelar
-                    </Button>
-                    <Button 
-                      type="submit" 
-                      disabled={createMutation.isPending || updateMutation.isPending}
-                      data-testid="button-submit"
-                      className="bg-blue-600 hover:bg-blue-700"
-                    >
-                      {createMutation.isPending || updateMutation.isPending ? (
-                        <>
-                          <span className="animate-spin mr-2">⏳</span>
-                          Salvando...
-                        </>
-                      ) : (
-                        editingInternship ? "Atualizar Estágio" : "Criar Estágio"
-                      )}
-                    </Button>
-                  </div>
+                <div className="flex justify-end space-x-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsDialogOpen(false)}
+                    data-testid="button-cancel"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    disabled={createMutation.isPending || updateMutation.isPending}
+                    data-testid="button-submit"
+                  >
+                    {editingInternship ? "Atualizar" : "Criar"}
+                  </Button>
                 </div>
               </form>
             </Form>
           </DialogContent>
         </Dialog>
+
+        {/* Management Dialog */}
+        <Dialog open={isManagementDialogOpen} onOpenChange={setIsManagementDialogOpen}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Gestão do Estágio Obrigatório</DialogTitle>
+              <DialogDescription>
+                Visualize todos os dados do estágio e controle a carga horária
+              </DialogDescription>
+            </DialogHeader>
+            {managingInternship && (
+              <div className="space-y-6">
+                {/* Dados do Estágio */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-lg mb-4">Dados do Estágio</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700">Estudante</Label>
+                      <p className="mt-1 text-sm">{getStudentName(managingInternship.studentId)}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700">Orientador</Label>
+                      <p className="mt-1 text-sm">{getAdvisorName(managingInternship.advisorId)}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700">Empresa</Label>
+                      <p className="mt-1 text-sm">{getCompanyName(managingInternship.companyId)}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700">Supervisor</Label>
+                      <p className="mt-1 text-sm">{managingInternship.supervisor || "-"}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700">CRC</Label>
+                      <p className="mt-1 text-sm">{managingInternship.crc || "-"}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700">Status</Label>
+                      <p className="mt-1 text-sm">
+                        {managingInternship.status === "approved" ? "Aprovado" :
+                         managingInternship.status === "completed" ? "Concluído" :
+                         managingInternship.status === "rejected" ? "Rejeitado" :
+                         "Ativo"}
+                      </p>
+                    </div>
+                    {managingInternship.startDate && (
+                      <div>
+                        <Label className="text-sm font-medium text-gray-700">Data de Início</Label>
+                        <p className="mt-1 text-sm">{format(new Date(managingInternship.startDate), "dd/MM/yyyy")}</p>
+                      </div>
+                    )}
+                    {managingInternship.endDate && (
+                      <div>
+                        <Label className="text-sm font-medium text-gray-700">Data de Término</Label>
+                        <p className="mt-1 text-sm">{format(new Date(managingInternship.endDate), "dd/MM/yyyy")}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Controle de Carga Horária */}
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-lg mb-4">Controle de Carga Horária</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700">CH Total</Label>
+                      <p className="mt-1 text-lg font-semibold text-blue-600">{managingInternship.workload || "390"} horas</p>
+                    </div>
+                    <div>
+                      <Label htmlFor="partialWorkload" className="text-sm font-medium text-gray-700">CH Parcial</Label>
+                      <Input
+                        id="partialWorkload"
+                        type="number"
+                        value={partialWorkload}
+                        onChange={(e) => setPartialWorkload(Number(e.target.value))}
+                        className="mt-1"
+                        min="0"
+                        max={Number(managingInternship.workload) || 390}
+                        data-testid="input-partial-workload"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700">CH Restante</Label>
+                      <p className="mt-1 text-lg font-semibold text-orange-600">
+                        {(Number(managingInternship.workload) || 390) - partialWorkload} horas
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Controle de Relatórios */}
+                <div className="bg-green-50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-lg mb-4">Controle de Relatórios</h3>
+                  <div className="grid grid-cols-5 gap-4">
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => {
+                      const reportKey = `r${num}` as keyof typeof reports;
+                      const isChecked = reports[reportKey];
+                      
+                      return (
+                        <div key={num} className="flex flex-col items-center space-y-2">
+                          <Label className="text-sm font-medium text-gray-700">R{num}</Label>
+                          <div className="flex flex-col items-center space-y-2">
+                            <div className="flex items-center justify-center w-12 h-12 border-2 rounded-lg transition-colors">
+                              {isChecked ? (
+                                <Checkbox
+                                  checked={true}
+                                  onCheckedChange={(checked) => handleReportChange(num, checked as boolean)}
+                                  className="w-6 h-6"
+                                  data-testid={`checkbox-report-${num}`}
+                                />
+                              ) : (
+                                <div 
+                                  className="w-8 h-8 border-2 border-red-300 rounded flex items-center justify-center cursor-pointer hover:border-red-400 transition-colors"
+                                  onClick={() => handleReportChange(num, true)}
+                                  data-testid={`missing-report-${num}`}
+                                >
+                                  <span className="text-red-500 font-bold text-lg">✗</span>
+                                </div>
+                              )}
+                            </div>
+                            <ObjectUploader
+                              maxNumberOfFiles={1}
+                              maxFileSize={10485760}
+                              onGetUploadParameters={handleGetUploadParameters}
+                              onComplete={handleUploadComplete(num)}
+                              buttonClassName="h-8 px-2 text-xs"
+                              allowedFileTypes={['.pdf', '.doc', '.docx']}
+                            >
+                              📁 Upload
+                            </ObjectUploader>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="mt-4 flex justify-end">
+                    <Button 
+                      onClick={handleSaveReports}
+                      disabled={updateMutation.isPending}
+                      variant="outline"
+                      data-testid="button-save-reports"
+                    >
+                      {updateMutation.isPending ? "Salvando..." : "Salvar Relatórios"}
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Ações */}
+                <div className="flex justify-end space-x-2 pt-4">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => setIsManagementDialogOpen(false)}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button 
+                    onClick={handleSaveWorkload}
+                    disabled={updateWorkloadMutation.isPending}
+                    data-testid="button-save-workload"
+                  >
+                    {updateWorkloadMutation.isPending ? "Salvando..." : "Salvar Carga Horária"}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
 
-      {/* Internships Table */}
+      {/* Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Lista de Estágios Obrigatórios</CardTitle>
+          <CardTitle>Estágios Obrigatórios</CardTitle>
           <CardDescription>
-            Visualize e gerencie todos os estágios obrigatórios cadastrados
+            Lista de todos os estágios obrigatórios cadastrados no sistema
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {internshipsLoading ? (
-            <div className="flex items-center justify-center p-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            </div>
+          {isLoading ? (
+            <div className="text-center py-8">Carregando...</div>
           ) : filteredInternships.length === 0 ? (
-            <div className="text-center p-8 text-gray-500">
-              <GraduationCap className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-              <p>Nenhum estágio obrigatório encontrado</p>
+            <div className="text-center py-8 text-gray-500">
+              Nenhum estágio obrigatório encontrado.
             </div>
           ) : (
             <Table>
@@ -669,19 +862,18 @@ export default function MandatoryInternships() {
                   <TableHead>Estudante</TableHead>
                   <TableHead>Orientador</TableHead>
                   <TableHead>Empresa</TableHead>
+                  <TableHead>Supervisor</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Carga Horária</TableHead>
                   <TableHead>Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredInternships.map((internship: MandatoryInternship) => (
                   <TableRow key={internship.id}>
-                    <TableCell>
-                      <div className="font-medium">{getStudentName(internship.studentId)}</div>
-                    </TableCell>
+                    <TableCell>{getStudentName(internship.studentId)}</TableCell>
                     <TableCell>{getAdvisorName(internship.advisorId)}</TableCell>
-                    <TableCell>{internship.companyId ? getCompanyName(internship.companyId) : "-"}</TableCell>
+                    <TableCell>{getCompanyName(internship.companyId)}</TableCell>
+                    <TableCell>{internship.supervisor || "-"}</TableCell>
                     <TableCell>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                         internship.status === "approved" ? "bg-green-100 text-green-800" :
@@ -695,9 +887,25 @@ export default function MandatoryInternships() {
                          "Ativo"}
                       </span>
                     </TableCell>
-                    <TableCell>{internship.workload || "390"} horas</TableCell>
                     <TableCell>
                       <div className="flex space-x-2">
+                        <Link href={`/mandatory-internship-control/${internship.id}`}>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            data-testid={`button-view-${internship.id}`}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </Link>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleManage(internship)}
+                          data-testid={`button-manage-${internship.id}`}
+                        >
+                          <Settings className="h-4 w-4" />
+                        </Button>
                         <Button
                           variant="outline"
                           size="sm"
@@ -710,6 +918,7 @@ export default function MandatoryInternships() {
                           variant="outline"
                           size="sm"
                           onClick={() => handleDelete(internship.id)}
+                          className="text-red-600 hover:text-red-700"
                           data-testid={`button-delete-${internship.id}`}
                         >
                           <Trash2 className="h-4 w-4" />

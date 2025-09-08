@@ -78,7 +78,8 @@ app.use((req, res, next) => {
     console.log('🚀 Modo produção detectado - verificando inicialização...');
     try {
       // Importar storage aqui para evitar problemas de dependência circular
-      const { storage } = await import('./storage.js');
+      const { PgStorage } = await import('./storage.js');
+      const storage = new PgStorage();
       
       // Verificar se banco tem usuários
       const users = await storage.getAllUsers();
@@ -98,7 +99,7 @@ app.use((req, res, next) => {
         });
         
         // Criar professor
-        const hashedPasswordProf = await bcrypt.hash("123456", 10);
+        const hashedPasswordProf = await bcrypt.hash("prof123", 10);
         await storage.createUser({
           username: "vasconcelos.wakim",
           email: "vasconcelos.wakim@ufvjm.edu.br",
@@ -109,7 +110,7 @@ app.use((req, res, next) => {
         
         console.log('✅ Usuários criados em produção:');
         console.log('   - admin / admin123 (administrator)');
-        console.log('   - vasconcelos.wakim / 123456 (professor)');
+        console.log('   - vasconcelos.wakim / prof123 (professor)');
       } else {
         console.log(`✅ Banco já possui ${users.length} usuários`);
       }

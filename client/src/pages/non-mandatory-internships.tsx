@@ -10,7 +10,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { ObjectUploader } from "@/components/ObjectUploader";
-import { StudentDropdown } from "@/components/StudentDropdown";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -38,8 +37,8 @@ export default function NonMandatoryInternshipsPage() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const form = useForm<any>({
-    mode: "onChange",
+  const form = useForm<FormData>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
       studentId: "",
       advisorId: "",
@@ -47,8 +46,8 @@ export default function NonMandatoryInternshipsPage() {
       supervisor: "",
       crc: "",
       status: "pending",
-      startDate: "",
-      endDate: "",
+      startDate: undefined,
+      endDate: undefined,
       isActive: true,
     },
   });
@@ -172,7 +171,7 @@ export default function NonMandatoryInternshipsPage() {
       workload: internship.workload || "",
       startDate: internship.startDate ? new Date(internship.startDate).toISOString().split('T')[0] : "",
       endDate: internship.endDate ? new Date(internship.endDate).toISOString().split('T')[0] : "",
-      status: internship.status || "pending",
+      status: internship.status,
       r1: internship.r1,
       r2: internship.r2,
       r3: internship.r3,
@@ -367,14 +366,13 @@ export default function NonMandatoryInternshipsPage() {
           />
         </div>
         
-        {currentUser?.role === "administrator" && (
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={handleOpenDialog} data-testid="button-add-internship">
-                <Plus className="h-4 w-4 mr-2" />
-                Novo Estágio Não Obrigatório
-              </Button>
-            </DialogTrigger>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button onClick={handleOpenDialog} data-testid="button-add-internship">
+              <Plus className="h-4 w-4 mr-2" />
+              Novo Estágio Não Obrigatório
+            </Button>
+          </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
@@ -390,11 +388,20 @@ export default function NonMandatoryInternshipsPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Aluno</FormLabel>
-                        <StudentDropdown
-                          value={field.value}
-                          onChange={field.onChange}
-                          placeholder="Selecione um estudante..."
-                        />
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione um aluno" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {students.map((student: Student) => (
+                              <SelectItem key={student.id} value={student.id}>
+                                {student.name} - {student.registrationNumber}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -552,7 +559,6 @@ export default function NonMandatoryInternshipsPage() {
             </Form>
           </DialogContent>
         </Dialog>
-        )}
       </div>
 
       {/* Internships Grid */}

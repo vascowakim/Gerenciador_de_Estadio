@@ -24,7 +24,6 @@ interface AuthenticatedRequest extends Request {
     };
     loginTime?: string;
     clientIP?: string;
-    userId?: string;
   } & session.Session;
 }
 
@@ -273,7 +272,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const token = jwt.sign(tokenPayload, JWT_SECRET, {
           expiresIn: '24h',
           issuer: 'estagiopro-ufvjm',
-          audience: req.get('host') || 'estagiopro-ufvjm.replit.app'
+          audience: req.get('host') || 'localhost'
         });
         
         const duration = Date.now() - startTime;
@@ -764,8 +763,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Mandatory Internships routes
   app.get("/api/mandatory-internships", requireAuth, async (req: any, res) => {
     try {
-      // Both administrators and professors can see all mandatory internships
-      const mandatoryInternships = await storage.getAllMandatoryInternships();
+      let mandatoryInternships;
+      if (req.session.user.role === "administrator") {
+        mandatoryInternships = await storage.getAllMandatoryInternships();
+      } else {
+        // Professors can only see mandatory internships they supervise
+        mandatoryInternships = await storage.getMandatoryInternshipsByAdvisor(req.session.user.id);
+      }
       res.json(mandatoryInternships);
     } catch (error) {
       res.status(500).json({ message: "Erro ao buscar estágios obrigatórios" });
@@ -844,27 +848,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
       
       const mandatoryInternshipData = insertMandatoryInternshipSchema.partial().parse(processedBody);
-      
-      // Primeiro, atualizar os dados
-      let mandatoryInternship = await storage.updateMandatoryInternship(id, mandatoryInternshipData);
+      const mandatoryInternship = await storage.updateMandatoryInternship(id, mandatoryInternshipData);
       if (!mandatoryInternship) {
         return res.status(404).json({ message: "Estágio obrigatório não encontrado" });
       }
-      
-      // Verificar se a carga horária foi atualizada e atingiu 390h para conclusão automática
-      if (mandatoryInternshipData.partialWorkload && 
-          mandatoryInternshipData.partialWorkload >= 390 && 
-          mandatoryInternship.status !== "completed") {
-        
-        // Automaticamente concluir o estágio
-        const completedInternship = await storage.updateMandatoryInternship(id, {
-          status: "completed"
-        });
-        
-        console.log(`🎓 Estágio obrigatório ${id} concluído automaticamente - carga horária: ${mandatoryInternshipData.partialWorkload}h`);
-        mandatoryInternship = completedInternship || mandatoryInternship;
-      }
-      
       res.json(mandatoryInternship);
     } catch (error) {
       console.error("Error updating mandatory internship:", error);
@@ -905,7 +892,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       const { partialWorkload, notes } = req.body;
       
-      // Primeiro, atualizar a carga horária
       const mandatoryInternship = await storage.updateMandatoryInternshipWorkload(id, {
         partialWorkload,
         workloadNotes: notes
@@ -915,17 +901,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Estágio obrigatório não encontrado" });
       }
       
-      // Verificar se atingiu 390h e automaticamente concluir
-      if (partialWorkload >= 390 && mandatoryInternship.status !== "completed") {
-        const completedInternship = await storage.updateMandatoryInternship(id, {
-          status: "completed"
-        });
-        
-        console.log(`🎓 Estágio obrigatório ${id} concluído automaticamente - carga horária: ${partialWorkload}h`);
-        res.json(completedInternship || mandatoryInternship);
-      } else {
-        res.json(mandatoryInternship);
-      }
+      res.json(mandatoryInternship);
     } catch (error) {
       console.error("Erro ao atualizar carga horária:", error);
       res.status(400).json({ message: "Erro ao atualizar carga horária" });
@@ -959,8 +935,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Non-Mandatory Internships routes
   app.get("/api/non-mandatory-internships", requireAuth, async (req: any, res) => {
     try {
-      // Both administrators and professors can see all non-mandatory internships
-      const nonMandatoryInternships = await storage.getAllNonMandatoryInternships();
+      let nonMandatoryInternships;
+      if (req.session.user.role === "administrator") {
+        nonMandatoryInternships = await storage.getAllNonMandatoryInternships();
+      } else {
+        // Professors can only see non-mandatory internships they supervise
+        nonMandatoryInternships = await storage.getNonMandatoryInternshipsByAdvisor(req.session.user.id);
+      }
       res.json(nonMandatoryInternships);
     } catch (error) {
       res.status(500).json({ message: "Erro ao buscar estágios não obrigatórios" });
@@ -1421,542 +1402,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Endpoint para relatório de orientação de estágios
-  app.get("/api/reports/orientation/:semester", requireAuth, async (req, res) => {
-    try {
-      const { semester } = req.params;
-      
-      if (!semester || !semester.match(/^\d{4}-[12]$/)) {
-        return res.status(400).json({
-          success: false,
-          message: "Formato de semestre inválido. Use YYYY-1 ou YYYY-2"
-        });
-      }
-      
-      const [year, sem] = semester.split('-');
-      const yearNum = parseInt(year);
-      
-      // Definir range de datas do semestre
-      let startDate: Date, endDate: Date;
-      if (sem === '1') {
-        startDate = new Date(yearNum, 0, 1);  // Janeiro
-        endDate = new Date(yearNum, 5, 30);   // Junho
-      } else {
-        startDate = new Date(yearNum, 6, 1);  // Julho
-        endDate = new Date(yearNum, 11, 31);  // Dezembro
-      }
-      
-      // Buscar todos os orientadores ativos
-      const advisors = await storage.getAllAdvisors();
-      const activeAdvisors = advisors.filter(advisor => advisor.isActive);
-      
-      // Buscar todos os tipos de estágios no período
-      const internships = await storage.getAllInternships();
-      const mandatoryInternships = await storage.getAllMandatoryInternships();
-      const nonMandatoryInternships = await storage.getAllNonMandatoryInternships();
-      
-      // Filtrar estágios por período
-      const semesterInternships = internships.filter(internship => {
-        if (!internship.startDate) return false;
-        const internshipStart = new Date(internship.startDate);
-        return internshipStart >= startDate && internshipStart <= endDate;
-      });
-      
-      const semesterMandatoryInternships = mandatoryInternships.filter(internship => {
-        if (!internship.startDate) return false;
-        const internshipStart = new Date(internship.startDate);
-        return internshipStart >= startDate && internshipStart <= endDate;
-      });
-      
-      const semesterNonMandatoryInternships = nonMandatoryInternships.filter(internship => {
-        if (!internship.startDate) return false;
-        const internshipStart = new Date(internship.startDate);
-        return internshipStart >= startDate && internshipStart <= endDate;
-      });
-      
-      // Buscar dados dos estudantes e empresas
-      const students = await storage.getAllStudents();
-      const companies = await storage.getAllCompanies();
-      
-      // Construir mapa de empresas por ID
-      const companyMap = companies.reduce((acc, company) => {
-        acc[company.id] = company.name;
-        return acc;
-      }, {} as Record<string, string>);
-      
-      // Construir mapa de estudantes por ID
-      const studentMap = students.reduce((acc, student) => {
-        acc[student.id] = {
-          name: student.name,
-          registrationNumber: student.registrationNumber
-        };
-        return acc;
-      }, {} as Record<string, { name: string; registrationNumber: string }>);
-      
-      // Agrupar todos os estágios por orientador
-      const advisorInternships = {} as Record<string, any[]>;
-      
-      // Adicionar estágios genéricos
-      semesterInternships.forEach(internship => {
-        if (!advisorInternships[internship.advisorId]) {
-          advisorInternships[internship.advisorId] = [];
-        }
-        advisorInternships[internship.advisorId].push({
-          ...internship,
-          internshipType: internship.type === 'mandatory' ? 'Obrigatório' : 'Não Obrigatório'
-        });
-      });
-      
-      // Adicionar estágios obrigatórios específicos
-      semesterMandatoryInternships.forEach(internship => {
-        if (!advisorInternships[internship.advisorId]) {
-          advisorInternships[internship.advisorId] = [];
-        }
-        advisorInternships[internship.advisorId].push({
-          ...internship,
-          internshipType: 'Obrigatório',
-          company: companies.find(c => c.id === internship.companyId)?.name || 'Empresa não encontrada'
-        });
-      });
-      
-      // Adicionar estágios não obrigatórios específicos
-      semesterNonMandatoryInternships.forEach(internship => {
-        if (!advisorInternships[internship.advisorId]) {
-          advisorInternships[internship.advisorId] = [];
-        }
-        advisorInternships[internship.advisorId].push({
-          ...internship,
-          internshipType: 'Não Obrigatório',
-          company: companies.find(c => c.id === internship.companyId)?.name || 'Empresa não encontrada'
-        });
-      });
-      
-      // Construir dados do relatório
-      const reportData = activeAdvisors.map(advisor => {
-        const advisorInternshipsList = advisorInternships[advisor.id] || [];
-        const studentsData = advisorInternshipsList.map(internship => {
-          const student = studentMap[internship.studentId];
-          const companyName = internship.company || companyMap[internship.companyId] || 'Empresa não encontrada';
-          
-          return {
-            name: student?.name || 'Nome não encontrado',
-            registrationNumber: student?.registrationNumber || 'N/A',
-            company: companyName,
-            type: internship.internshipType || 'Não informado'
-          };
-        });
-        
-        return {
-          id: advisor.id,
-          name: advisor.name,
-          siape: advisor.siape || 'N/A',
-          students: studentsData
-        };
-      });
-      
-      res.json(reportData);
-      
-    } catch (error) {
-      console.error('Erro ao gerar relatório de orientação:', error);
-      res.status(500).json({
-        success: false,
-        message: "Erro interno ao gerar relatório"
-      });
-    }
-  });
-
-  // Endpoint para relatório de estudantes em estágios obrigatórios
-  app.get("/api/reports/mandatory-students/:semester", requireAuth, async (req, res) => {
-    try {
-      const { semester } = req.params;
-      
-      if (!semester || !semester.match(/^\d{4}-[12]$/)) {
-        return res.status(400).json({
-          success: false,
-          message: "Formato de semestre inválido. Use YYYY-1 ou YYYY-2"
-        });
-      }
-      
-      const [year, sem] = semester.split('-');
-      const yearNum = parseInt(year);
-      
-      let startDate: Date, endDate: Date;
-      if (sem === '1') {
-        startDate = new Date(yearNum, 0, 1);
-        endDate = new Date(yearNum, 5, 30);
-      } else {
-        startDate = new Date(yearNum, 6, 1);
-        endDate = new Date(yearNum, 11, 31);
-      }
-      
-      const mandatoryInternships = await storage.getAllMandatoryInternships();
-      const semesterInternships = mandatoryInternships.filter(internship => {
-        if (!internship.startDate) return false;
-        const internshipStart = new Date(internship.startDate);
-        return internshipStart >= startDate && internshipStart <= endDate;
-      });
-      
-      const students = await storage.getAllStudents();
-      const advisors = await storage.getAllAdvisors();
-      const companies = await storage.getAllCompanies();
-      
-      const studentMap = students.reduce((acc, student) => {
-        acc[student.id] = student;
-        return acc;
-      }, {} as Record<string, any>);
-      
-      const advisorMap = advisors.reduce((acc, advisor) => {
-        acc[advisor.id] = advisor.name;
-        return acc;
-      }, {} as Record<string, string>);
-      
-      const companyMap = companies.reduce((acc, company) => {
-        acc[company.id] = company.name;
-        return acc;
-      }, {} as Record<string, string>);
-      
-      const reportData = semesterInternships.map(internship => {
-        const student = studentMap[internship.studentId];
-        return {
-          name: student?.name || 'N/A',
-          registrationNumber: student?.registrationNumber || 'N/A',
-          course: student?.course || 'N/A',
-          company: companyMap[internship.companyId] || 'N/A',
-          advisor: advisorMap[internship.advisorId] || 'N/A',
-          status: internship.status || 'N/A'
-        };
-      });
-      
-      res.json(reportData);
-      
-    } catch (error) {
-      console.error('Erro ao gerar relatório de estágios obrigatórios:', error);
-      res.status(500).json({
-        success: false,
-        message: "Erro interno ao gerar relatório"
-      });
-    }
-  });
-
-  // Endpoint para relatório de estudantes em estágios não obrigatórios
-  app.get("/api/reports/non-mandatory-students/:semester", requireAuth, async (req, res) => {
-    try {
-      const { semester } = req.params;
-      
-      if (!semester || !semester.match(/^\d{4}-[12]$/)) {
-        return res.status(400).json({
-          success: false,
-          message: "Formato de semestre inválido. Use YYYY-1 ou YYYY-2"
-        });
-      }
-      
-      const [year, sem] = semester.split('-');
-      const yearNum = parseInt(year);
-      
-      let startDate: Date, endDate: Date;
-      if (sem === '1') {
-        startDate = new Date(yearNum, 0, 1);
-        endDate = new Date(yearNum, 5, 30);
-      } else {
-        startDate = new Date(yearNum, 6, 1);
-        endDate = new Date(yearNum, 11, 31);
-      }
-      
-      const nonMandatoryInternships = await storage.getAllNonMandatoryInternships();
-      const semesterInternships = nonMandatoryInternships.filter(internship => {
-        if (!internship.startDate) return false;
-        const internshipStart = new Date(internship.startDate);
-        return internshipStart >= startDate && internshipStart <= endDate;
-      });
-      
-      const students = await storage.getAllStudents();
-      const advisors = await storage.getAllAdvisors();
-      const companies = await storage.getAllCompanies();
-      
-      const studentMap = students.reduce((acc, student) => {
-        acc[student.id] = student;
-        return acc;
-      }, {} as Record<string, any>);
-      
-      const advisorMap = advisors.reduce((acc, advisor) => {
-        acc[advisor.id] = advisor.name;
-        return acc;
-      }, {} as Record<string, string>);
-      
-      const companyMap = companies.reduce((acc, company) => {
-        acc[company.id] = company.name;
-        return acc;
-      }, {} as Record<string, string>);
-      
-      const reportData = semesterInternships.map(internship => {
-        const student = studentMap[internship.studentId];
-        return {
-          name: student?.name || 'N/A',
-          registrationNumber: student?.registrationNumber || 'N/A',
-          course: student?.course || 'N/A',
-          company: companyMap[internship.companyId] || 'N/A',
-          advisor: advisorMap[internship.advisorId] || 'N/A',
-          workload: internship.workload || 'N/A'
-        };
-      });
-      
-      res.json(reportData);
-      
-    } catch (error) {
-      console.error('Erro ao gerar relatório de estágios não obrigatórios:', error);
-      res.status(500).json({
-        success: false,
-        message: "Erro interno ao gerar relatório"
-      });
-    }
-  });
-
-  // Endpoint para buscar estágios não obrigatórios concluídos do orientador logado
-  app.get("/api/certificates/non-mandatory-completed", requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.userId;
-      
-      if (!userId) {
-        return res.status(401).json({
-          success: false,
-          message: "Usuário não autenticado"
-        });
-      }
-
-      // Buscar o orientador pelo userId
-      const advisors = await storage.getAllAdvisors();
-      const currentAdvisor = advisors.find(advisor => advisor.userId === userId);
-      
-      if (!currentAdvisor) {
-        return res.status(403).json({
-          success: false,
-          message: "Usuário não é um orientador"
-        });
-      }
-
-      // Buscar estágios não obrigatórios concluídos do orientador
-      const nonMandatoryInternships = await storage.getAllNonMandatoryInternships();
-      const completedInternships = nonMandatoryInternships.filter(internship => 
-        internship.advisorId === currentAdvisor.id && 
-        internship.status === 'concluido'
-      );
-
-      // Buscar dados dos estudantes, empresas
-      const students = await storage.getAllStudents();
-      const companies = await storage.getAllCompanies();
-      
-      const studentMap = students.reduce((acc, student) => {
-        acc[student.id] = student;
-        return acc;
-      }, {} as Record<string, any>);
-      
-      const companyMap = companies.reduce((acc, company) => {
-        acc[company.id] = company.name;
-        return acc;
-      }, {} as Record<string, string>);
-      
-      // Montar dados para os certificados
-      const certificateData = completedInternships.map(internship => {
-        const student = studentMap[internship.studentId];
-        return {
-          id: internship.id,
-          studentName: student?.name || 'N/A',
-          studentRegistration: student?.registrationNumber || 'N/A',
-          course: student?.course || 'N/A',
-          startDate: internship.startDate,
-          endDate: internship.endDate,
-          advisorName: currentAdvisor.name,
-          company: companyMap[internship.companyId] || 'N/A'
-        };
-      });
-      
-      res.json(certificateData);
-      
-    } catch (error) {
-      console.error('Erro ao buscar estágios concluídos para certificados:', error);
-      res.status(500).json({
-        success: false,
-        message: "Erro interno ao buscar dados"
-      });
-    }
-  });
-
-  // Endpoint para buscar estágios obrigatórios concluídos para certificados
-  app.get("/api/certificates/mandatory-completed", requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.userId;
-      
-      if (!userId) {
-        return res.status(401).json({
-          success: false,
-          message: "Usuário não autenticado"
-        });
-      }
-
-      // Buscar o orientador pelo userId
-      const advisors = await storage.getAllAdvisors();
-      const currentAdvisor = advisors.find(advisor => advisor.userId === userId);
-      
-      if (!currentAdvisor) {
-        return res.status(403).json({
-          success: false,
-          message: "Usuário não é um orientador"
-        });
-      }
-
-      // Buscar estágios obrigatórios concluídos do orientador
-      const mandatoryInternships = await storage.getAllMandatoryInternships();
-      const completedInternships = mandatoryInternships.filter(internship => 
-        internship.advisorId === currentAdvisor.id && 
-        internship.status === 'completed'
-      );
-
-      // Buscar dados dos estudantes e empresas
-      const students = await storage.getAllStudents();
-      const companies = await storage.getAllCompanies();
-      
-      const studentMap = students.reduce((acc, student) => {
-        acc[student.id] = student;
-        return acc;
-      }, {} as Record<string, any>);
-      
-      const companyMap = companies.reduce((acc, company) => {
-        acc[company.id] = company.name;
-        return acc;
-      }, {} as Record<string, string>);
-      
-      // Montar dados para os certificados
-      const certificateData = completedInternships.map(internship => {
-        const student = studentMap[internship.studentId];
-        return {
-          id: internship.id,
-          studentName: student?.name || 'N/A',
-          studentRegistration: student?.registrationNumber || 'N/A',
-          course: student?.course || 'N/A',
-          startDate: internship.startDate,
-          endDate: internship.endDate,
-          advisorName: currentAdvisor.name,
-          company: companyMap[internship.companyId] || 'N/A',
-          workload: internship.partialWorkload || 390,
-          crc: internship.crc
-        };
-      });
-      
-      res.json(certificateData);
-      
-    } catch (error) {
-      console.error('Erro ao buscar estágios obrigatórios concluídos para certificados:', error);
-      res.status(500).json({
-        success: false,
-        message: "Erro interno ao buscar dados"
-      });
-    }
-  });
-
-  // Endpoint para buscar dados do perfil do orientador (estágios e certificados)
-  app.get("/api/profile/advisor-data", requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.user?.id;
-      
-      if (!userId) {
-        return res.status(401).json({
-          success: false,
-          message: "Usuário não autenticado"
-        });
-      }
-
-      // Buscar o orientador pelo userId (mesmo ID do usuário)
-      const currentAdvisor = await storage.getAdvisor(userId);
-      
-      if (!currentAdvisor) {
-        return res.status(403).json({
-          success: false,
-          message: "Usuário não é um orientador"
-        });
-      }
-
-      // Buscar todos os estágios do orientador (obrigatórios e não obrigatórios)
-      const [mandatoryInternships, nonMandatoryInternships, students, companies] = await Promise.all([
-        storage.getAllMandatoryInternships(),
-        storage.getAllNonMandatoryInternships(),
-        storage.getAllStudents(),
-        storage.getAllCompanies()
-      ]);
-
-      // Filtrar estágios do orientador
-      const advisorMandatory = mandatoryInternships.filter(i => i.advisorId === currentAdvisor.id);
-      const advisorNonMandatory = nonMandatoryInternships.filter(i => i.advisorId === currentAdvisor.id);
-
-      // Criar mapas para facilitar lookup
-      const studentMap = students.reduce((acc, student) => {
-        acc[student.id] = student;
-        return acc;
-      }, {} as Record<string, any>);
-      
-      const companyMap = companies.reduce((acc, company) => {
-        acc[company.id] = company.name;
-        return acc;
-      }, {} as Record<string, string>);
-
-      // Preparar dados dos estágios obrigatórios
-      const mandatoryData = advisorMandatory.map(internship => ({
-        id: internship.id,
-        type: 'mandatory',
-        studentName: studentMap[internship.studentId]?.name || 'N/A',
-        studentRegistration: studentMap[internship.studentId]?.registrationNumber || 'N/A',
-        company: companyMap[internship.companyId] || 'N/A',
-        startDate: internship.startDate,
-        endDate: internship.endDate,
-        status: internship.status,
-        workload: internship.workload
-      }));
-
-      // Preparar dados dos estágios não obrigatórios
-      const nonMandatoryData = advisorNonMandatory.map(internship => ({
-        id: internship.id,
-        type: 'non-mandatory',
-        studentName: studentMap[internship.studentId]?.name || 'N/A',
-        studentRegistration: studentMap[internship.studentId]?.registrationNumber || 'N/A',
-        company: companyMap[internship.companyId] || 'N/A',
-        startDate: internship.startDate,
-        endDate: internship.endDate,
-        status: internship.status,
-        workload: internship.workload
-      }));
-
-      // Filtrar estágios concluídos para certificados
-      const completedNonMandatory = nonMandatoryData.filter(i => i.status === 'completed');
-
-      // Combinar todos os dados
-      const allInternships = [...mandatoryData, ...nonMandatoryData];
-
-      res.json({
-        advisor: {
-          name: currentAdvisor.name,
-          siape: currentAdvisor.siape,
-          department: currentAdvisor.department,
-          email: currentAdvisor.email
-        },
-        internships: {
-          mandatory: mandatoryData,
-          nonMandatory: nonMandatoryData,
-          total: allInternships.length
-        },
-        certificates: {
-          available: completedNonMandatory,
-          count: completedNonMandatory.length
-        }
-      });
-      
-    } catch (error) {
-      console.error('Erro ao buscar dados do perfil do orientador:', error);
-      res.status(500).json({
-        success: false,
-        message: "Erro interno ao buscar dados"
-      });
-    }
-  });
-
   // Endpoint público para registro de novos usuários (sem autenticação)
   app.post("/api/public/register", async (req, res) => {
     try {
@@ -2057,60 +1502,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: "Erro interno do servidor",
         error: errorMessage,
         code: "INTERNAL_ERROR"
-      });
-    }
-  });
-
-  // Endpoints de configurações do sistema (apenas para administradores)
-  app.get("/api/settings", requireAuth, requireAdmin, async (req, res) => {
-    try {
-      const systemSettings = await storage.getSettings();
-      
-      if (!systemSettings) {
-        // Inicializar configurações se não existirem
-        const newSettings = await storage.initializeSettings();
-        return res.json(newSettings);
-      }
-      
-      res.json(systemSettings);
-    } catch (error) {
-      console.error("Erro ao buscar configurações:", error);
-      res.status(500).json({ message: "Erro interno do servidor" });
-    }
-  });
-
-  app.put("/api/settings", requireAuth, requireAdmin, async (req, res) => {
-    try {
-      const { internshipCoordinatorName, courseCoordinatorName } = req.body;
-      
-      // Validação básica
-      if (!internshipCoordinatorName || !courseCoordinatorName) {
-        return res.status(400).json({ 
-          message: "Nome do coordenador de estágio e coordenador do curso são obrigatórios" 
-        });
-      }
-
-      const updatedSettings = await storage.updateSettings({
-        internshipCoordinatorName,
-        courseCoordinatorName,
-        updatedBy: req.session.user?.id || "system"
-      });
-
-      console.log(`⚙️ Configurações atualizadas por ${req.session.user?.username}:`, {
-        internshipCoordinatorName,
-        courseCoordinatorName
-      });
-
-      res.json({
-        success: true,
-        settings: updatedSettings,
-        message: "Configurações atualizadas com sucesso"
-      });
-    } catch (error) {
-      console.error("Erro ao atualizar configurações:", error);
-      res.status(500).json({ 
-        success: false,
-        message: "Erro interno ao atualizar configurações" 
       });
     }
   });

@@ -32,17 +32,14 @@ export async function apiRequest(
   const token = getAuthToken();
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
+    // console.log('🔑 Usando JWT token para API request:', method, url);
   }
 
-  // Construir URL corretamente para produção e desenvolvimento
-  const fullUrl = url.startsWith('http') ? url : `${window.location.origin}${url}`;
-
-  const res = await fetch(fullUrl, {
+  const res = await fetch(url, {
     method,
     headers,
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
-    mode: 'cors', // Explicit CORS mode for production
   });
 
   await throwIfResNotOk(res);
@@ -61,16 +58,12 @@ export const getQueryFn: <T>(options: {
     const token = getAuthToken();
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
+      // console.log('🔑 Usando JWT token para query:', queryKey.join("/"));
     }
 
-    // Construir URL corretamente para produção e desenvolvimento
-    const url = queryKey.join("/") as string;
-    const fullUrl = url.startsWith('http') ? url : `${window.location.origin}${url}`;
-
-    const res = await fetch(fullUrl, {
+    const res = await fetch(queryKey.join("/") as string, {
       headers,
       credentials: "include",
-      mode: 'cors', // Explicit CORS mode for production
     });
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {
@@ -87,12 +80,11 @@ export const queryClient = new QueryClient({
       queryFn: getQueryFn({ on401: "throw" }),
       refetchInterval: false,
       refetchOnWindowFocus: false,
-      staleTime: 5 * 60 * 1000, // 5 minutes instead of Infinity
-      retry: 2, // Retry up to 2 times for network issues
-      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+      staleTime: Infinity,
+      retry: false,
     },
     mutations: {
-      retry: 1, // Retry mutations once
+      retry: false,
     },
   },
 });

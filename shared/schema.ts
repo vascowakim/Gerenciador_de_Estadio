@@ -76,18 +76,6 @@ export const companies = pgTable("companies", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Tabela de configurações do sistema
-export const settings = pgTable("settings", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  internshipCoordinatorName: text("internship_coordinator_name").notNull().default(""),
-  courseCoordinatorName: text("course_coordinator_name").notNull().default(""), 
-  courseName: text("course_name").notNull().default("Ciências Contábeis"),
-  universityName: text("university_name").notNull().default("Universidade Federal dos Vales do Jequitinhonha e Mucuri"),
-  universityAbbreviation: text("university_abbreviation").notNull().default("UFVJM"),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-  updatedBy: varchar("updated_by").notNull().default("system"),
-});
-
 export const internships = pgTable("internships", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   studentId: varchar("student_id").notNull().references(() => students.id),
@@ -327,16 +315,12 @@ export const insertMandatoryInternshipSchema = createInsertSchema(mandatoryInter
   id: true,
   createdAt: true,
   updatedAt: true,
-}).extend({
-  status: z.enum(["pending", "approved", "rejected", "completed"]).default("pending"),
 });
 
 export const insertNonMandatoryInternshipSchema = createInsertSchema(nonMandatoryInternships).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
-}).extend({
-  status: z.enum(["pending", "approved", "rejected", "completed"]).default("pending"),
 });
 
 export const insertInternshipDocumentSchema = createInsertSchema(internshipDocuments).omit({
@@ -378,11 +362,3 @@ export type InsertInternshipDocument = z.infer<typeof insertInternshipDocumentSc
 
 export type InternshipAlert = typeof internshipAlerts.$inferSelect;
 export type InsertInternshipAlert = z.infer<typeof insertInternshipAlertSchema>;
-
-// Settings schemas
-export const insertSettingsSchema = createInsertSchema(settings).omit({
-  id: true,
-  updatedAt: true,
-});
-export type Settings = typeof settings.$inferSelect;
-export type InsertSettings = z.infer<typeof insertSettingsSchema>;
