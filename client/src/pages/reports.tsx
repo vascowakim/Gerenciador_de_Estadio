@@ -344,11 +344,13 @@ export default function ReportsPage() {
             }
             
             .university {
-              font-size: 28px;
+              font-size: 20px;
               font-weight: 700;
               color: #1e40af;
               margin-bottom: 15px;
               text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+              white-space: nowrap;
+              text-align: center;
             }
             
             .report-title {
