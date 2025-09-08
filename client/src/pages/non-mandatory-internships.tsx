@@ -104,7 +104,7 @@ export default function NonMandatoryInternshipsPage() {
       setIsDialogOpen(false);
       form.reset({
         studentId: "",
-        advisorId: currentUser?.role === "professor" ? currentUser.id : "",
+        advisorId: "",
         companyId: "",
         supervisor: "",
         crc: "",
@@ -280,7 +280,7 @@ export default function NonMandatoryInternshipsPage() {
     setEditingInternship(null);
     form.reset({
       studentId: "",
-      advisorId: currentUser?.role === "professor" ? currentUser.id : "",
+      advisorId: "",
       companyId: "",
       supervisor: "",
       crc: "",
@@ -466,7 +466,6 @@ export default function NonMandatoryInternshipsPage() {
                         <Select 
                           onValueChange={field.onChange} 
                           value={field.value}
-                          disabled={currentUser?.role === "professor"}
                         >
                           <FormControl>
                             <SelectTrigger>
@@ -702,17 +701,15 @@ export default function NonMandatoryInternshipsPage() {
                     >
                       <Edit2 className="h-4 w-4" />
                     </Button>
-                    {currentUser?.role === "administrator" && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDelete(internship.id)}
-                        className="text-red-600 hover:text-red-700"
-                        data-testid={`button-delete-internship-${internship.id}`}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDelete(internship.id)}
+                      className="text-red-600 hover:text-red-700"
+                      data-testid={`button-delete-internship-${internship.id}`}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
               </CardContent>
