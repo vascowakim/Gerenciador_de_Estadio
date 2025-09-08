@@ -27,6 +27,9 @@ interface SidebarProps {
 
 export function Sidebar({ user }: SidebarProps) {
   const [location, setLocation] = useLocation();
+  
+  // Garantir que sempre temos um objeto user válido
+  const safeUser = user || { role: 'professor', name: 'Usuário', username: 'user' };
 
   const handleLogout = () => {
     // Limpar dados locais de autenticação se houver
@@ -111,10 +114,10 @@ export function Sidebar({ user }: SidebarProps) {
   ];
 
   const filteredItems = navigationItems.filter(item => {
-    if (user?.role === "administrator") {
+    if (safeUser.role === "administrator") {
       return true; // Administradores veem tudo
     }
-    if (user?.role === "professor") {
+    if (safeUser.role === "professor") {
       // Professores só veem: Dashboard, Estágio Obrigatório, Não Obrigatório e Certificados
       const allowedRoutes = ["/dashboard", "/mandatory-internships", "/non-mandatory-internships", "/certificates"];
       return allowedRoutes.includes(item.href);
