@@ -53,7 +53,6 @@ export default function Internships() {
   });
 
   const form = useForm({
-    resolver: zodResolver(insertInternshipSchema),
     defaultValues: {
       studentId: "",
       advisorId: "",
@@ -61,8 +60,8 @@ export default function Internships() {
       position: "",
       type: "mandatory" as const,
       status: "pending" as const,
-      startDate: undefined,
-      endDate: undefined,
+      startDate: "",
+      endDate: "",
       workload: "",
       description: "",
     },
