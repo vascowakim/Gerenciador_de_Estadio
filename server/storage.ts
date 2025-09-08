@@ -70,6 +70,12 @@ export interface IStorage {
   createDocument(document: InsertInternshipDocument): Promise<InternshipDocument>;
   updateDocument(id: string, document: Partial<InsertInternshipDocument>): Promise<InternshipDocument | undefined>;
   deleteDocument(id: string): Promise<boolean>;
+
+  // System Settings operations
+  getSystemSetting(key: string): Promise<SystemSetting | undefined>;
+  getAllSystemSettings(): Promise<SystemSetting[]>;
+  createOrUpdateSystemSetting(setting: InsertSystemSetting): Promise<SystemSetting>;
+  deleteSystemSetting(key: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -583,6 +589,51 @@ export class DatabaseStorage implements IStorage {
 
   async deleteDocument(id: string): Promise<boolean> {
     const result = await db.delete(internshipDocuments).where(eq(internshipDocuments.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // System Settings operations
+  async getSystemSetting(key: string): Promise<SystemSetting | undefined> {
+    const [setting] = await db
+      .select()
+      .from(systemSettings)
+      .where(eq(systemSettings.key, key));
+    return setting || undefined;
+  }
+
+  async getAllSystemSettings(): Promise<SystemSetting[]> {
+    return await db.select().from(systemSettings).orderBy(systemSettings.key);
+  }
+
+  async createOrUpdateSystemSetting(insertSetting: InsertSystemSetting): Promise<SystemSetting> {
+    // Verificar se já existe
+    const existing = await this.getSystemSetting(insertSetting.key);
+    
+    if (existing) {
+      // Atualizar existente
+      const [setting] = await db
+        .update(systemSettings)
+        .set({
+          value: insertSetting.value,
+          description: insertSetting.description,
+          updatedBy: insertSetting.updatedBy,
+          updatedAt: sql`now()`,
+        })
+        .where(eq(systemSettings.key, insertSetting.key))
+        .returning();
+      return setting;
+    } else {
+      // Criar novo
+      const [setting] = await db
+        .insert(systemSettings)
+        .values(insertSetting)
+        .returning();
+      return setting;
+    }
+  }
+
+  async deleteSystemSetting(key: string): Promise<boolean> {
+    const result = await db.delete(systemSettings).where(eq(systemSettings.key, key));
     return (result.rowCount || 0) > 0;
   }
 }

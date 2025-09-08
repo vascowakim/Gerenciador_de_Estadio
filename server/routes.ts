@@ -1130,6 +1130,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // System Settings routes
+  app.get("/api/settings", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const settings = await storage.getAllSystemSettings();
+      res.json(settings);
+    } catch (error) {
+      console.error("Erro ao buscar configurações:", error);
+      res.status(500).json({ message: "Erro ao buscar configurações do sistema" });
+    }
+  });
+
+  app.get("/api/settings/:key", requireAuth, async (req, res) => {
+    try {
+      const { key } = req.params;
+      const setting = await storage.getSystemSetting(key);
+      if (!setting) {
+        return res.status(404).json({ message: "Configuração não encontrada" });
+      }
+      res.json(setting);
+    } catch (error) {
+      console.error("Erro ao buscar configuração:", error);
+      res.status(500).json({ message: "Erro ao buscar configuração" });
+    }
+  });
+
+  app.post("/api/settings", requireAuth, requireAdmin, async (req: any, res) => {
+    try {
+      const { key, value, description } = req.body;
+      
+      if (!key || !value) {
+        return res.status(400).json({ message: "Chave e valor são obrigatórios" });
+      }
+
+      const setting = await storage.createOrUpdateSystemSetting({
+        key,
+        value,
+        description,
+        updatedBy: req.session.user.id,
+      });
+
+      res.json(setting);
+    } catch (error) {
+      console.error("Erro ao salvar configuração:", error);
+      res.status(500).json({ message: "Erro ao salvar configuração" });
+    }
+  });
+
+  app.put("/api/settings/:key", requireAuth, requireAdmin, async (req: any, res) => {
+    try {
+      const { key } = req.params;
+      const { value, description } = req.body;
+      
+      if (!value) {
+        return res.status(400).json({ message: "Valor é obrigatório" });
+      }
+
+      const setting = await storage.createOrUpdateSystemSetting({
+        key,
+        value,
+        description,
+        updatedBy: req.session.user.id,
+      });
+
+      res.json(setting);
+    } catch (error) {
+      console.error("Erro ao atualizar configuração:", error);
+      res.status(500).json({ message: "Erro ao atualizar configuração" });
+    }
+  });
+
+  app.delete("/api/settings/:key", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const { key } = req.params;
+      const deleted = await storage.deleteSystemSetting(key);
+      
+      if (!deleted) {
+        return res.status(404).json({ message: "Configuração não encontrada" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Erro ao deletar configuração:", error);
+      res.status(500).json({ message: "Erro ao deletar configuração" });
+    }
+  });
+
   // Document management routes
   app.get("/api/documents", requireAuth, async (req, res) => {
     try {
