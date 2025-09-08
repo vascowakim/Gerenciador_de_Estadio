@@ -539,6 +539,20 @@ export default function ReportsPage() {
               <p><strong>EstagioPro UFVJM</strong> - Sistema de Gerenciamento de Estágios</p>
               <p>Relatório gerado automaticamente em ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</p>
               <p style="margin-top: 10px; font-style: italic;">Este documento possui validade institucional e pode ser utilizado para fins acadêmicos e administrativos.</p>
+              
+              <!-- Seção de Coordenadores -->
+              <div style="margin-top: 40px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; max-width: 800px; margin-left: auto; margin-right: auto;">
+                <div style="text-align: center; padding: 20px; border-top: 2px solid #1e40af;">
+                  <p style="margin-top: 15px; font-weight: 600; color: #1e40af; font-size: 16px;">Coordenador de Curso</p>
+                  <p style="color: #4a5568; font-size: 14px; margin-top: 5px;">Prof. Dr. Nome do Coordenador</p>
+                  <p style="color: #6b7280; font-size: 12px;">Ciências Contábeis - UFVJM</p>
+                </div>
+                <div style="text-align: center; padding: 20px; border-top: 2px solid #059669;">
+                  <p style="margin-top: 15px; font-weight: 600; color: #059669; font-size: 16px;">Coordenadora de Estágio</p>
+                  <p style="color: #4a5568; font-size: 14px; margin-top: 5px;">Profa. Dra. Nome da Coordenadora</p>
+                  <p style="color: #6b7280; font-size: 12px;">Coordenação de Estágios - UFVJM</p>
+                </div>
+              </div>
             </div>
           </div>
         </body>
