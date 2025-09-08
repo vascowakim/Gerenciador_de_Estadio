@@ -38,7 +38,8 @@ export default function NonMandatoryInternshipsPage() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const form = useForm<FormData>({
+  const form = useForm<any>({
+    mode: "onChange",
     defaultValues: {
       studentId: "",
       advisorId: "",
