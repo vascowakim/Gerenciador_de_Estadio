@@ -438,40 +438,41 @@ export default function MandatoryInternships() {
           />
         </div>
         
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button 
-              onClick={() => {
-                setEditingInternship(null);
-                form.reset({
-                  studentId: "",
-                  advisorId: user?.role === "professor" ? user.id : "",
-                  companyId: "",
-                  supervisor: "",
-                  crc: "",
-                  workload: "390",
-                  startDate: "",
-                  endDate: "",
-                  status: "pending",
-                  r1: false,
-                  r2: false,
-                  r3: false,
-                  r4: false,
-                  r5: false,
-                  r6: false,
-                  r7: false,
-                  r8: false,
-                  r9: false,
-                  r10: false,
-                  isActive: true,
-                });
-              }}
-              data-testid="button-add-internship"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Novo Estágio Obrigatório
-            </Button>
-          </DialogTrigger>
+        {user?.role === "administrator" && (
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button 
+                onClick={() => {
+                  setEditingInternship(null);
+                  form.reset({
+                    studentId: "",
+                    advisorId: user?.role === "professor" ? user.id : "",
+                    companyId: "",
+                    supervisor: "",
+                    crc: "",
+                    workload: "390",
+                    startDate: "",
+                    endDate: "",
+                    status: "pending",
+                    r1: false,
+                    r2: false,
+                    r3: false,
+                    r4: false,
+                    r5: false,
+                    r6: false,
+                    r7: false,
+                    r8: false,
+                    r9: false,
+                    r10: false,
+                    isActive: true,
+                  });
+                }}
+                data-testid="button-add-internship"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Novo Estágio Obrigatório
+              </Button>
+            </DialogTrigger>
 
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
