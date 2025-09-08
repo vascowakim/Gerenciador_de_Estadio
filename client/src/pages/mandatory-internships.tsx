@@ -35,6 +35,7 @@ export default function MandatoryInternships() {
     r1: false, r2: false, r3: false, r4: false, r5: false,
     r6: false, r7: false, r8: false, r9: false, r10: false
   });
+  const [newlyCreatedId, setNewlyCreatedId] = useState<string | null>(null);
 
   const form = useForm({
     resolver: zodResolver(insertMandatoryInternshipSchema),
@@ -100,10 +101,13 @@ export default function MandatoryInternships() {
   // Create mandatory internship mutation
   const createMutation = useMutation({
     mutationFn: (data: any) => apiRequest("POST", "/api/mandatory-internships", data),
-    onSuccess: () => {
+    onSuccess: (newInternship) => {
       queryClient.invalidateQueries({ queryKey: ["/api/mandatory-internships"] });
       setIsDialogOpen(false);
       form.reset();
+      setNewlyCreatedId(newInternship.id);
+      // Remove destaque após 3 segundos
+      setTimeout(() => setNewlyCreatedId(null), 3000);
       toast({
         title: "Sucesso",
         description: "Estágio obrigatório criado com sucesso!",
@@ -863,7 +867,10 @@ export default function MandatoryInternships() {
               </TableHeader>
               <TableBody>
                 {filteredInternships.map((internship: MandatoryInternship) => (
-                  <TableRow key={internship.id}>
+                  <TableRow 
+                    key={internship.id}
+                    className={newlyCreatedId === internship.id ? "bg-green-50 border-l-4 border-green-400" : ""}
+                  >
                     <TableCell>{getStudentName(internship.studentId)}</TableCell>
                     <TableCell>{getAdvisorName(internship.advisorId)}</TableCell>
                     <TableCell>{getCompanyName(internship.companyId)}</TableCell>

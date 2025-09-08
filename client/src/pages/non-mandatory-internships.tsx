@@ -35,6 +35,7 @@ export default function NonMandatoryInternshipsPage() {
     r1: false, r2: false, r3: false, r4: false, r5: false,
     r6: false, r7: false, r8: false, r9: false, r10: false,
   });
+  const [newlyCreatedId, setNewlyCreatedId] = useState<string | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -90,10 +91,13 @@ export default function NonMandatoryInternshipsPage() {
       if (!response.ok) throw new Error("Falha ao criar estágio");
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (newInternship) => {
       queryClient.invalidateQueries({ queryKey: ["/api/non-mandatory-internships"] });
       setIsDialogOpen(false);
       form.reset();
+      setNewlyCreatedId(newInternship.id);
+      // Remove destaque após 3 segundos
+      setTimeout(() => setNewlyCreatedId(null), 3000);
       toast({ title: "Estágio não obrigatório criado com sucesso!" });
     },
     onError: (error) => {
@@ -563,7 +567,12 @@ export default function NonMandatoryInternshipsPage() {
           const company = companies.find((c: Company) => c.id === internship.companyId);
           
           return (
-            <Card key={internship.id} className="hover:shadow-md transition-shadow">
+            <Card 
+              key={internship.id} 
+              className={`hover:shadow-md transition-shadow ${
+                newlyCreatedId === internship.id ? "bg-green-50 border-l-4 border-green-400 shadow-md" : ""
+              }`}
+            >
               <CardContent className="p-6">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
