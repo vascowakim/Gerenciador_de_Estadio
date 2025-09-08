@@ -206,32 +206,36 @@ export default function ReportsPage() {
       return;
     }
     
+    // Obter informações do semestre selecionado
+    const selectedSemesterInfo = selectedSemester === "all" ? "Todos os Semestres" : 
+      availableSemesters.find(s => s.value === selectedSemester)?.label || selectedSemester;
+    
     let tableHTML = "";
     
     if (reportType === "advisors-orientees") {
       tableHTML = `
-        <table border="1" style="border-collapse: collapse; width: 100%; margin-top: 20px;">
+        <table style="border-collapse: collapse; width: 100%; margin-top: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
           <thead>
-            <tr style="background-color: #f5f5f5;">
-              <th style="padding: 10px; text-align: left;">Nome do Professor</th>
-              <th style="padding: 10px; text-align: left;">SIAPE</th>
-              <th style="padding: 10px; text-align: left;">Departamento</th>
-              <th style="padding: 10px; text-align: center;">Semestre</th>
-              <th style="padding: 10px; text-align: center;">Est. Obrigatórios</th>
-              <th style="padding: 10px; text-align: center;">Est. Não Obrig.</th>
-              <th style="padding: 10px; text-align: center;">Total</th>
+            <tr style="background: linear-gradient(135deg, #1e40af, #059669); color: white;">
+              <th style="padding: 15px; text-align: left; border: 1px solid #ddd; font-weight: 600;">Nome do Professor</th>
+              <th style="padding: 15px; text-align: left; border: 1px solid #ddd; font-weight: 600;">SIAPE</th>
+              <th style="padding: 15px; text-align: left; border: 1px solid #ddd; font-weight: 600;">Departamento</th>
+              <th style="padding: 15px; text-align: center; border: 1px solid #ddd; font-weight: 600;">Semestre</th>
+              <th style="padding: 15px; text-align: center; border: 1px solid #ddd; font-weight: 600;">Est. Obrigatórios</th>
+              <th style="padding: 15px; text-align: center; border: 1px solid #ddd; font-weight: 600;">Est. Não Obrig.</th>
+              <th style="padding: 15px; text-align: center; border: 1px solid #ddd; font-weight: 600;">Total</th>
             </tr>
           </thead>
           <tbody>
-            ${data.map(item => `
-              <tr>
-                <td style="padding: 8px;">${item.advisorName}</td>
-                <td style="padding: 8px;">${item.siape}</td>
-                <td style="padding: 8px;">${item.department}</td>
-                <td style="padding: 8px; text-align: center;">${item.semester}</td>
-                <td style="padding: 8px; text-align: center;">${item.mandatoryCount}</td>
-                <td style="padding: 8px; text-align: center;">${item.nonMandatoryCount}</td>
-                <td style="padding: 8px; text-align: center; font-weight: bold;">${item.totalOrientees}</td>
+            ${data.map((item, index) => `
+              <tr style="background-color: ${index % 2 === 0 ? '#f8fafc' : '#ffffff'}; transition: background-color 0.2s;">
+                <td style="padding: 12px; border: 1px solid #e5e7eb; font-weight: 500;">${item.advisorName}</td>
+                <td style="padding: 12px; border: 1px solid #e5e7eb;">${item.siape}</td>
+                <td style="padding: 12px; border: 1px solid #e5e7eb;">${item.department}</td>
+                <td style="padding: 12px; border: 1px solid #e5e7eb; text-align: center;">${item.semester}</td>
+                <td style="padding: 12px; border: 1px solid #e5e7eb; text-align: center; color: #1e40af; font-weight: 600;">${item.mandatoryCount}</td>
+                <td style="padding: 12px; border: 1px solid #e5e7eb; text-align: center; color: #059669; font-weight: 600;">${item.nonMandatoryCount}</td>
+                <td style="padding: 12px; border: 1px solid #e5e7eb; text-align: center; font-weight: bold; color: #dc2626; background-color: #fef2f2;">${item.totalOrientees}</td>
               </tr>
             `).join('')}
           </tbody>
@@ -241,16 +245,16 @@ export default function ReportsPage() {
       // Tabela genérica para outros relatórios
       const headers = data.length > 0 ? Object.keys(data[0]) : [];
       tableHTML = `
-        <table border="1" style="border-collapse: collapse; width: 100%; margin-top: 20px;">
+        <table style="border-collapse: collapse; width: 100%; margin-top: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
           <thead>
-            <tr style="background-color: #f5f5f5;">
-              ${headers.map(header => `<th style="padding: 10px; text-align: left;">${header}</th>`).join('')}
+            <tr style="background: linear-gradient(135deg, #1e40af, #059669); color: white;">
+              ${headers.map(header => `<th style="padding: 15px; text-align: left; border: 1px solid #ddd; font-weight: 600;">${header}</th>`).join('')}
             </tr>
           </thead>
           <tbody>
-            ${data.map(item => `
-              <tr>
-                ${headers.map(header => `<td style="padding: 8px;">${item[header] || ''}</td>`).join('')}
+            ${data.map((item, index) => `
+              <tr style="background-color: ${index % 2 === 0 ? '#f8fafc' : '#ffffff'}; transition: background-color 0.2s;">
+                ${headers.map(header => `<td style="padding: 12px; border: 1px solid #e5e7eb;">${item[header] || ''}</td>`).join('')}
               </tr>
             `).join('')}
           </tbody>
@@ -265,28 +269,278 @@ export default function ReportsPage() {
           <title>Relatório - ${title}</title>
           <meta charset="utf-8">
           <style>
-            body { font-family: Arial, sans-serif; margin: 20px; }
-            h1 { color: #333; border-bottom: 2px solid #007bff; padding-bottom: 10px; }
-            .info { background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+            * {
+              margin: 0;
+              padding: 0;
+              box-sizing: border-box;
+            }
+            
+            body { 
+              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+              line-height: 1.6;
+              color: #2d3748;
+              background: #f7fafc;
+              padding: 20px;
+            }
+            
+            .report-container {
+              max-width: 1200px;
+              margin: 0 auto;
+              background: white;
+              padding: 40px;
+              border-radius: 12px;
+              box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            }
+            
+            .header {
+              text-align: center;
+              margin-bottom: 40px;
+              border-bottom: 3px solid #e2e8f0;
+              padding-bottom: 30px;
+            }
+            
+            .logo-section {
+              margin-bottom: 20px;
+            }
+            
+            .logo-placeholder {
+              width: 120px;
+              height: 120px;
+              margin: 0 auto 20px;
+              background: linear-gradient(135deg, #1e40af, #059669);
+              border-radius: 50%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: white;
+              font-size: 48px;
+              font-weight: bold;
+              box-shadow: 0 8px 25px rgba(30, 64, 175, 0.3);
+            }
+            
+            .ministry {
+              font-size: 16px;
+              font-weight: 600;
+              color: #4a5568;
+              text-transform: uppercase;
+              letter-spacing: 1px;
+              margin-bottom: 8px;
+            }
+            
+            .university {
+              font-size: 28px;
+              font-weight: 700;
+              color: #1e40af;
+              margin-bottom: 15px;
+              text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            
+            .report-title {
+              font-size: 24px;
+              font-weight: 600;
+              color: #059669;
+              margin-bottom: 10px;
+            }
+            
+            .semester-info {
+              font-size: 18px;
+              color: #4a5568;
+              background: linear-gradient(135deg, #e6fffa, #f0f9ff);
+              padding: 12px 24px;
+              border-radius: 8px;
+              border-left: 4px solid #059669;
+              display: inline-block;
+            }
+            
+            .report-info {
+              background: linear-gradient(135deg, #f7fafc, #edf2f7);
+              padding: 25px;
+              border-radius: 12px;
+              margin: 30px 0;
+              border: 1px solid #e2e8f0;
+            }
+            
+            .info-grid {
+              display: grid;
+              grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+              gap: 20px;
+            }
+            
+            .info-item {
+              background: white;
+              padding: 15px;
+              border-radius: 8px;
+              border-left: 4px solid #1e40af;
+              box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            }
+            
+            .info-label {
+              font-weight: 600;
+              color: #2d3748;
+              font-size: 14px;
+              margin-bottom: 5px;
+            }
+            
+            .info-value {
+              color: #4a5568;
+              font-size: 16px;
+            }
+            
+            .actions {
+              text-align: center;
+              margin-bottom: 30px;
+              padding: 20px;
+              background: #f8fafc;
+              border-radius: 8px;
+            }
+            
+            .btn {
+              padding: 12px 24px;
+              margin: 0 8px;
+              border: none;
+              border-radius: 8px;
+              cursor: pointer;
+              font-weight: 600;
+              font-size: 16px;
+              transition: all 0.3s ease;
+              text-decoration: none;
+              display: inline-block;
+            }
+            
+            .btn-primary {
+              background: linear-gradient(135deg, #1e40af, #3b82f6);
+              color: white;
+              box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+            }
+            
+            .btn-secondary {
+              background: linear-gradient(135deg, #6b7280, #9ca3af);
+              color: white;
+              box-shadow: 0 4px 12px rgba(107, 114, 128, 0.3);
+            }
+            
+            .btn:hover {
+              transform: translateY(-2px);
+              box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+            }
+            
+            .stats-summary {
+              background: linear-gradient(135deg, #1e40af, #059669);
+              color: white;
+              padding: 20px;
+              border-radius: 12px;
+              margin-bottom: 30px;
+              text-align: center;
+            }
+            
+            .stats-grid {
+              display: grid;
+              grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+              gap: 20px;
+              margin-top: 15px;
+            }
+            
+            .stat-item {
+              background: rgba(255,255,255,0.1);
+              padding: 15px;
+              border-radius: 8px;
+              backdrop-filter: blur(10px);
+            }
+            
+            .stat-number {
+              font-size: 28px;
+              font-weight: bold;
+              margin-bottom: 5px;
+            }
+            
+            .stat-label {
+              font-size: 14px;
+              opacity: 0.9;
+            }
+            
             @media print {
-              .no-print { display: none; }
+              .no-print { display: none !important; }
+              body { background: white; padding: 0; }
+              .report-container { box-shadow: none; padding: 20px; }
+              .btn:hover { transform: none; }
+            }
+            
+            @media (max-width: 768px) {
+              .report-container { padding: 20px; }
+              .university { font-size: 24px; }
+              .report-title { font-size: 20px; }
+              .info-grid { grid-template-columns: 1fr; }
             }
           </style>
         </head>
         <body>
-          <h1>📊 ${title}</h1>
-          <div class="info">
-            <strong>Data de Geração:</strong> ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}<br>
-            <strong>Filtros Aplicados:</strong> 
-            Semestre: ${selectedSemester === "all" ? "Todos" : availableSemesters.find(s => s.value === selectedSemester)?.label || selectedSemester}
-            ${selectedAdvisor !== "all" ? ` | Orientador: ${advisors.find(a => a.id === selectedAdvisor)?.name || 'Não encontrado'}` : ''}<br>
-            <strong>Total de Registros:</strong> ${data.length}
+          <div class="report-container">
+            <div class="header">
+              <div class="logo-section">
+                <div class="logo-placeholder">UFVJM</div>
+                <div class="ministry">MINISTÉRIO DA EDUCAÇÃO</div>
+                <div class="university">UNIVERSIDADE FEDERAL DOS VALES DO JEQUITINHONHA E MUCURI</div>
+                <div class="report-title">${title}</div>
+                <div class="semester-info">📅 ${selectedSemesterInfo}</div>
+              </div>
+            </div>
+            
+            <div class="stats-summary">
+              <h3 style="margin-bottom: 15px; font-size: 20px;">📊 Resumo Estatístico</h3>
+              <div class="stats-grid">
+                <div class="stat-item">
+                  <div class="stat-number">${data.length}</div>
+                  <div class="stat-label">Total de Registros</div>
+                </div>
+                <div class="stat-item">
+                  <div class="stat-number">${format(new Date(), "dd/MM/yyyy", { locale: ptBR })}</div>
+                  <div class="stat-label">Data de Geração</div>
+                </div>
+                <div class="stat-item">
+                  <div class="stat-number">${format(new Date(), "HH:mm", { locale: ptBR })}</div>
+                  <div class="stat-label">Horário</div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="report-info">
+              <div class="info-grid">
+                <div class="info-item">
+                  <div class="info-label">🗓️ Período Selecionado</div>
+                  <div class="info-value">${selectedSemesterInfo}</div>
+                </div>
+                <div class="info-item">
+                  <div class="info-label">👨‍🏫 Filtro de Orientador</div>
+                  <div class="info-value">${selectedAdvisor !== "all" ? advisors.find(a => a.id === selectedAdvisor)?.name || 'Não encontrado' : 'Todos os Orientadores'}</div>
+                </div>
+                <div class="info-item">
+                  <div class="info-label">📋 Tipo de Relatório</div>
+                  <div class="info-value">${title}</div>
+                </div>
+                <div class="info-item">
+                  <div class="info-label">🔢 Registros Encontrados</div>
+                  <div class="info-value">${data.length} ${data.length === 1 ? 'registro' : 'registros'}</div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="actions no-print">
+              <button onclick="window.print()" class="btn btn-primary">
+                🖨️ Imprimir Relatório
+              </button>
+              <button onclick="window.close()" class="btn btn-secondary">
+                ❌ Fechar Janela
+              </button>
+            </div>
+            
+            ${tableHTML}
+            
+            <div style="margin-top: 40px; padding-top: 20px; border-top: 2px solid #e2e8f0; text-align: center; color: #718096; font-size: 14px;">
+              <p><strong>EstagioPro UFVJM</strong> - Sistema de Gerenciamento de Estágios</p>
+              <p>Relatório gerado automaticamente em ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</p>
+              <p style="margin-top: 10px; font-style: italic;">Este documento possui validade institucional e pode ser utilizado para fins acadêmicos e administrativos.</p>
+            </div>
           </div>
-          <div class="no-print" style="margin-bottom: 20px;">
-            <button onclick="window.print()" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;">🖨️ Imprimir</button>
-            <button onclick="window.close()" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer; margin-left: 10px;">❌ Fechar</button>
-          </div>
-          ${tableHTML}
         </body>
       </html>
     `);
