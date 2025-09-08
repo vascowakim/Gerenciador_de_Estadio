@@ -104,8 +104,19 @@ export default function MandatoryInternships() {
       const response = await apiRequest("POST", "/api/mandatory-internships", data);
       return response.json();
     },
-    onSuccess: (responseData) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/mandatory-internships"] });
+    onSuccess: async (responseData) => {
+      // Invalidar e forçar refetch imediato da lista de estágios obrigatórios
+      await queryClient.invalidateQueries({ 
+        queryKey: ["/api/mandatory-internships"],
+        refetchType: 'all'
+      });
+      
+      // Refetch forçado para garantir que a lista seja atualizada
+      await queryClient.refetchQueries({ 
+        queryKey: ["/api/mandatory-internships"],
+        type: 'all'
+      });
+      
       setIsDialogOpen(false);
       form.reset({
         studentId: "",
@@ -129,11 +140,13 @@ export default function MandatoryInternships() {
         r10: false,
         isActive: true,
       });
+      
       if (responseData.data?.id) {
         setNewlyCreatedId(responseData.data.id);
         // Remove destaque após 3 segundos
         setTimeout(() => setNewlyCreatedId(null), 3000);
       }
+      
       toast({
         title: "Sucesso",
         description: responseData.message || "Estágio obrigatório criado com sucesso!",

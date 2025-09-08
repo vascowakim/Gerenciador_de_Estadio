@@ -94,21 +94,38 @@ export default function NonMandatoryInternshipsPage() {
       }
       return response.json();
     },
-    onSuccess: (responseData) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/non-mandatory-internships"] });
-      setIsDialogOpen(false);
-      form.reset();
+    onSuccess: async (responseData) => {
+      // Invalidar e forçar refetch imediato da lista de estágios não obrigatórios
+      await queryClient.invalidateQueries({ 
+        queryKey: ["/api/non-mandatory-internships"],
+        refetchType: 'all'
+      });
       
-      // Garantir que o advisorId seja definido novamente para professores após reset
-      if (currentUser?.role === "professor") {
-        form.setValue("advisorId", currentUser.id);
-      }
+      // Refetch forçado para garantir que a lista seja atualizada
+      await queryClient.refetchQueries({ 
+        queryKey: ["/api/non-mandatory-internships"],
+        type: 'all'
+      });
+      
+      setIsDialogOpen(false);
+      form.reset({
+        studentId: "",
+        advisorId: currentUser?.role === "professor" ? currentUser.id : "",
+        companyId: "",
+        supervisor: "",
+        crc: "",
+        status: "pending",
+        startDate: undefined,
+        endDate: undefined,
+        isActive: true,
+      });
       
       if (responseData.data?.id) {
         setNewlyCreatedId(responseData.data.id);
         // Remove destaque após 3 segundos
         setTimeout(() => setNewlyCreatedId(null), 3000);
       }
+      
       toast({ 
         title: "Sucesso",
         description: responseData.message || "Estágio não obrigatório criado com sucesso!" 
