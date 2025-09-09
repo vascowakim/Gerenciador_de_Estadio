@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Plus, Edit2, Trash2, Search, CheckCircle, XCircle, Calendar, FileText, Users, Building, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,7 +27,7 @@ type FormData = z.infer<typeof formSchema>;
 
 export default function NonMandatoryInternshipsPage() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedAdvisorId, setSelectedAdvisorId] = useState("");
+  const [selectedAdvisorId, setSelectedAdvisorId] = useState("todos");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingInternship, setEditingInternship] = useState<NonMandatoryInternship | null>(null);
   const [isManagementDialogOpen, setIsManagementDialogOpen] = useState(false);
@@ -302,33 +302,39 @@ export default function NonMandatoryInternshipsPage() {
     setIsDialogOpen(true);
   };
 
-  const filteredInternships = internships.filter((internship: NonMandatoryInternship) => {
-    // Filtrar por termo de busca
-    let matchesSearch = true;
-    if (searchTerm) {
-      const student = students.find((s: Student) => s.id === internship.studentId);
-      const advisor = advisors.find((a: Advisor) => a.id === internship.advisorId);
-      const company = companies.find((c: Company) => c.id === internship.companyId);
+  const filteredInternships = useMemo(() => {
+    if (!internships || !Array.isArray(internships)) {
+      return [];
+    }
+
+    return internships.filter((internship: NonMandatoryInternship) => {
+      // Filtrar por termo de busca
+      let matchesSearch = true;
+      if (searchTerm) {
+        const student = students.find((s: Student) => s.id === internship.studentId);
+        const advisor = advisors.find((a: Advisor) => a.id === internship.advisorId);
+        const company = companies.find((c: Company) => c.id === internship.companyId);
+        
+        const searchLower = searchTerm.toLowerCase();
+        matchesSearch = (
+          student?.name.toLowerCase().includes(searchLower) ||
+          student?.registrationNumber.toLowerCase().includes(searchLower) ||
+          advisor?.name.toLowerCase().includes(searchLower) ||
+          company?.name.toLowerCase().includes(searchLower) ||
+          internship.supervisor?.toLowerCase().includes(searchLower) ||
+          internship.status.toLowerCase().includes(searchLower)
+        );
+      }
       
-      const searchLower = searchTerm.toLowerCase();
-      matchesSearch = (
-        student?.name.toLowerCase().includes(searchLower) ||
-        student?.registrationNumber.toLowerCase().includes(searchLower) ||
-        advisor?.name.toLowerCase().includes(searchLower) ||
-        company?.name.toLowerCase().includes(searchLower) ||
-        internship.supervisor?.toLowerCase().includes(searchLower) ||
-        internship.status.toLowerCase().includes(searchLower)
-      );
-    }
-    
-    // Filtrar por orientador selecionado
-    let matchesAdvisor = true;
-    if (selectedAdvisorId && selectedAdvisorId !== "todos") {
-      matchesAdvisor = internship.advisorId === selectedAdvisorId;
-    }
-    
-    return matchesSearch && matchesAdvisor;
-  });
+      // Filtrar por orientador selecionado
+      let matchesAdvisor = true;
+      if (selectedAdvisorId && selectedAdvisorId !== "todos") {
+        matchesAdvisor = internship.advisorId === selectedAdvisorId;
+      }
+      
+      return matchesSearch && matchesAdvisor;
+    });
+  }, [internships, searchTerm, selectedAdvisorId, students, advisors, companies]);
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
