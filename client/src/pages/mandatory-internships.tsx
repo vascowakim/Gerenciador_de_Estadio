@@ -100,13 +100,10 @@ export default function MandatoryInternships() {
     enabled: !!user,
   });
 
-  // Definir valor padrão do filtro de orientador baseado no usuário logado
+  // Definir valor padrão do filtro de orientador - todos os usuários veem todos por padrão
   useEffect(() => {
-    if (user && user.user && user.user.role === "professor") {
-      // Para professores, pré-selecionar o próprio professor
-      setSelectedAdvisorId(user.user.id);
-    } else if (user && user.user && user.user.role === "administrator") {
-      // Para administradores, mostrar todos por padrão
+    if (user && user.user) {
+      // Todos os usuários veem todos os estágios por padrão
       setSelectedAdvisorId("todos");
     }
   }, [user]);

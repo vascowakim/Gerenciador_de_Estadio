@@ -77,13 +77,10 @@ export default function NonMandatoryInternshipsPage() {
     queryKey: ["/api/auth/me"],
   });
 
-  // Definir valor padrão do filtro de orientador baseado no usuário logado
+  // Definir valor padrão do filtro de orientador - todos os usuários veem todos por padrão
   useEffect(() => {
-    if (currentUser && currentUser.user && currentUser.user.role === "professor") {
-      // Para professores, pré-selecionar o próprio professor
-      setSelectedAdvisorId(currentUser.user.id);
-    } else if (currentUser && currentUser.user && currentUser.user.role === "administrator") {
-      // Para administradores, mostrar todos por padrão
+    if (currentUser && currentUser.user) {
+      // Todos os usuários veem todos os estágios por padrão
       setSelectedAdvisorId("todos");
     }
   }, [currentUser]);
