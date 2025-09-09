@@ -26,21 +26,26 @@ export function MainLayout({ children }: MainLayoutProps) {
   // Se user for null após carregamento, o AuthService já redireciona
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar fixa */}
-      <div className="w-64 fixed inset-y-0 left-0 z-50">
+    <div className="min-h-screen bg-gray-50">
+      {/* Sidebar fixa com classe específica */}
+      <div className="sidebar-container">
         <Sidebar user={user || { role: 'professor' }} />
       </div>
       
-      {/* Área de conteúdo principal */}
-      <div className="flex-1 ml-64">
-        <main className="h-full">
+      {/* Área de conteúdo principal com classe específica */}
+      <div className="main-content">
+        <main className="min-h-screen p-0">
           {isLoading && !user ? (
             <div className="min-h-screen flex items-center justify-center">
-              <div className="text-center">Carregando...</div>
+              <div className="text-center text-gray-600">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                Carregando...
+              </div>
             </div>
           ) : (
-            children
+            <div className="w-full h-full">
+              {children}
+            </div>
           )}
         </main>
       </div>

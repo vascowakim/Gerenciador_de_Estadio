@@ -111,4 +111,48 @@
   .ufvjm-light-blue {
     background-color: var(--ufvjm-light-blue);
   }
+
+  /* Scrollbar customization */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+  
+  .scrollbar-thumb-blue-800::-webkit-scrollbar-thumb {
+    background-color: rgb(30 64 175);
+    border-radius: 4px;
+  }
+  
+  .scrollbar-track-blue-600::-webkit-scrollbar-track {
+    background-color: rgb(37 99 235);
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  /* Sidebar stability fixes */
+  .sidebar-container {
+    width: 256px !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    height: 100vh !important;
+    z-index: 40 !important;
+    overflow: hidden !important;
+  }
+
+  /* Content area adjustment */
+  .main-content {
+    margin-left: 256px !important;
+    min-height: 100vh !important;
+    width: calc(100% - 256px) !important;
+  }
+
+  /* Prevent text selection on navigation items */
+  .nav-item {
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+  }
 }
