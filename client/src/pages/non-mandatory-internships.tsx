@@ -56,9 +56,13 @@ export default function NonMandatoryInternshipsPage() {
   });
 
   // Queries with enhanced cache strategy
-  const { data: internships = [], isLoading: internshipsLoading, refetch } = useQuery<NonMandatoryInternship[]>({
+  const { data: internships = [], isLoading: internshipsLoading, refetch } = useQuery({
     queryKey: ["/api/non-mandatory-internships"],
+    enabled: !!currentUser,
     refetchOnMount: true,
+    refetchOnWindowFocus: false,
+    staleTime: 0,
+    gcTime: 0,
   });
 
   const { data: students = [] } = useQuery<Student[]>({
@@ -273,7 +277,11 @@ export default function NonMandatoryInternshipsPage() {
     if (managingInternship) {
       updateMutation.mutate({
         id: managingInternship.id,
-        data: { ...managingInternship, ...reports }
+        data: {
+          ...reports,
+          startDate: managingInternship.startDate ? new Date(managingInternship.startDate).toISOString().split('T')[0] : undefined,
+          endDate: managingInternship.endDate ? new Date(managingInternship.endDate).toISOString().split('T')[0] : undefined,
+        }
       });
     }
   };
@@ -348,6 +356,15 @@ export default function NonMandatoryInternshipsPage() {
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
+
+  // Debug temporário
+  console.log('🔍 Estado atual:', {
+    internshipsLoading,
+    internshipsLength: internships?.length || 0,
+    filteredLength: filteredInternships?.length || 0,
+    internships: internships,
+    selectedAdvisorId
+  });
 
   if (internshipsLoading) {
     return (
