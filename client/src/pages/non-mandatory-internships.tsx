@@ -55,8 +55,13 @@ export default function NonMandatoryInternshipsPage() {
     },
   });
 
+  // Query do usuário atual - deve vir primeiro
+  const { data: currentUser } = useQuery<{ user: { id: string; role: string } }>({
+    queryKey: ["/api/auth/me"],
+  });
+
   // Queries with enhanced cache strategy
-  const { data: internships = [], isLoading: internshipsLoading, refetch } = useQuery({
+  const { data: internships = [], isLoading: internshipsLoading, refetch } = useQuery<NonMandatoryInternship[]>({
     queryKey: ["/api/non-mandatory-internships"],
     enabled: !!currentUser,
     refetchOnMount: true,
@@ -75,10 +80,6 @@ export default function NonMandatoryInternshipsPage() {
 
   const { data: companies = [] } = useQuery<Company[]>({
     queryKey: ["/api/companies"],
-  });
-
-  const { data: currentUser } = useQuery<{ user: { id: string; role: string } }>({
-    queryKey: ["/api/auth/me"],
   });
 
   // Definir valor padrão do filtro de orientador - todos os usuários veem todos por padrão
@@ -278,6 +279,8 @@ export default function NonMandatoryInternshipsPage() {
       updateMutation.mutate({
         id: managingInternship.id,
         data: {
+          studentId: managingInternship.studentId,
+          advisorId: managingInternship.advisorId,
           ...reports,
           startDate: managingInternship.startDate ? new Date(managingInternship.startDate).toISOString().split('T')[0] : undefined,
           endDate: managingInternship.endDate ? new Date(managingInternship.endDate).toISOString().split('T')[0] : undefined,
