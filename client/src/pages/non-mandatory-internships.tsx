@@ -60,35 +60,30 @@ export default function NonMandatoryInternshipsPage() {
     queryKey: ["/api/auth/me"],
   });
 
-  // Queries with enhanced cache strategy
+  // Queries simplificadas sem cache para debug
   const { data: internships = [], isLoading: internshipsLoading, refetch } = useQuery<NonMandatoryInternship[]>({
     queryKey: ["/api/non-mandatory-internships"],
-    enabled: !!currentUser,
+    enabled: !!currentUser?.user,
     refetchOnMount: true,
     refetchOnWindowFocus: false,
-    staleTime: 0,
-    gcTime: 0,
   });
 
   const { data: students = [] } = useQuery<Student[]>({
     queryKey: ["/api/students"],
+    enabled: !!currentUser?.user,
   });
 
   const { data: advisors = [] } = useQuery<Advisor[]>({
     queryKey: ["/api/advisors"],
+    enabled: !!currentUser?.user,
   });
 
   const { data: companies = [] } = useQuery<Company[]>({
     queryKey: ["/api/companies"],
+    enabled: !!currentUser?.user,
   });
 
-  // Definir valor padrão do filtro de orientador - todos os usuários veem todos por padrão
-  useEffect(() => {
-    if (currentUser && currentUser.user) {
-      // Todos os usuários veem todos os estágios por padrão
-      setSelectedAdvisorId("todos");
-    }
-  }, [currentUser]);
+  // Remover useEffect problemático - valor já inicializado como "todos"
 
   // Mutations
   const createMutation = useMutation({
@@ -318,6 +313,10 @@ export default function NonMandatoryInternshipsPage() {
       return [];
     }
 
+    if (internships.length === 0) {
+      return [];
+    }
+
     return internships.filter((internship: NonMandatoryInternship) => {
       // Filtrar por termo de busca
       let matchesSearch = true;
@@ -360,14 +359,6 @@ export default function NonMandatoryInternshipsPage() {
   };
 
 
-  // Debug temporário
-  console.log('🔍 Estado atual:', {
-    internshipsLoading,
-    internshipsLength: internships?.length || 0,
-    filteredLength: filteredInternships?.length || 0,
-    internships: internships,
-    selectedAdvisorId
-  });
 
   if (internshipsLoading) {
     return (
@@ -673,7 +664,7 @@ export default function NonMandatoryInternshipsPage() {
 
       {/* Internships Grid */}
       <div className="grid grid-cols-1 gap-4">
-        {filteredInternships.length > 0 ? filteredInternships.map((internship: NonMandatoryInternship) => {
+        {!internshipsLoading && internships && internships.length > 0 && filteredInternships.length > 0 ? filteredInternships.map((internship: NonMandatoryInternship) => {
           const student = students.find((s: Student) => s.id === internship.studentId);
           const advisor = advisors.find((a: Advisor) => a.id === internship.advisorId);
           const company = companies.find((c: Company) => c.id === internship.companyId);
@@ -776,19 +767,25 @@ export default function NonMandatoryInternshipsPage() {
               </CardContent>
             </Card>
           );
-        }) : (
+        }) : !internshipsLoading ? (
           <div className="text-center py-8 text-gray-500">
-            {!searchTerm ? 'Nenhum estágio não obrigatório encontrado.' : 'Nenhum resultado encontrado para a pesquisa.'}
+            {internships && internships.length > 0 
+              ? (!searchTerm ? 'Nenhum estágio não obrigatório encontrado após filtragem.' : 'Nenhum resultado encontrado para a pesquisa.')
+              : 'Nenhum estágio não obrigatório cadastrado ainda.'
+            }
           </div>
-        )}
+        ) : null}
       </div>
 
-      {filteredInternships.length === 0 && (
+      {!internshipsLoading && filteredInternships.length === 0 && (
         <Card>
           <CardContent className="p-8 text-center">
             <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <p className="text-gray-500">
-              {searchTerm ? "Nenhum estágio não obrigatório encontrado com os critérios de busca." : "Nenhum estágio não obrigatório cadastrado ainda."}
+              {internships && internships.length > 0 
+                ? (searchTerm ? "Nenhum estágio não obrigatório encontrado com os critérios de busca." : "Nenhum estágio passou pelos filtros aplicados.")
+                : "Nenhum estágio não obrigatório cadastrado ainda."
+              }
             </p>
           </CardContent>
         </Card>
