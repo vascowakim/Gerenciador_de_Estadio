@@ -126,8 +126,9 @@ export function Sidebar({ user }: SidebarProps) {
   });
 
   return (
-    <div className="w-64 bg-blue-600 text-white h-full">
-      <div className="p-4">
+    <div className="w-64 bg-blue-600 text-white h-full flex flex-col relative">
+      {/* Header Section */}
+      <div className="p-4 flex-shrink-0">
         <div className="bg-blue-700 rounded-lg p-4 mb-6 text-center">
           <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto mb-2">
             <img 
@@ -139,8 +140,11 @@ export function Sidebar({ user }: SidebarProps) {
           <h2 className="text-sm font-bold">UFVJM</h2>
           <p className="text-xs text-blue-200">Ciências Contábeis</p>
         </div>
+      </div>
 
-        <nav className="space-y-1">
+      {/* Navigation Section - Scrollable */}
+      <div className="flex-1 px-4 overflow-y-auto">
+        <nav className="space-y-1 pb-4">
           {filteredItems.map((item) => {
             const Icon = item.icon;
             const isActive = location === item.href;
@@ -149,39 +153,39 @@ export function Sidebar({ user }: SidebarProps) {
               <Link key={item.href} href={item.href}>
                 <div
                   className={cn(
-                    "flex items-center space-x-3 px-3 py-2 rounded text-sm hover:bg-blue-700 cursor-pointer",
+                    "flex items-center space-x-3 px-3 py-2 rounded text-sm hover:bg-blue-700 cursor-pointer transition-colors duration-200",
                     isActive && "bg-blue-700 font-semibold"
                   )}
                   data-testid={`link-${item.title.toLowerCase()}`}
                 >
-                  <Icon className="w-4 h-4" />
-                  <span>{item.title}</span>
+                  <Icon className="w-4 h-4 flex-shrink-0" />
+                  <span className="truncate">{item.title}</span>
                 </div>
               </Link>
             );
           })}
         </nav>
+      </div>
         
-        {/* Bottom Section */}
-        <div className="absolute bottom-4 left-4 right-4">
-          <Link href="/profile">
-            <Button
-              className="w-full bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded text-center text-sm font-semibold mb-2"
-              data-testid="button-profile"
-            >
-              <UserCog className="w-4 h-4 mr-2" />
-              Meu Perfil
-            </Button>
-          </Link>
+      {/* Bottom Section - Fixed */}
+      <div className="p-4 flex-shrink-0 border-t border-blue-500">
+        <Link href="/profile">
           <Button
-            onClick={handleLogout}
-            className="w-full bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded text-center text-sm font-semibold"
-            data-testid="button-logout"
+            className="w-full bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded text-center text-sm font-semibold mb-2 transition-colors duration-200"
+            data-testid="button-profile"
           >
-            <LogOut className="w-4 h-4 mr-2" />
-            Sair
+            <UserCog className="w-4 h-4 mr-2" />
+            Meu Perfil
           </Button>
-        </div>
+        </Link>
+        <Button
+          onClick={handleLogout}
+          className="w-full bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded text-center text-sm font-semibold transition-colors duration-200"
+          data-testid="button-logout"
+        >
+          <LogOut className="w-4 h-4 mr-2" />
+          Sair
+        </Button>
       </div>
     </div>
   );
