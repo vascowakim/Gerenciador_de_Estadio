@@ -172,7 +172,10 @@ export default function NonMandatoryInternshipsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      if (!response.ok) throw new Error("Falha ao atualizar estágio");
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(`${response.status}: ${errorData}`);
+      }
       return response.json();
     },
     onSuccess: () => {
@@ -180,11 +183,34 @@ export default function NonMandatoryInternshipsPage() {
       setIsDialogOpen(false);
       setEditingInternship(null);
       form.reset();
-      toast({ title: "Estágio não obrigatório atualizado com sucesso!" });
+      toast({ 
+        title: "Sucesso",
+        description: "Estágio não obrigatório atualizado com sucesso!"
+      });
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       console.error("Erro ao atualizar estágio não obrigatório:", error);
-      toast({ title: "Erro ao atualizar estágio não obrigatório", variant: "destructive" });
+      
+      // Extrair mensagem de erro detalhada do servidor
+      let errorMessage = "Erro ao atualizar estágio não obrigatório";
+      try {
+        const errorText = error.message;
+        if (errorText.includes("404:")) {
+          errorMessage = "Estágio não encontrado. Pode ter sido removido por outro usuário.";
+        } else if (errorText.includes("400:")) {
+          errorMessage = "Dados inválidos. Verifique se todos os campos obrigatórios estão preenchidos corretamente.";
+        } else if (errorText.includes("INVALID_REFERENCES")) {
+          errorMessage = "Estudante, orientador ou empresa não encontrados.";
+        }
+      } catch (e) {
+        // Use mensagem padrão se não conseguir parsear o erro
+      }
+      
+      toast({ 
+        title: "Erro",
+        description: errorMessage,
+        variant: "destructive" 
+      });
     },
   });
 

@@ -1029,12 +1029,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const nonMandatoryInternshipData = insertNonMandatoryInternshipSchema.partial().parse(processedBody);
       const nonMandatoryInternship = await storage.updateNonMandatoryInternship(id, nonMandatoryInternshipData);
       if (!nonMandatoryInternship) {
-        return res.status(404).json({ message: "Estágio não obrigatório não encontrado" });
+        return res.status(404).json({ 
+          success: false,
+          message: "Estágio não obrigatório não encontrado",
+          code: "NOT_FOUND"
+        });
       }
-      res.json(nonMandatoryInternship);
+      res.json({
+        success: true,
+        data: nonMandatoryInternship,
+        message: "Estágio não obrigatório atualizado com sucesso"
+      });
     } catch (error) {
-      console.error("Error updating non-mandatory internship:", error);
-      res.status(400).json({ message: "Dados inválidos", error: error.message });
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      console.error("Error updating non-mandatory internship:", errorMessage);
+      
+      // Tratar erros específicos
+      if (error instanceof Error && error.message.includes('foreign key')) {
+        return res.status(400).json({ 
+          success: false,
+          message: "Estudante, orientador ou empresa não encontrados",
+          code: "INVALID_REFERENCES"
+        });
+      }
+      
+      res.status(400).json({ 
+        success: false,
+        message: "Dados inválidos para atualização do estágio",
+        code: "VALIDATION_ERROR",
+        details: errorMessage
+      });
     }
   });
 
